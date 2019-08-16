@@ -6,4 +6,6 @@
 #pragma GCC poison realloc
 #pragma GCC poison free
 
+#define fallthrough __attribute__((fallthrough))
+
 #endif

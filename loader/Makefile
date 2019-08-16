@@ -1,4 +1,4 @@
-CFLAGS := -fPIC -g -O3 -Wall -Werror
+CFLAGS := -fPIC -g -O3 -Wall -Werror -Wimplicit-fallthrough
 LDFLAGS := -flto -fPIC -lgc
 UNITS := interpreter io lexer lisp parser util
 

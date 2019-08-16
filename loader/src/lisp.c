@@ -19,6 +19,8 @@ static const uint64_t TAG_BIT_IDX = 60;
 static const uint64_t TAG_MASK = 7;
 static const uint64_t UNTAG_MASK = TAG_MASK << TAG_BIT_IDX;
 
+compile_assert(sizeof(void*) == sizeof(uint64_t), pointer_is_64bit);
+
 value add_tag(uint64_t n, tag new_tag) {
 	uint16_t high_bits = (n >> 48);
 	expect(high_bits == 0 || high_bits == 0xffff, "Tried to tag a value that already had a tag!");

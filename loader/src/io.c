@@ -10,5 +10,6 @@ int read_file(str path, str* out_buf) {
 	FILE* file = fopen(cstr_path, "r");
 	if(!file)
 		return errno;
+	// TODO
 	return 0;
 }

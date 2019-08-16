@@ -45,6 +45,7 @@ str str_cat(str l, str r) {
 
 str str_drop(str str, size_t n) {
 	expect(n <= str.len, "Tried to drop more characters than are in the string.");
+	str.data += n;
 	str.len -= n;
 	return str;
 }
@@ -57,7 +58,7 @@ str str_take(str str, size_t n) {
 
 str str_substr(str str, size_t start, size_t end) {
 	expect(end >= start, "Tried to take a substring of negative length.");
-	return str_take(str_drop(str, start), (end - start));
+	return str_drop(str_take(str, end), start);
 }
 
 char str_get(str str, size_t i) {
@@ -74,4 +75,15 @@ char* cstr_from_str(str str) {
 	memcpy(out, str.data, str.len);
 	out[str.len] = '\0';
 	return out;
+}
+
+int str_fputs(str str, FILE* stream) {
+	str rest = str;
+	while(rest.len) {
+		size_t size = fwrite(rest.data, 1, rest.len, stream);
+		if(size == rest.len)
+			break;
+		rest = str_drop(rest, size);
+	}
+	return 0;
 }

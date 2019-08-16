@@ -8,6 +8,9 @@
 #define STRINGIFY(x) #x
 #define TOSTRING(x) STRINGIFY(x)
 #define AT __FILE__ ":" TOSTRING(__LINE__)
+
+#define compile_assert(COND, NAME) extern char NAME[(COND) ? 1 : -1]
+
 #define expect(COND, MSG) \
 	do { \
 		if(!(COND)) { \
@@ -30,6 +33,7 @@ str str_substr(str, size_t, size_t);
 char str_get(str, size_t);
 size_t str_len(str);
 char* cstr_from_str(str);
+int str_fputs(str, FILE*);
 
 typedef unsigned long long hash;
 
