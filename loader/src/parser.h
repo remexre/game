@@ -3,7 +3,7 @@
 
 #include "lisp.h"
 
-void parse_one(str*, value*);
-void parse_all(str*, value*);
+error parse_one(str, value*);
+error parse_all(str, value*);
 
 #endif

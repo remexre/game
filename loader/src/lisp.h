@@ -6,7 +6,7 @@
 #include <stdint.h>
 
 typedef uint8_t tag;
-typedef uint64_t value;
+typedef struct { uint64_t n; } value;
 
 extern const tag TAG_CONS;
 extern const tag TAG_CLOSURE;
@@ -23,28 +23,29 @@ typedef struct package_data* package;
 typedef struct symbol_data* symbol;
 
 struct package_data {
-	str name;
+	string name;
 	hash hash;
 };
 
 struct symbol_data {
-	str name;
-	str fq_name;
+	string name;
+	string fq_name;
 	hash hash;
 	value class;
 	value function;
 	value global;
 	package package;
+	value place;
 };
 
 value add_tag(uint64_t, tag);
 uint64_t del_tag(value);
 tag get_tag(value);
 
-package make_package(str name);
-symbol make_symbol(package package, str name);
+package make_package(string name);
+symbol make_symbol(package package, string name);
 
-value value_of_string(str);
+value value_of_string(string);
 value value_of_symbol(symbol);
 
 #endif

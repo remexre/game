@@ -2,8 +2,9 @@
 #define GAME_IO_H 1
 
 #include "util.h"
-#include "common.h"
+#include <stdio.h>
 
-int read_file(str path, str* out_buf);
+error read_file(string path, string* out);
+int string_fputs(string, FILE*);
 
 #endif

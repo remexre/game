@@ -1,5 +1,6 @@
 #include "io.h"
 #include "lisp.h"
+#include <stdlib.h>
 #include <stdnoreturn.h>
 #include <unistd.h>
 #include "common.h"
@@ -19,14 +20,13 @@ int main(int argc, char **argv) {
 
 	if(optind + 1 != argc)
 		usage(argc, argv);
-	str main_file_path = str_from_static_cstr(argv[optind]);
+	string main_file_path = string_from_static_cstr(argv[optind]);
 
-	str main_file_src;
-	expect(read_file(main_file_path, &main_file_src) != 0,
-		"Couldn't read main file.");
+	string main_file_src;
+	expect_ok(read_file(main_file_path, &main_file_src),
+		"Couldn't read main file");
 
-	for(int i = optind; i < argc; i++)
-		printf("arg = %s\n", argv[i]);
+	string_fputs(main_file_src, stdout);
 
 	return 0;
 }

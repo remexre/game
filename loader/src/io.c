@@ -1,15 +1,38 @@
 #include "io.h"
-
 #include <errno.h>
-#include <stdio.h>
-
 #include "common.h"
 
-int read_file(str path, str* out_buf) {
-	char* cstr_path = cstr_from_str(path);
+#define BUF_SIZE 4096
+
+error read_file(string path, string* out) {
+	char* cstr_path = cstr_from_string(path);
 	FILE* file = fopen(cstr_path, "r");
-	if(!file)
-		return errno;
-	// TODO
+	if(!file) {
+		return error_errno(errno);
+	}
+
+	string s = string_empty;
+	char buf[BUF_SIZE];
+	while(1) {
+		size_t len = fread(buf, 1, BUF_SIZE, file);
+		s = string_cat(s, (string) { .len = len, .data = buf });
+		if(len < BUF_SIZE) {
+			if(ferror(file))
+				return error_errno(errno);
+			break;
+		}
+	}
+
+	*out = s;
+	return error_none;
+}
+
+int string_fputs(string str, FILE* stream) {
+	while(str.len) {
+		size_t size = fwrite(str.data, 1, str.len, stream);
+		if(size == str.len)
+			break;
+		str = string_drop(str, size);
+	}
 	return 0;
 }

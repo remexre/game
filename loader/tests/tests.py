@@ -49,18 +49,18 @@ strings = st.characters(blacklist_categories=('Cs',), min_codepoint=1)
 @given(strings)
 def test_str_roundtrip(s: str):
     bs = bytes(s, 'utf-8')
-    s = bindings.str_from_cstr(bs)
-    assert bindings.cstr_from_str(s) == bs
+    s = bindings.string_from_cstr(bs)
+    assert bindings.cstr_from_string(s) == bs
 
 
 @test
 @given(st.data())
-def test_str_substr(data):
+def test_str_sub(data):
     bs = bytes(data.draw(strings), 'utf-8')
-    s = bindings.str_from_cstr(bs)
+    s = bindings.string_from_cstr(bs)
     end = data.draw(st.integers(min_value=0, max_value=len(bs)))
     start = data.draw(st.integers(min_value=0, max_value=end))
-    ss = bindings.cstr_from_str(bindings.str_substr(s, start, end))
+    ss = bindings.cstr_from_string(bindings.string_sub(s, start, end))
     assert bs[start:end] == ss
 
 

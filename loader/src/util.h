@@ -2,8 +2,7 @@
 #define GAME_UTIL_H 1
 
 #include <stddef.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <stdbool.h>
 
 #define STRINGIFY(x) #x
 #define TOSTRING(x) STRINGIFY(x)
@@ -12,31 +11,50 @@
 #define compile_assert(COND, NAME) extern char NAME[(COND) ? 1 : -1]
 
 #define expect(COND, MSG) \
-	do { \
-		if(!(COND)) { \
-			fputs("At " AT ": " MSG "\nFailing condition: " STRINGIFY(COND) "\n", stderr); \
-			abort(); \
-		} \
-	} while(0)
+	do { fail_at_error(AT, error_expect(COND, TOSTRING(COND))); } while(0)
+#define expect_ok(EXPR, MSG) \
+	do { fail_at_error(AT, EXPR); } while(0)
+#define expect_errno_ok(EXPR, MSG) \
+	do { fail_at_error(AT, error_errno(EXPR)); } while(0)
 
 typedef struct {
 	size_t len;
 	const char* data;
-} str;
+} string;
 
-str str_from_cstr(const char*);
-str str_from_static_cstr(const char*);
-str str_cat(str, str);
-str str_drop(str, size_t);
-str str_take(str, size_t);
-str str_substr(str, size_t, size_t);
-char str_get(str, size_t);
-size_t str_len(str);
-char* cstr_from_str(str);
-int str_fputs(str, FILE*);
+extern const string string_empty;
+
+string string_from_cstr(const char*);
+string string_from_static_cstr(const char*);
+string string_cat(string, string);
+string string_drop(string, size_t);
+string string_take(string, size_t);
+string string_sub(string, size_t, size_t);
+char string_get(string, size_t);
+size_t string_len(string);
+char* cstr_from_string(string);
 
 typedef unsigned long long hash;
 
-hash djb2a(str);
+hash djb2a(string);
+
+typedef enum {
+	OK = 0,
+	EXPECTATION_FAILED,
+	SYSCALL_FAILED
+} error_code;
+
+typedef struct {
+	error_code code;
+	string msg;
+} error;
+
+extern const error error_none;
+#define ERROR(CODE, MSG) (error) { .code = CODE, .msg = MSG }
+
+const char* error_msg(error_code code);
+void fail_at_error(const char* at, error err);
+error error_errno(int err);
+error error_expect(bool cond, const char* expr);
 
 #endif
