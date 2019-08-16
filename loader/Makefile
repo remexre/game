@@ -4,7 +4,7 @@ UNITS := interpreter io lexer lisp parser util
 
 all: compile check
 check: out/game.so
-	cd tests && pipenv run python tests.py
+	cd tests && ./run.sh
 clean:
 	test ! -d out || rm -r out
 	test ! -d tmp || rm -r tmp
