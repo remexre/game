@@ -24,3 +24,10 @@ out/game.so: $(patsubst %,tmp/%.o,$(UNITS))
 tmp/%.o: src/%.c
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -c -o $@ $<
+
+tmp/%.d: src/%.c
+	@set -e; mkdir -p $(dir $@); rm -f $@; \
+		$(CC) -M $(CPPFLAGS) $< > $@.$$$$; \
+		sed 's,\($*\)\.o[ :]*,\1.o $@ : ,g' < $@.$$$$ > $@; \
+		rm -f $@.$$$$
+include $(patsubst %,tmp/%.d,$(UNITS) main)

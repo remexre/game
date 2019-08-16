@@ -82,12 +82,12 @@ char* cstr_from_string(string str) {
 
 const error error_none = { OK, { 0, NULL }};
 
-const char* error_msg(error_code code) {
+string error_msg(error_code code) {
 	switch(code) {
-	case OK: return "Success";
-	case EXPECTATION_FAILED: return "Expectation failed";
-	case SYSCALL_FAILED: return "System call failed";
-	default: return "Unknown error";
+	case OK: return string_from_static_cstr("Success");
+	case EXPECTATION_FAILED: return string_from_static_cstr("Expectation failed");
+	case SYSCALL_FAILED: return string_from_static_cstr("System call failed");
+	default: return string_from_static_cstr("Unknown error");
 	}
 }
 
@@ -98,11 +98,15 @@ void fail_at_error(const char* at, error err) {
 	fputs("At ", stderr);
 	fputs(at, stderr);
 	fputs(": ", stderr);
-	fputs(error_msg(err.code), stderr);
+	string_fputs(error_msg(err.code), stderr);
 	fputs(": ", stderr);
 	string_fputs(err.msg, stderr);
 	fputs("\n", stderr);
 	exit(err.code);
+}
+
+error error_add_msg(error err, string msg) {
+	return ERROR(err.code, string_cat(msg, string_cat(string_from_static_cstr(": "), err.msg)));
 }
 
 error error_errno(int err) {

@@ -5,7 +5,11 @@
 #include <unistd.h>
 #include "common.h"
 
-noreturn void usage(int argc, char **argv);
+noreturn void usage(int argc, char **argv) {
+	fprintf(stderr, "Usage: %s [flags] main-file-path\n",
+		argc ? argv[0] : "game");
+	exit(1);
+}
 
 int main(int argc, char **argv) {
 	int c;
@@ -29,10 +33,4 @@ int main(int argc, char **argv) {
 	string_fputs(main_file_src, stdout);
 
 	return 0;
-}
-
-noreturn void usage(int argc, char **argv) {
-	fprintf(stderr, "Usage: %s [flags] main-file-path\n",
-		argc ? argv[0] : "game");
-	exit(1);
 }

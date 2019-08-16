@@ -10,5 +10,5 @@ compile:
 .PHONY: all check clean compile
 
 run: compile
-	./loader/out/game
+	./loader/out/game src/main.lisp
 .PHONY: run

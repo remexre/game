@@ -11,11 +11,13 @@
 #define compile_assert(COND, NAME) extern char NAME[(COND) ? 1 : -1]
 
 #define expect(COND, MSG) \
-	do { fail_at_error(AT, error_expect(COND, TOSTRING(COND))); } while(0)
+	do { fail_at_error(AT, error_add_msg(error_expect(COND, TOSTRING(COND)), \
+				                         string_from_static_cstr(MSG))); } while(0)
 #define expect_ok(EXPR, MSG) \
-	do { fail_at_error(AT, EXPR); } while(0)
+	do { fail_at_error(AT, error_add_msg(EXPR, string_from_static_cstr(MSG))); } while(0)
 #define expect_errno_ok(EXPR, MSG) \
-	do { fail_at_error(AT, error_errno(EXPR)); } while(0)
+	do { fail_at_error(AT, error_add_msg(error_errno(EXPR), \
+				                         string_from_static_cstr(MSG))); } while(0)
 
 typedef struct {
 	size_t len;
@@ -52,8 +54,10 @@ typedef struct {
 extern const error error_none;
 #define ERROR(CODE, MSG) (error) { .code = CODE, .msg = MSG }
 
-const char* error_msg(error_code code);
+string error_msg(error_code code);
 void fail_at_error(const char* at, error err);
+void fail_at_error_nocode(const char* at, error err);
+error error_add_msg(error err, string msg);
 error error_errno(int err);
 error error_expect(bool cond, const char* expr);
 
