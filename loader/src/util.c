@@ -78,12 +78,11 @@ char* cstr_from_str(str str) {
 }
 
 int str_fputs(str str, FILE* stream) {
-	str rest = str;
-	while(rest.len) {
-		size_t size = fwrite(rest.data, 1, rest.len, stream);
-		if(size == rest.len)
+	while(str.len) {
+		size_t size = fwrite(str.data, 1, str.len, stream);
+		if(size == str.len)
 			break;
-		rest = str_drop(rest, size);
+		str = str_drop(str, size);
 	}
 	return 0;
 }

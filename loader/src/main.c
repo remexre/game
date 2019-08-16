@@ -1,8 +1,7 @@
+#include "io.h"
 #include "lisp.h"
-
 #include <stdnoreturn.h>
 #include <unistd.h>
-
 #include "common.h"
 
 noreturn void usage(int argc, char **argv);
