@@ -1,6 +1,6 @@
 CFLAGS := -fPIC -g -O3 -Wall -Werror
 LDFLAGS := -flto -fPIC -lgc
-UNITS := lisp util
+UNITS := interpreter io lexer lisp parser util
 
 all: compile check
 check: out/game.so

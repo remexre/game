@@ -2,6 +2,8 @@
 
 #include <gc.h>
 
+#include "common.h"
+
 const tag TAG_CONS = 0;
 const tag TAG_CLOSURE = 1;
 const tag TAG_FIXNUM = 2;

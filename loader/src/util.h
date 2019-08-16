@@ -21,12 +21,18 @@ typedef struct {
 	const char* data;
 } str;
 
-typedef unsigned long long hash;
-
-hash djb2a(str);
-
 str str_from_cstr(const char*);
 str str_from_static_cstr(const char*);
 str str_cat(str, str);
+str str_drop(str, size_t);
+str str_take(str, size_t);
+str str_substr(str, size_t, size_t);
+char str_get(str, size_t);
+size_t str_len(str);
+char* cstr_from_str(str);
+
+typedef unsigned long long hash;
+
+hash djb2a(str);
 
 #endif
