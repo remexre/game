@@ -90,12 +90,36 @@ symbol package_get_symbol(package pkg, string name) {
 	return NULL;
 }
 
-value value_of_fixnum(int32_t n) {
+symbol package_get_or_make_symbol(package pkg, string name) {
+	hash h = djb2a(name);
+	struct symtab_link** entry = &pkg->symtab[h % SYMTAB_BUCKETS];
+	struct symtab_link* iter = *entry;
+	while(iter) {
+		if(string_cmp(iter->sym->name, name) == 0)
+			return iter->sym;
+		iter = iter->next;
+	}
+
+	struct symtab_link* link = GC_malloc(sizeof(struct symtab_link));
+	link->sym = make_symbol(pkg, name);
+	link->next = *entry;
+	*entry = link;
+	return link->sym;
+}
+
+value fixnum_to_value(int32_t n) {
 	return add_tag(n, TAG_FIXNUM);
 }
 
-value value_of_string(string);
-value value_of_symbol(symbol);
+value string_to_value(string str) {
+	string* ptr = GC_malloc(sizeof(string));
+	*ptr = str;
+	return add_tag((uint64_t) ptr, TAG_STRING);
+}
+
+value symbol_to_value(symbol sym) {
+	return add_tag((uint64_t) sym, TAG_SYMBOL);
+}
 
 value make_cons(value hd, value tl) {
 	struct cons* cons = GC_malloc(sizeof(struct cons));

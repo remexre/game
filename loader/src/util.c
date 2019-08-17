@@ -6,18 +6,31 @@
 #include <string.h>
 #include "common.h"
 
-const string string_empty = { 0, NULL };
-
-#define MAKE_MIN(NAME, TY) TY NAME(TY x, TY y) { return x < y ? x : y; }
-MAKE_MIN(min_int, int)
-MAKE_MIN(min_size_t, size_t)
+#define MAKE_MIN(TY) TY min_##TY(TY x, TY y) { return x < y ? x : y; }
+MAKE_MIN(int)
+MAKE_MIN(size_t)
 #undef MAKE_MIN
 
-hash djb2a(string str) {
-	hash out = 5381;
-	for(size_t i = 0; i < string_len(str); i++)
-		out = (out * 33) ^ string_get(str, i);
-	return out;
+const string string_empty = { 0, NULL };
+
+string stringf(const char* format, ...) {
+	va_list ap;
+	va_start(ap, format);
+	string str = vstringf(format, ap);
+	va_end(ap);
+	return str;
+}
+
+string vstringf(const char* format, va_list ap) {
+	va_list aq;
+	va_copy(aq, ap);
+	int size = vsnprintf(NULL, 0, format, aq);
+	if(size < 0)
+		return string_from_static_cstr("vstringf error");
+	char* data = GC_malloc(size + 1);
+	if(vsnprintf(data, size + 1, format, ap) < 0)
+		return string_from_static_cstr("vstringf error");
+	return (string) { .len = size, .data = data };
 }
 
 string string_from_cstr(const char* cstr) {
@@ -96,7 +109,26 @@ char* cstr_from_string(string str) {
 	return out;
 }
 
+hash djb2a(string str) {
+	hash out = 5381;
+	for(size_t i = 0; i < string_len(str); i++)
+		out = (out * 33) ^ string_get(str, i);
+	return out;
+}
+
 const error ok = { OK, { 0, NULL }};
+
+error make_error(error_code code, string msg) {
+	return (error) { .code = code, .msg = msg };
+}
+
+error errorf(error_code code, const char* format, ...) {
+	va_list ap;
+	va_start(ap, format);
+	string msg = vstringf(format, ap);
+	va_end(ap);
+	return make_error(code, msg);
+}
 
 string error_msg(error_code code) {
 	switch(code) {
@@ -123,18 +155,18 @@ void fail_at_error(const char* at, error err) {
 
 __attribute__((warn_unused_result))
 error error_add_msg(error err, string msg) {
-	return ERROR(err.code, string_cat(msg, string_cat(string_from_static_cstr(": "), err.msg)));
+	return make_error(err.code, string_cat(msg, string_cat(string_from_static_cstr(": "), err.msg)));
 }
 
 __attribute__((warn_unused_result))
 error error_errno(int err) {
 	expect(err != 0, "error_errno should be called with a non-zero error");
-	return ERROR(SYSCALL_FAILED, string_from_cstr(strerror(err)));
+	return make_error(SYSCALL_FAILED, string_from_cstr(strerror(err)));
 }
 
 __attribute__((warn_unused_result))
 error error_expect(bool cond, const char* expr) {
 	if(cond)
 		return ok;
-	return ERROR(EXPECTATION_FAILED, string_from_static_cstr(expr));
+	return make_error(EXPECTATION_FAILED, string_from_static_cstr(expr));
 }

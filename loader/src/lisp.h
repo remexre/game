@@ -24,7 +24,7 @@ string tag_name(tag);
 	value check_type__value = EXPR; \
 	tag check_type__tag = TAG; \
 	if(get_tag(check_type__value) != check_type__tag) { \
-		return ERROR(TYPE_ERROR, \
+		return make_error(TYPE_ERROR, \
 			string_cat(string_from_static_cstr("Expected "), \
 				string_cat(tag_name(check_type__tag), \
 					string_cat(string_from_static_cstr(", found "), \
@@ -60,13 +60,14 @@ uint64_t del_tag(value);
 tag get_tag(value);
 
 package make_package(string name);
-symbol make_symbol(package package, string name);
+symbol make_symbol(package pkg, string name);
 
 symbol package_get_symbol(package pkg, string name);
+symbol package_get_or_make_symbol(package pkg, string name);
 
-value value_of_fixnum(int);
-value value_of_string(string);
-value value_of_symbol(symbol);
+value fixnum_to_value(int32_t);
+value string_to_value(string);
+value symbol_to_value(symbol);
 
 value make_cons(value, value);
 

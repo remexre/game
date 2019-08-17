@@ -1,6 +1,7 @@
 #ifndef GAME_UTIL_H
 #define GAME_UTIL_H 1
 
+#include <stdarg.h>
 #include <stddef.h>
 #include <stdbool.h>
 
@@ -43,6 +44,8 @@ typedef struct {
 
 extern const string string_empty;
 
+string stringf(const char*, ...) __attribute__((format(printf, 1, 2)));
+string vstringf(const char*, va_list);
 string string_from_cstr(const char*);
 string string_from_static_cstr(const char*);
 string string_cat(string, string);
@@ -72,7 +75,9 @@ typedef struct {
 } error;
 
 extern const error ok;
-#define ERROR(CODE, MSG) (error) { .code = CODE, .msg = MSG }
+
+error make_error(error_code code, string msg);
+error errorf(error_code code, const char* format, ...) __attribute__((format(printf, 2, 3)));
 
 string error_msg(error_code code);
 void fail_at_error(const char* at, error err);

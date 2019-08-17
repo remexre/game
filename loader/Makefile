@@ -1,6 +1,6 @@
 CFLAGS := -fPIC -g -O3 -Wall -Werror -Wimplicit-fallthrough
 LDFLAGS := -flto -fPIC -lgc
-UNITS := eval io lexer lisp lisp/lists parser util
+UNITS := buffer eval io lexer lisp lisp/lists parser util
 
 all: compile check
 check: out/game.so

@@ -24,7 +24,7 @@ class Value(Structure):
 
     @staticmethod
     def make_fixnum(n: int) -> 'Value':
-        return lib.value_of_fixnum(n)
+        return lib.fixnum_to_value(n)
 
     @staticmethod
     def make_list(l: List['Value']) -> 'Value':
@@ -136,11 +136,11 @@ def get_tag(value: Value) -> int:
 # symbol make_symbol(package package, string name);
 # symbol package_get_symbol(package pkg, string name);
 
-lib.value_of_fixnum.argtypes = [c_int]
-lib.value_of_fixnum.restype = Value
+lib.fixnum_to_value.argtypes = [c_int]
+lib.fixnum_to_value.restype = Value
 
-# value value_of_string(string);
-# value value_of_symbol(symbol);
+# value string_to_value(string);
+# value symbol_to_value(symbol);
 
 lib.make_cons.argtypes = [Value, Value]
 lib.make_cons.restype = Value
