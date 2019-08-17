@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import bindings
+from bindings import Value
 from hypothesis import given
 import hypothesis.strategies as st
 import unittest
@@ -42,6 +43,7 @@ def test_tagging_high_1(n, tag):
     assert sign_extended(n2)
 
 
+fixnums = st.integers(min_value=-0x80000000, max_value=0x7fffffff)
 strings = st.characters(blacklist_categories=('Cs',), min_codepoint=1)
 
 
@@ -62,6 +64,14 @@ def test_str_sub(data):
     start = data.draw(st.integers(min_value=0, max_value=end))
     ss = bindings.cstr_from_string(bindings.string_sub(s, start, end))
     assert bs[start:end] == ss
+
+
+@test
+@given(st.lists(fixnums))
+def test_nreverse_list(l):
+    value = Value.make_list([Value.make_fixnum(n) for n in l])
+    rev = bindings.nreverse_list(value)
+    assert list(reversed(l)) == rev.as_python()
 
 
 @test

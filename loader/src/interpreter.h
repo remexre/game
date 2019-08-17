@@ -1,3 +1,0 @@
-#ifndef GAME_INTERPRETER_H
-#define GAME_INTERPRETER_H 1
-#endif

@@ -24,7 +24,7 @@ error read_file(string path, string* out) {
 	}
 
 	*out = s;
-	return error_none;
+	return ok;
 }
 
 int string_fputs(string str, FILE* stream) {

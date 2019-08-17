@@ -1,6 +1,6 @@
 CFLAGS := -fPIC -g -O3 -Wall -Werror -Wimplicit-fallthrough
 LDFLAGS := -flto -fPIC -lgc
-UNITS := interpreter io lexer lisp parser util
+UNITS := eval io lexer lisp lisp/lists parser util
 
 all: compile check
 check: out/game.so
@@ -13,7 +13,7 @@ watch:
 	watchexec -cre c,h,py $(MAKE)
 .PHONY: all clean compile watch
 
-out/game: $(patsubst %,tmp/%.o,$(UNITS)) tmp/main.o
+out/game: $(patsubst %,tmp/%.o,$(UNITS) main)
 	@mkdir -p $(dir $@)
 	$(CC) $(LDFLAGS) -o $@ $^
 
@@ -28,6 +28,6 @@ tmp/%.o: src/%.c
 tmp/%.d: src/%.c
 	@set -e; mkdir -p $(dir $@); rm -f $@; \
 		$(CC) -M $(CPPFLAGS) $< > $@.$$$$; \
-		sed 's,\($*\)\.o[ :]*,\1.o $@ : ,g' < $@.$$$$ > $@; \
+		sed 's,\($*\)\.o[ :]*,tmp/\1.o $@ : ,g' < $@.$$$$ > $@; \
 		rm -f $@.$$$$
 include $(patsubst %,tmp/%.d,$(UNITS) main)

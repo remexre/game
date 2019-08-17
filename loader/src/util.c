@@ -8,6 +8,11 @@
 
 const string string_empty = { 0, NULL };
 
+#define MAKE_MIN(NAME, TY) TY NAME(TY x, TY y) { return x < y ? x : y; }
+MAKE_MIN(min_int, int)
+MAKE_MIN(min_size_t, size_t)
+#undef MAKE_MIN
+
 hash djb2a(string str) {
 	hash out = 5381;
 	for(size_t i = 0; i < string_len(str); i++)
@@ -46,6 +51,17 @@ string string_cat(string l, string r) {
 	return out;
 }
 
+int string_cmp(string l, string r) {
+	int c = memcmp(l.data, r.data, min(l.len, r.len));
+	if(c == 0) {
+		if(l.len < r.len)
+			return -1;
+		else if(l.len > r.len)
+			return 1;
+	}
+	return c;
+}
+
 string string_drop(string str, size_t n) {
 	expect(n <= str.len, "Tried to drop more characters than are in the string.");
 	str.data += n;
@@ -80,7 +96,7 @@ char* cstr_from_string(string str) {
 	return out;
 }
 
-const error error_none = { OK, { 0, NULL }};
+const error ok = { OK, { 0, NULL }};
 
 string error_msg(error_code code) {
 	switch(code) {
@@ -105,17 +121,20 @@ void fail_at_error(const char* at, error err) {
 	exit(err.code);
 }
 
+__attribute__((warn_unused_result))
 error error_add_msg(error err, string msg) {
 	return ERROR(err.code, string_cat(msg, string_cat(string_from_static_cstr(": "), err.msg)));
 }
 
+__attribute__((warn_unused_result))
 error error_errno(int err) {
 	expect(err != 0, "error_errno should be called with a non-zero error");
 	return ERROR(SYSCALL_FAILED, string_from_cstr(strerror(err)));
 }
 
+__attribute__((warn_unused_result))
 error error_expect(bool cond, const char* expr) {
 	if(cond)
-		return error_none;
+		return ok;
 	return ERROR(EXPECTATION_FAILED, string_from_static_cstr(expr));
 }

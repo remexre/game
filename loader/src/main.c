@@ -1,5 +1,6 @@
 #include "io.h"
 #include "lisp.h"
+#include "parser.h"
 #include <stdlib.h>
 #include <stdnoreturn.h>
 #include <unistd.h>
@@ -29,6 +30,10 @@ int main(int argc, char **argv) {
 	string main_file_src;
 	expect_ok(read_file(main_file_path, &main_file_src),
 		"Couldn't read main file");
+
+	value main_src;
+	expect_ok(parse_all(main_file_src, &main_src),
+		"Couldn't parse main file");
 
 	string_fputs(main_file_src, stdout);
 
