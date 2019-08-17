@@ -3,22 +3,9 @@
 
 #include "context.h"
 #include "symbol.h"
+#include "tags.h"
 #include "../util.h"
 #include <stdint.h>
-
-typedef uint8_t tag;
-typedef struct { uint64_t n; } value;
-
-extern const tag TAG_CONS;
-extern const tag TAG_FIXNUM;
-extern const tag TAG_FUNCTION;
-extern const tag TAG_FLOAT;
-extern const tag TAG_OBJECT;
-extern const tag TAG_SYMBOL;
-extern const tag TAG_STRING;
-extern const tag TAG_VECTOR;
-
-string tag_name(tag);
 
 extern const value NIL;
 
@@ -51,6 +38,9 @@ struct cons {
 error as_cons(value, struct cons* out);
 error as_cons_ref(value, struct cons** out);
 error as_fixnum(value val, int32_t* out);
+error as_symbol(value, symbol* out);
 bool null(value);
+
+void DEBUG_print_value(value);
 
 #endif

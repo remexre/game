@@ -38,7 +38,7 @@ int main(int argc, char **argv) {
 	expect_ok(parse_all(main_file_src, ctx, &main_src),
 		"Couldn't parse main file");
 
-	string_fputs(main_file_src, stdout);
+	DEBUG_print_value(main_src);
 
 	return 0;
 }

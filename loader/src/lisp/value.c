@@ -1,16 +1,26 @@
+#include "../io.h"
 #include "value.h"
 #include <gc.h>
+#include <stdio.h>
 #include "../common.h"
 
 #define check_type(EXPR, TAG) do { \
 	value check_type__value = EXPR; \
 	tag check_type__tag = TAG; \
-	if(get_tag(check_type__value) != check_type__tag) { \
+	string check_type__found = tag_name(get_tag(check_type__value)); \
+	bool check_type__error = false; \
+	if(null(check_type__value)) { \
+		check_type__found = string_from_static_cstr("nil"); \
+		check_type__error = true; \
+	} else if(get_tag(check_type__value) != check_type__tag) { \
+		check_type__error = true; \
+	} \
+	if(check_type__error) { \
 		return make_error(TYPE_ERROR, \
 			string_cat(string_from_static_cstr("Expected "), \
 				string_cat(tag_name(check_type__tag), \
 					string_cat(string_from_static_cstr(", found "), \
-						tag_name(get_tag(check_type__value)))))); \
+						check_type__found)))); \
 	} \
 } while(0)
 
@@ -56,4 +66,46 @@ error as_fixnum(value val, int32_t* out) {
 	return ok;
 }
 
+error as_symbol(value val, symbol* out) {
+	check_type(val, TAG_SYMBOL);
+	*out = (symbol) del_tag(val);
+	return ok;
+}
+
 bool null(value val) { return !val.n; }
+
+void DEBUG_print_value(value val) {
+	struct cons cons;
+	symbol sym;
+	switch(get_tag(val)) {
+	case TAG_CONS:
+		if(null(val)) {
+			printf("()");
+		} else {
+			expect_ok(as_cons(val, &cons), "inconsistent type-check");
+			printf("(");
+			DEBUG_print_value(cons.hd);
+			printf(" . ");
+			DEBUG_print_value(cons.tl);
+			printf(")");
+		}
+		break;
+	case TAG_FUNCTION:
+		printf("#<function>");
+		break;
+	case TAG_FIXNUM:
+	case TAG_FLOAT:
+	case TAG_OBJECT:
+	case TAG_SYMBOL:
+		expect_ok(as_symbol(val, &sym), "inconsistent type-check");
+		string_fputs(package_name(sym->package), stdout);
+		printf("::");
+		string_fputs(sym->name, stdout);
+		break;
+	case TAG_STRING:
+	case TAG_VECTOR:
+	default:
+		printf("#<unknown-value %016lx>", val.n);
+		break;
+	}
+}

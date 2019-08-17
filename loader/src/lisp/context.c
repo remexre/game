@@ -59,8 +59,16 @@ package context_def_package(context ctx, string name) {
 	HASHMAP_GET_OR_INSERT(ctx->pkgtab, pkgtab_link, pkg, PKGTAB_BUCKETS, make_package(name));
 }
 
+symbol context_intern_symbol(context ctx, string name) {
+	return package_intern_symbol(context_current_package(ctx), name);
+}
+
 symbol package_intern_symbol(package pkg, string name) {
 	HASHMAP_GET_OR_INSERT(pkg->symtab, symtab_link, sym, SYMTAB_BUCKETS, make_symbol(pkg, name));
+}
+
+string package_name(package pkg) {
+	return pkg->name;
 }
 
 static package make_package(string name) {

@@ -15,9 +15,10 @@ error eat_whitespace(string*);
 bool is_symbolish(char);
 
 parse_rule(list_rest, value);
-parse_rule(symbol, value);
+parse_rule(symbolish, value);
 parse_rule(expr, value);
 parse_rule(exprs, value);
+parse_rule(quoted, value);
 
 error parse_one(string src, context ctx, value* out) {
 	try(eat_whitespace(&src));
@@ -90,7 +91,7 @@ parse_rule(list_rest, value) {
 	}
 }
 
-parse_rule(symbol, value) {
+parse_rule(symbolish, value) {
 	buffer buf = make_buffer(64);
 	char ch;
 	while(1) {
@@ -100,7 +101,10 @@ parse_rule(symbol, value) {
 		buffer_append_char(&buf, ch);
 		try(advance(src, &ch));
 	}
-	symbol sym = package_intern_symbol(context_current_package(ctx), buffer_to_string(buf));
+
+	// TODO: Check if buf represents a number.
+
+	symbol sym = context_intern_symbol(ctx, buffer_to_string(buf));
 	*out = symbol_to_value(sym);
 	return eat_whitespace(src);
 }
@@ -109,6 +113,10 @@ parse_rule(expr, value) {
 	char first;
 	try(peek(src, &first));
 	switch(first) {
+	case '\'':
+		try(advance(src, &first));
+		try(eat_whitespace(src));
+		return parse_quoted(src, ctx, out);
 	case '(':
 		try(advance(src, &first));
 		try(eat_whitespace(src));
@@ -116,7 +124,7 @@ parse_rule(expr, value) {
 		return parse_list_rest(src, ctx, out);
 	default:
 		if(is_symbolish(first))
-			return parse_symbol(src, ctx, out);
+			return parse_symbolish(src, ctx, out);
 		return errorf(SYNTAX_ERROR, "Unexpected character: 0x%02x", (int) first);
 	}
 }
@@ -129,5 +137,13 @@ parse_rule(exprs, value) {
 		*out = make_cons(head, *out);
 	}
 	try(nreverse_list(*out, out));
+	return ok;
+}
+
+parse_rule(quoted, value) {
+	value val;
+	try(parse_expr(src, ctx, &val));
+	symbol quote = context_intern_symbol(ctx, string_from_static_cstr("quote"));
+	*out = make_cons(symbol_to_value(quote), make_cons(val, NIL));
 	return ok;
 }

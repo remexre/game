@@ -1,15 +1,6 @@
 #include "tags.h"
 #include "../common.h"
 
-const tag TAG_CONS = 0;
-const tag TAG_FIXNUM = 1;
-const tag TAG_FUNCTION = 2;
-const tag TAG_FLOAT = 3;
-const tag TAG_OBJECT = 4;
-const tag TAG_SYMBOL = 5;
-const tag TAG_STRING = 6;
-const tag TAG_VECTOR = 7;
-
 string tag_name(tag t) {
 	switch(t) {
 	case TAG_CONS: return string_from_static_cstr("cons");
