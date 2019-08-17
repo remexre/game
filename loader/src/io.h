@@ -4,7 +4,7 @@
 #include "util.h"
 #include <stdio.h>
 
-error read_file(string path, string* out);
+error_return read_file(string path, string* out);
 int string_fputs(string, FILE*);
 
 #endif

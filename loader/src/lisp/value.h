@@ -35,12 +35,12 @@ struct cons {
 	value tl;
 };
 
-error as_cons(value, struct cons* out);
-error as_cons_ref(value, struct cons** out);
-error as_fixnum(value val, int32_t* out);
-error as_symbol(value, symbol* out);
+error_return as_cons(value, struct cons* out);
+error_return as_cons_ref(value, struct cons** out);
+error_return as_fixnum(value val, int32_t* out);
+error_return as_symbol(value, symbol* out);
 bool null(value);
 
-void DEBUG_print_value(value);
+string show_value(value);
 
 #endif

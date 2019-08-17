@@ -118,11 +118,11 @@ hash djb2a(string str) {
 
 const error ok = { OK, { 0, NULL }};
 
-error make_error(error_code code, string msg) {
+error_return make_error(error_code code, string msg) {
 	return (error) { .code = code, .msg = msg };
 }
 
-error errorf(error_code code, const char* format, ...) {
+error_return errorf(error_code code, const char* format, ...) {
 	va_list ap;
 	va_start(ap, format);
 	string msg = vstringf(format, ap);
@@ -135,7 +135,9 @@ string error_msg(error_code code) {
 	case OK: return string_from_static_cstr("Success");
 	case EXPECTATION_FAILED: return string_from_static_cstr("Expectation failed");
 	case SYSCALL_FAILED: return string_from_static_cstr("System call failed");
-	default: return string_from_static_cstr("Unknown error");
+	case TODO: return string_from_static_cstr("TODO");
+	case TYPE_ERROR: return string_from_static_cstr("Type error");
+	default: return stringf("Unknown error (%d)", code);
 	}
 }
 
@@ -153,19 +155,16 @@ void fail_at_error(const char* at, error err) {
 	exit(err.code);
 }
 
-__attribute__((warn_unused_result))
-error error_add_msg(error err, string msg) {
+error_return error_add_msg(error err, string msg) {
 	return make_error(err.code, string_cat(msg, string_cat(string_from_static_cstr(": "), err.msg)));
 }
 
-__attribute__((warn_unused_result))
-error error_errno(int err) {
+error_return error_errno(int err) {
 	expect(err != 0, "error_errno should be called with a non-zero error");
 	return make_error(SYSCALL_FAILED, string_from_cstr(strerror(err)));
 }
 
-__attribute__((warn_unused_result))
-error error_expect(bool cond, const char* expr) {
+error_return error_expect(bool cond, const char* expr) {
 	if(cond)
 		return ok;
 	return make_error(EXPECTATION_FAILED, string_from_static_cstr(expr));

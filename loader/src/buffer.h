@@ -12,6 +12,7 @@ typedef struct {
 buffer make_buffer(size_t cap);
 string buffer_to_string(buffer);
 void buffer_append_char(buffer*, char);
+void buffer_append_cstr(buffer*, const char*);
 void buffer_append_string(buffer*, string);
 void buffer_reserve(buffer*, size_t);
 

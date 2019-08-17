@@ -1,7 +1,6 @@
-#include "../io.h"
+#include "../buffer.h"
 #include "value.h"
 #include <gc.h>
-#include <stdio.h>
 #include "../common.h"
 
 #define check_type(EXPR, TAG) do { \
@@ -46,27 +45,27 @@ value make_cons(value hd, value tl) {
 	return add_tag(untagged, TAG_CONS);
 }
 
-error as_cons(value val, struct cons* out) {
+error_return as_cons(value val, struct cons* out) {
 	check_type(val, TAG_CONS);
 	struct cons* cons = (struct cons*) del_tag(val);
 	*out = *cons;
 	return ok;
 }
 
-error as_cons_ref(value val, struct cons** out) {
+error_return as_cons_ref(value val, struct cons** out) {
 	check_type(val, TAG_CONS);
 	struct cons* cons = (struct cons*) del_tag(val);
 	*out = cons;
 	return ok;
 }
 
-error as_fixnum(value val, int32_t* out) {
+error_return as_fixnum(value val, int32_t* out) {
 	check_type(val, TAG_FIXNUM);
 	*out = (int32_t) del_tag(val);
 	return ok;
 }
 
-error as_symbol(value val, symbol* out) {
+error_return as_symbol(value val, symbol* out) {
 	check_type(val, TAG_SYMBOL);
 	*out = (symbol) del_tag(val);
 	return ok;
@@ -74,38 +73,45 @@ error as_symbol(value val, symbol* out) {
 
 bool null(value val) { return !val.n; }
 
-void DEBUG_print_value(value val) {
+static void show_value_helper(buffer* buf, value val) {
 	struct cons cons;
 	symbol sym;
 	switch(get_tag(val)) {
 	case TAG_CONS:
 		if(null(val)) {
-			printf("()");
+			buffer_append_cstr(buf, "()");
 		} else {
 			expect_ok(as_cons(val, &cons), "inconsistent type-check");
-			printf("(");
-			DEBUG_print_value(cons.hd);
-			printf(" . ");
-			DEBUG_print_value(cons.tl);
-			printf(")");
+			buffer_append_char(buf, '(');
+			show_value_helper(buf, cons.hd);
+			buffer_append_cstr(buf, " . ");
+			show_value_helper(buf, cons.tl);
+			buffer_append_char(buf, ')');
 		}
 		break;
 	case TAG_FUNCTION:
-		printf("#<function>");
+		buffer_append_cstr(buf, "#<function>");
 		break;
 	case TAG_FIXNUM:
 	case TAG_FLOAT:
 	case TAG_OBJECT:
 	case TAG_SYMBOL:
 		expect_ok(as_symbol(val, &sym), "inconsistent type-check");
-		string_fputs(package_name(sym->package), stdout);
-		printf("::");
-		string_fputs(sym->name, stdout);
+		buffer_append_string(buf, package_name(sym->package));
+		buffer_append_cstr(buf, "::");
+		buffer_append_string(buf, sym->name);
 		break;
 	case TAG_STRING:
 	case TAG_VECTOR:
 	default:
-		printf("#<unknown-value %016lx>", val.n);
+		buffer_append_string(buf, stringf("#<unknown-value %016lx>", val.n));
 		break;
 	}
+}
+
+string show_value(value val) {
+	buffer buf = make_buffer(64);
+	show_value_helper(&buf, val);
+	buffer_append_char(&buf, '\n');
+	return buffer_to_string(buf);
 }

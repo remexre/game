@@ -1,6 +1,7 @@
 CFLAGS := -fPIC -g -O3 -Wall -Werror -Wimplicit-fallthrough
 LDFLAGS := -flto -fPIC -lgc
-UNITS := buffer eval io lexer lisp/context lisp/lists lisp/tags lisp/value parser util
+UNITS := buffer io lexer lisp/context lisp/env lisp/eval lisp/lists lisp/tags lisp/value parser \
+	util
 
 all: compile check
 check: out/game.so
@@ -8,7 +9,7 @@ check: out/game.so
 clean:
 	test ! -d out || rm -r out
 	test ! -d tmp || rm -r tmp
-compile: out/game
+compile: out/game out/game-asan
 watch:
 	watchexec -cre c,h,py $(MAKE)
 .PHONY: all clean compile watch
@@ -17,6 +18,10 @@ out/game: $(patsubst %,tmp/%.o,$(UNITS) main)
 	@mkdir -p $(dir $@)
 	$(CC) $(LDFLAGS) -o $@ $^
 
+out/game-asan: $(patsubst %,tmp/%.asan.o,$(UNITS) main)
+	@mkdir -p $(dir $@)
+	$(CC) $(LDFLAGS) -fsanitize=address -o $@ $^
+
 out/game.so: $(patsubst %,tmp/%.o,$(UNITS))
 	@mkdir -p $(dir $@)
 	$(CC) $(LDFLAGS) -shared -o $@ $^
@@ -24,6 +29,10 @@ out/game.so: $(patsubst %,tmp/%.o,$(UNITS))
 tmp/%.o: src/%.c
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -c -o $@ $<
+
+tmp/%.asan.o: src/%.c
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) -fsanitize=address -c -o $@ $<
 
 tmp/%.d: src/%.c
 	@set -e; mkdir -p $(dir $@); rm -f $@; \

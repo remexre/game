@@ -4,6 +4,6 @@
 #include "value.h"
 #include "../util.h"
 
-error nreverse_list(value, value* out);
+error_return nreverse_list(value, value* out);
 
 #endif

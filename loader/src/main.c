@@ -1,5 +1,7 @@
 #include "io.h"
 #include "lisp/context.h"
+#include "lisp/env.h"
+#include "lisp/eval.h"
 #include "lisp/value.h"
 #include "parser.h"
 #include <stdlib.h>
@@ -38,7 +40,8 @@ int main(int argc, char **argv) {
 	expect_ok(parse_all(main_file_src, ctx, &main_src),
 		"Couldn't parse main file");
 
-	DEBUG_print_value(main_src);
+	expect_ok(eval_all(main_src, ctx),
+		"Error in main");
 
 	return 0;
 }

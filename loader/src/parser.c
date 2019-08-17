@@ -4,13 +4,13 @@
 #include <stdlib.h>
 #include "common.h"
 
-#define parse_rule(NAME, TY) error parse_##NAME(string* src, context ctx, TY* out)
+#define parse_rule(NAME, TY) error_return parse_##NAME(string* src, context ctx, TY* out)
 
 bool eof(string*);
 parse_rule(peek, char);
 parse_rule(advance, char);
 bool is_whitespace(char);
-error eat_whitespace(string*);
+error_return eat_whitespace(string*);
 
 bool is_symbolish(char);
 
@@ -20,12 +20,12 @@ parse_rule(expr, value);
 parse_rule(exprs, value);
 parse_rule(quoted, value);
 
-error parse_one(string src, context ctx, value* out) {
+error_return parse_one(string src, context ctx, value* out) {
 	try(eat_whitespace(&src));
 	return parse_expr(&src, ctx, out);
 }
 
-error parse_all(string src, context ctx, value* out) {
+error_return parse_all(string src, context ctx, value* out) {
 	try(eat_whitespace(&src));
 	return parse_exprs(&src, ctx, out);
 }
@@ -34,14 +34,14 @@ bool eof(string* src) {
 	return string_len(*src) == 0;
 }
 
-error peek(string* src, char* out) {
+error_return peek(string* src, char* out) {
 	if(!string_len(*src))
 		return make_error(SYNTAX_ERROR, string_from_static_cstr("Unexpected EOF"));
 	*out = string_get(*src, 0);
 	return ok;
 }
 
-error advance(string* src, char* out) {
+error_return advance(string* src, char* out) {
 	if(!string_len(*src))
 		return make_error(SYNTAX_ERROR, string_from_static_cstr("Unexpected EOF"));
 	*out = string_get(*src, 0);
@@ -53,7 +53,7 @@ bool is_whitespace(char c) {
 	return c <= ' ';
 }
 
-error eat_whitespace(string* src) {
+error_return eat_whitespace(string* src) {
 	char peek_char;
 	error err;
 	while(1) {

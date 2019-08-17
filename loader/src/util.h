@@ -26,11 +26,15 @@
 				string_from_static_cstr(MSG))); \
 } while(0)
 
+#define todo do { \
+	return make_error(TODO, string_from_static_cstr(AT)); \
+} while(0)
+
 #define try(EXPR) do { \
-		error try__error = (EXPR); \
-		if(try__error.code != OK) \
-			return try__error; \
-	} while(0)
+	error try__error = (EXPR); \
+	if(try__error.code != OK) \
+		return try__error; \
+} while(0)
 
 int min_int(int x, int y);
 size_t min_size_t(size_t x, size_t y);
@@ -67,6 +71,7 @@ typedef enum {
 	EXPECTATION_FAILED,
 	SYSCALL_FAILED,
 	SYNTAX_ERROR,
+	TODO,
 	TYPE_ERROR
 } error_code;
 
@@ -75,22 +80,20 @@ typedef struct {
 	string msg;
 } error;
 
+#define error_return __attribute__((warn_unused_result)) error
+
 extern const error ok;
 
-error make_error(error_code code, string msg);
-error errorf(error_code code, const char* format, ...) __attribute__((format(printf, 2, 3)));
+error_return make_error(error_code code, string msg);
+error_return errorf(error_code code, const char* format, ...) __attribute__((format(printf, 2, 3)));
 
 string error_msg(error_code code);
 void fail_at_error(const char* at, error err);
 void fail_at_error_nocode(const char* at, error err);
 
-__attribute__((warn_unused_result))
-error error_add_msg(error err, string msg);
+error_return error_add_msg(error err, string msg);
+error_return error_errno(int err);
 
-__attribute__((warn_unused_result))
-error error_errno(int err);
-
-__attribute__((warn_unused_result))
-error error_expect(bool cond, const char* expr);
+error_return error_expect(bool cond, const char* expr);
 
 #endif

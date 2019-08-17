@@ -4,7 +4,7 @@
 #include "lisp/context.h"
 #include "lisp/value.h"
 
-error parse_one(string, context, value*);
-error parse_all(string, context, value*);
+error_return parse_one(string, context, value*);
+error_return parse_all(string, context, value*);
 
 #endif

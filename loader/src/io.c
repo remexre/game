@@ -4,7 +4,7 @@
 
 #define BUF_SIZE 4096
 
-error read_file(string path, string* out) {
+error_return read_file(string path, string* out) {
 	char* cstr_path = cstr_from_string(path);
 	FILE* file = fopen(cstr_path, "r");
 	if(!file) {

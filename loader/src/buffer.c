@@ -1,5 +1,6 @@
 #include "buffer.h"
 #include <gc.h>
+#include <string.h>
 #include "common.h"
 
 buffer make_buffer(size_t cap) {
@@ -22,7 +23,18 @@ void buffer_append_char(buffer* buf, char ch) {
 	buf->data[buf->len++] = ch;
 }
 
-void buffer_append_string(buffer* buf, string str);
+void buffer_append_cstr(buffer* buf, const char* str) {
+	size_t len = strlen(str);
+	buffer_reserve(buf, len);
+	memcpy(&buf->data[buf->len], str, len);
+	buf->len += len;
+}
+
+void buffer_append_string(buffer* buf, string str) {
+	buffer_reserve(buf, str.len);
+	memcpy(&buf->data[buf->len], str.data, str.len);
+	buf->len += str.len;
+}
 
 void buffer_reserve(buffer* buf, size_t n) {
 	size_t new_cap = buf->cap;

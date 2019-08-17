@@ -1,7 +1,7 @@
 #include "lists.h"
 #include "../common.h"
 
-error nreverse_list(value val, value* out) {
+error_return nreverse_list(value val, value* out) {
 	value prev = NIL;
 	while(!null(val)) {
 		struct cons* cons;
