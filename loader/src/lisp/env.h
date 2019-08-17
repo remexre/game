@@ -19,6 +19,7 @@ struct env {
 };
 
 env make_env(context ctx);
+env env_add(env env, symbol name, value val);
 error env_get(env env, symbol name, value* out);
 
 #endif
