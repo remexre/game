@@ -2,6 +2,7 @@
 #define GAME_LISP_CONTEXT_H 1
 
 #include "symbol.h"
+#include "tags.h"
 #include "../util.h"
 
 #define PKGTAB_BUCKETS 256
@@ -19,5 +20,8 @@ symbol context_intern_symbol(context ctx, string name);
 symbol package_intern_symbol(package pkg, string name);
 
 string package_name(package);
+
+symbol context_quote(context ctx);
+value context_t(context ctx);
 
 #endif

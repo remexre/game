@@ -9,9 +9,21 @@ class String(Structure):
     'A length and string pointer.'
     _fields_ = [('len', c_size_t), ('data', c_void_p)]
 
+    def __bytes__(self):
+        buf = create_string_buffer(self.len)
+        lib.memcpy(buf, self.data, self.len)
+        return buf.raw
+
+    def __str__(self):
+        return str(self.__bytes__(), 'utf-8')
+
 
 class Error(Structure):
     _fields_ = [('code', c_int), ('msg', String)]
+
+    def check(self):
+        if self.code != 0:
+            raise Exception(str(self.msg))
 
 
 class Value(Structure):
@@ -41,16 +53,12 @@ class Value(Structure):
 
     def as_cons(self) -> Tuple['Value', 'Value']:
         cons = Cons()
-        err = lib.as_cons(self, byref(cons))
-        if err.code != 0:
-            raise err
+        lib.as_cons(self, byref(cons)).check()
         return (cons.hd, cons.tl)
 
     def as_fixnum(self) -> int:
         n = c_int()
-        err = lib.as_fixnum(self, byref(n))
-        if err.code != 0:
-            raise err
+        lib.as_fixnum(self, byref(n)).check()
         return n.value
 
     def as_python(self) -> any:
@@ -89,22 +97,26 @@ class Cons(Structure):
     _fields_ = [('hd', Value), ('tl', Value)]
 
 
-def def_foreign(name, n_args):
+lib.make_context.argtypes = []
+lib.make_context.restype = c_void_p
+ctx = lib.make_context()
+
+
+def def_foreign(name):
     foreign = getattr(lib, name)
-    foreign.argtypes = [Value for _ in range(n_args)] + [c_void_p]
+    foreign.argtypes = [Value, c_void_p, c_void_p]
     foreign.restype = Error
 
-    def func(*args):
+    def func(*args, ctx=ctx):
         out = Value()
-        fargs = list(args)
-        fargs.append(byref(out))
-        err = foreign.__call__(*fargs)
-        if err.code != 0:
-            raise err
+        foreign(Value.make_list(args), byref(out), ctx).check()
         return out
 
     globals()[name] = func
 
+
+lib.memcpy.argtypes = [c_void_p, c_void_p, c_size_t]
+lib.memcpy.restype = c_void_p
 
 # lisp.h
 
@@ -157,7 +169,7 @@ lib.null.restype = bool
 # lisp/lists.h
 
 
-def_foreign('nreverse_list', 1)
+def_foreign('nreverse_list')
 
 # util.h
 

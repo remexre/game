@@ -4,6 +4,6 @@
 #include "value.h"
 #include "../util.h"
 
-error_return nreverse_list(value, value* out);
+native_func(nreverse_list);
 
 #endif

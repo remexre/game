@@ -118,8 +118,23 @@ hash djb2a(string str) {
 
 const error ok = { OK, { 0, NULL }};
 
+static string error_prefix(error_code code) {
+	switch(code) {
+	case OK: return string_from_static_cstr("Success: ");
+	case ARGN_MISMATCH: return string_from_static_cstr("Argument number mismatch: ");
+	case EXPECTATION_FAILED: return string_from_static_cstr("Expectation failed: ");
+	case SYNTAX_ERROR: return string_from_static_cstr("Syntax error: ");
+	case SYSCALL_FAILED: return string_from_static_cstr("System call failed: ");
+	case TODO: return string_from_static_cstr("TODO: ");
+	case TYPE_ERROR: return string_from_static_cstr("Type error: ");
+	case UNBOUND_FUNC: return string_from_static_cstr("Unbound function: ");
+	case UNBOUND_VAR: return string_from_static_cstr("Unbound variable: ");
+	default: return stringf("Unknown error (%d): ", code);
+	}
+}
+
 error_return make_error(error_code code, string msg) {
-	return (error) { .code = code, .msg = msg };
+	return (error) { .code = code, .msg = string_cat(error_prefix(code), msg) };
 }
 
 error_return errorf(error_code code, const char* format, ...) {
@@ -130,17 +145,6 @@ error_return errorf(error_code code, const char* format, ...) {
 	return make_error(code, msg);
 }
 
-string error_msg(error_code code) {
-	switch(code) {
-	case OK: return string_from_static_cstr("Success");
-	case EXPECTATION_FAILED: return string_from_static_cstr("Expectation failed");
-	case SYSCALL_FAILED: return string_from_static_cstr("System call failed");
-	case TODO: return string_from_static_cstr("TODO");
-	case TYPE_ERROR: return string_from_static_cstr("Type error");
-	default: return stringf("Unknown error (%d)", code);
-	}
-}
-
 void fail_at_error(const char* at, error err) {
 	if(err.code == OK)
 		return;
@@ -148,15 +152,16 @@ void fail_at_error(const char* at, error err) {
 	fputs("At ", stderr);
 	fputs(at, stderr);
 	fputs(": ", stderr);
-	string_fputs(error_msg(err.code), stderr);
-	fputs(": ", stderr);
 	string_fputs(err.msg, stderr);
 	fputs("\n", stderr);
 	exit(err.code);
 }
 
 error_return error_add_msg(error err, string msg) {
-	return make_error(err.code, string_cat(msg, string_cat(string_from_static_cstr(": "), err.msg)));
+	return (error) {
+		.code = err.code,
+		.msg = string_cat(msg, string_cat(string_from_static_cstr(": "), err.msg))
+	};
 }
 
 error_return error_errno(int err) {

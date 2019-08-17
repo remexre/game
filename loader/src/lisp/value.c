@@ -27,6 +27,13 @@ value fixnum_to_value(int32_t n) {
 	return add_tag(n, TAG_FIXNUM);
 }
 
+value native_to_value(error (*native)(value, value*, context)) {
+	struct func* func = GC_malloc(sizeof(struct func));
+	func->is_closure = false;
+	func->native = native;
+	return add_tag((uint64_t) func, TAG_FUNCTION);
+}
+
 value string_to_value(string str) {
 	string* ptr = GC_malloc(sizeof(string));
 	*ptr = str;
@@ -43,6 +50,26 @@ value make_cons(value hd, value tl) {
 	cons->tl = tl;
 	uint64_t untagged = (uint64_t) cons;
 	return add_tag(untagged, TAG_CONS);
+}
+
+value make_list(size_t n, ...) {
+	value out = NIL;
+	dotimes(n) {
+		out = make_cons(NIL, out);
+	}
+
+	va_list ap;
+	va_start(ap, n);
+	value iter = out;
+	dotimes(n) {
+		struct cons* cons;
+		expect_ok(as_cons_ref(iter, &cons), "impossible");
+		cons->hd = va_arg(ap, value);
+		iter = cons->tl;
+	}
+	va_end(ap);
+
+	return out;
 }
 
 error_return as_cons(value val, struct cons* out) {
@@ -62,6 +89,13 @@ error_return as_cons_ref(value val, struct cons** out) {
 error_return as_fixnum(value val, int32_t* out) {
 	check_type(val, TAG_FIXNUM);
 	*out = (int32_t) del_tag(val);
+	return ok;
+}
+
+error_return as_function(value val, struct func* out) {
+	check_type(val, TAG_FUNCTION);
+	struct func* func = (struct func*) del_tag(val);
+	*out = *func;
 	return ok;
 }
 
@@ -92,17 +126,19 @@ static void show_value_helper(buffer* buf, value val) {
 	case TAG_FUNCTION:
 		buffer_append_cstr(buf, "#<function>");
 		break;
-	case TAG_FIXNUM:
-	case TAG_FLOAT:
+	// case TAG_FIXNUM:
+	// case TAG_FLOAT:
 	case TAG_OBJECT:
+		buffer_append_cstr(buf, "#<object>");
+		break;
 	case TAG_SYMBOL:
 		expect_ok(as_symbol(val, &sym), "inconsistent type-check");
 		buffer_append_string(buf, package_name(sym->package));
 		buffer_append_cstr(buf, "::");
 		buffer_append_string(buf, sym->name);
 		break;
-	case TAG_STRING:
-	case TAG_VECTOR:
+	// case TAG_STRING:
+	// case TAG_VECTOR:
 	default:
 		buffer_append_string(buf, stringf("#<unknown-value %016lx>", val.n));
 		break;

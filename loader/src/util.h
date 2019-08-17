@@ -11,6 +11,7 @@
 
 #define compile_assert(COND, NAME) extern char NAME[(COND) ? 1 : -1]
 #define upto(I, N) for(size_t I = 0; I < (N); I++)
+#define dotimes(N) upto(dotimes__i, N)
 
 #define expect(COND, MSG) do { \
 	fail_at_error(AT, error_add_msg(error_expect(COND, TOSTRING(COND)), \
@@ -68,11 +69,14 @@ hash djb2a(string);
 
 typedef enum {
 	OK = 0,
+	ARGN_MISMATCH,
 	EXPECTATION_FAILED,
-	SYSCALL_FAILED,
 	SYNTAX_ERROR,
+	SYSCALL_FAILED,
 	TODO,
-	TYPE_ERROR
+	TYPE_ERROR,
+	UNBOUND_FUNC,
+	UNBOUND_VAR
 } error_code;
 
 typedef struct {
@@ -87,7 +91,6 @@ extern const error ok;
 error_return make_error(error_code code, string msg);
 error_return errorf(error_code code, const char* format, ...) __attribute__((format(printf, 2, 3)));
 
-string error_msg(error_code code);
 void fail_at_error(const char* at, error err);
 void fail_at_error_nocode(const char* at, error err);
 

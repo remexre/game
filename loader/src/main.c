@@ -40,8 +40,13 @@ int main(int argc, char **argv) {
 	expect_ok(parse_all(main_file_src, ctx, &main_src),
 		"Couldn't parse main file");
 
-	expect_ok(eval_all(main_src, ctx),
-		"Error in main");
+	value result;
+	env env = make_env(ctx);
+	expect_ok(eval_body(main_src, &result, env),
+		"Error in main file");
+
+	printf("Evaluated to: ");
+	string_fputs(show_value(result), stdout);
 
 	return 0;
 }

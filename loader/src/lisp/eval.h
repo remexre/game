@@ -4,7 +4,9 @@
 #include "env.h"
 #include "value.h"
 
+error_return apply(value func, value args, value* out, env);
 error_return eval(value, value* out, env);
-error_return eval_all(value, context);
+error_return eval_body(value, value* out, env);
+error_return eval_list(value, value* out, env);
 
 #endif

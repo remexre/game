@@ -4,8 +4,8 @@
 string tag_name(tag t) {
 	switch(t) {
 	case TAG_CONS: return string_from_static_cstr("cons");
-	case TAG_FUNCTION: return string_from_static_cstr("closure");
 	case TAG_FIXNUM: return string_from_static_cstr("fixnum");
+	case TAG_FUNCTION: return string_from_static_cstr("function");
 	case TAG_FLOAT: return string_from_static_cstr("float");
 	case TAG_OBJECT: return string_from_static_cstr("object");
 	case TAG_SYMBOL: return string_from_static_cstr("symbol");
