@@ -10,6 +10,7 @@
 #define AT __FILE__ ":" TOSTRING(__LINE__)
 
 #define compile_assert(COND, NAME) extern char NAME[(COND) ? 1 : -1]
+#define upto(I, N) for(size_t I = 0; I < (N); I++)
 
 #define expect(COND, MSG) do { \
 	fail_at_error(AT, error_add_msg(error_expect(COND, TOSTRING(COND)), \

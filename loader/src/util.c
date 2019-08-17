@@ -36,7 +36,7 @@ string vstringf(const char* format, va_list ap) {
 string string_from_cstr(const char* cstr) {
 	size_t len = strlen(cstr);
 	char* data = GC_malloc(len);
-	for(size_t i = 0; i < len; i++)
+	upto(i, len)
 		data[i] = cstr[i];
 	string str;
 	str.len = len;
@@ -56,9 +56,9 @@ string string_cat(string l, string r) {
 	string out;
 	out.len = l.len + r.len;
 	char* data = GC_malloc(out.len);
-	for(size_t i = 0; i < l.len; i++)
+	upto(i, l.len)
 		data[i] = l.data[i];
-	for(size_t i = 0; i < r.len; i++)
+	upto(i, r.len)
 		data[l.len + i] = r.data[i];
 	out.data = data;
 	return out;
@@ -111,7 +111,7 @@ char* cstr_from_string(string str) {
 
 hash djb2a(string str) {
 	hash out = 5381;
-	for(size_t i = 0; i < string_len(str); i++)
+	upto(i, string_len(str))
 		out = (out * 33) ^ string_get(str, i);
 	return out;
 }

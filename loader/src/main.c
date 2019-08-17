@@ -1,5 +1,6 @@
 #include "io.h"
-#include "lisp.h"
+#include "lisp/context.h"
+#include "lisp/value.h"
 #include "parser.h"
 #include <stdlib.h>
 #include <stdnoreturn.h>
@@ -31,10 +32,10 @@ int main(int argc, char **argv) {
 	expect_ok(read_file(main_file_path, &main_file_src),
 		"Couldn't read main file");
 
-	package default_package = make_package(string_from_static_cstr("default"));
+	context ctx = make_context();
 
 	value main_src;
-	expect_ok(parse_all(main_file_src, default_package, &main_src),
+	expect_ok(parse_all(main_file_src, ctx, &main_src),
 		"Couldn't parse main file");
 
 	string_fputs(main_file_src, stdout);

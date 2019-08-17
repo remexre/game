@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include "common.h"
 
-#define parse_rule(NAME, TY) error parse_##NAME(string* src, package pkg, TY* out)
+#define parse_rule(NAME, TY) error parse_##NAME(string* src, context ctx, TY* out)
 
 bool eof(string*);
 parse_rule(peek, char);
@@ -19,14 +19,14 @@ parse_rule(symbol, value);
 parse_rule(expr, value);
 parse_rule(exprs, value);
 
-error parse_one(string src, package pkg, value* out) {
+error parse_one(string src, context ctx, value* out) {
 	try(eat_whitespace(&src));
-	return parse_expr(&src, pkg, out);
+	return parse_expr(&src, ctx, out);
 }
 
-error parse_all(string src, package pkg, value* out) {
+error parse_all(string src, context ctx, value* out) {
 	try(eat_whitespace(&src));
-	return parse_exprs(&src, pkg, out);
+	return parse_exprs(&src, ctx, out);
 }
 
 bool eof(string* src) {
@@ -83,7 +83,7 @@ parse_rule(list_rest, value) {
 			try(eat_whitespace(src));
 			return nreverse_list(*out, out);
 		default:
-			try(parse_expr(src, pkg, &head));
+			try(parse_expr(src, ctx, &head));
 			*out = make_cons(head, *out);
 			break;
 		}
@@ -100,7 +100,8 @@ parse_rule(symbol, value) {
 		buffer_append_char(&buf, ch);
 		try(advance(src, &ch));
 	}
-	*out = symbol_to_value(package_get_or_make_symbol(pkg, buffer_to_string(buf)));
+	symbol sym = package_intern_symbol(context_current_package(ctx), buffer_to_string(buf));
+	*out = symbol_to_value(sym);
 	return eat_whitespace(src);
 }
 
@@ -112,10 +113,10 @@ parse_rule(expr, value) {
 		try(advance(src, &first));
 		try(eat_whitespace(src));
 		*out = NIL;
-		return parse_list_rest(src, pkg, out);
+		return parse_list_rest(src, ctx, out);
 	default:
 		if(is_symbolish(first))
-			return parse_symbol(src, pkg, out);
+			return parse_symbol(src, ctx, out);
 		return errorf(SYNTAX_ERROR, "Unexpected character: 0x%02x", (int) first);
 	}
 }
@@ -124,7 +125,7 @@ parse_rule(exprs, value) {
 	*out = NIL;
 	while(!eof(src)) {
 		value head;
-		try(parse_expr(src, pkg, &head));
+		try(parse_expr(src, ctx, &head));
 		*out = make_cons(head, *out);
 	}
 	try(nreverse_list(*out, out));
