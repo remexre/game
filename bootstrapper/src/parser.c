@@ -14,6 +14,7 @@ static bool is_symbolish(char);
 
 static error_return parse_fixnum(string, int64_t*);
 static error_return parse_float(string, double*);
+static error_return parse_prefix_rm(string* src, context ctx, const char* name, value* out);
 
 parse_rule(lambda_list_keyword, value);
 parse_rule(list_rest, value);
@@ -21,7 +22,6 @@ parse_rule(symbolish, string);
 parse_rule(symbolish_value, value);
 parse_rule(expr, value);
 parse_rule(exprs, value);
-parse_rule(quoted, value);
 
 error_return parse_one(string src, context ctx, value* out) {
 	try(eat_ignored(&src));
@@ -220,7 +220,22 @@ parse_rule(expr, value) {
 	case '\'':
 		try(advance(src, &first));
 		try(eat_ignored(src));
-		return parse_quoted(src, ctx, out);
+		return parse_prefix_rm(src, ctx, "quote", out);
+	case '`':
+		try(advance(src, &first));
+		try(eat_ignored(src));
+		return parse_prefix_rm(src, ctx, "quasiquote", out);
+	case ',':
+		try(advance(src, &first));
+		try(peek(src, &first));
+		if(first == '@')
+			try(advance(src, &first));
+		try(eat_ignored(src));
+		return parse_prefix_rm(src, ctx, first == '@' ? "unquote-splicing" : "unquote", out);
+	case '%':
+		try(advance(src, &first));
+		try(eat_ignored(src));
+		return parse_prefix_rm(src, ctx, "print-id", out);
 	case '(':
 		try(advance(src, &first));
 		try(eat_ignored(src));
@@ -244,10 +259,10 @@ parse_rule(exprs, value) {
 	return ok;
 }
 
-parse_rule(quoted, value) {
+static error_return parse_prefix_rm(string* src, context ctx, const char* name, value* out) {
 	value val;
 	try(parse_expr(src, ctx, &val));
-	symbol quote = context_intern_symbol(ctx, string_from_static_cstr("quote"));
+	symbol quote = context_intern_symbol(ctx, string_from_static_cstr(name));
 	*out = make_cons(symbol_to_value(quote), make_cons(val, NIL));
 	return ok;
 }
