@@ -1,10 +1,5 @@
 (set-function 'list (named-lambda list (&rest args) args))
 
-(set-function 'print-id
-  (named-lambda print-id (x)
-    (print x)
-    x))
-
 (set-function 'append-2
   (named-lambda append-2 (l r)
     (cond ((atom l) r)
@@ -31,6 +26,13 @@
 (defun apply (func &rest args)
   (apply-1 func (cons-arg-list args)))
 
-(print (apply (get-function 'list) 1 2 (list 3 4)))
+(defun print-id (x)
+  (print x)
+  x)
+
+(defun symbol-function (sym)
+  (get-function sym))
+
+(print (apply #'list 1 2 (list 3 4)))
 
 ; (in-package 'user)

@@ -15,6 +15,7 @@ static bool is_symbolish(char);
 static error_return parse_fixnum(string, int64_t*);
 static error_return parse_float(string, double*);
 static error_return parse_prefix_rm(string* src, context ctx, const char* name, value* out);
+static error_return parse_quoted_prefix_rm(string* src, context ctx, const char* name, value* out);
 
 parse_rule(lambda_list_keyword, value);
 parse_rule(list_rest, value);
@@ -214,6 +215,21 @@ parse_rule(expr, value) {
 	char first;
 	try(peek(src, &first));
 	switch(first) {
+	case '#':
+		try(advance(src, &first));
+		try(advance(src, &first));
+		try(eat_ignored(src));
+		switch(first) {
+		case '\'':
+			return parse_quoted_prefix_rm(src, ctx, "symbol-function", out);
+		default:
+			return errorf(SYNTAX_ERROR, "Unknown reader macro: #%c", first);
+		}
+		return parse_prefix_rm(src, ctx, "print-id", out);
+	case '%':
+		try(advance(src, &first));
+		try(eat_ignored(src));
+		return parse_prefix_rm(src, ctx, "print-id", out);
 	case '&':
 		try(advance(src, &first));
 		return parse_lambda_list_keyword(src, ctx, out);
@@ -221,10 +237,6 @@ parse_rule(expr, value) {
 		try(advance(src, &first));
 		try(eat_ignored(src));
 		return parse_prefix_rm(src, ctx, "quote", out);
-	case '`':
-		try(advance(src, &first));
-		try(eat_ignored(src));
-		return parse_prefix_rm(src, ctx, "quasiquote", out);
 	case ',':
 		try(advance(src, &first));
 		try(peek(src, &first));
@@ -232,15 +244,15 @@ parse_rule(expr, value) {
 			try(advance(src, &first));
 		try(eat_ignored(src));
 		return parse_prefix_rm(src, ctx, first == '@' ? "unquote-splicing" : "unquote", out);
-	case '%':
-		try(advance(src, &first));
-		try(eat_ignored(src));
-		return parse_prefix_rm(src, ctx, "print-id", out);
 	case '(':
 		try(advance(src, &first));
 		try(eat_ignored(src));
 		*out = NIL;
 		return parse_list_rest(src, ctx, out);
+	case '`':
+		try(advance(src, &first));
+		try(eat_ignored(src));
+		return parse_prefix_rm(src, ctx, "quasiquote", out);
 	default:
 		if(is_symbolish(first))
 			return parse_symbolish_value(src, ctx, out);
@@ -262,7 +274,17 @@ parse_rule(exprs, value) {
 static error_return parse_prefix_rm(string* src, context ctx, const char* name, value* out) {
 	value val;
 	try(parse_expr(src, ctx, &val));
-	symbol quote = context_intern_symbol(ctx, string_from_static_cstr(name));
-	*out = make_cons(symbol_to_value(quote), make_cons(val, NIL));
+	symbol sym = context_intern_symbol(ctx, string_from_static_cstr(name));
+	*out = make_cons(symbol_to_value(sym), make_cons(val, NIL));
+	return ok;
+}
+
+static error_return parse_quoted_prefix_rm(string* src, context ctx, const char* name, value* out) {
+	value val;
+	try(parse_expr(src, ctx, &val));
+	symbol quote = context_intern_symbol(ctx, string_from_static_cstr("quote"));
+	symbol sym = context_intern_symbol(ctx, string_from_static_cstr(name));
+	val = make_cons(symbol_to_value(quote), make_cons(val, NIL));
+	*out = make_cons(symbol_to_value(sym), make_cons(val, NIL));
 	return ok;
 }
