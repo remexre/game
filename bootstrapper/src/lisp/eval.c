@@ -6,6 +6,7 @@
 #include "../common.h"
 
 static error_return do_cond(value, value* out, env);
+static error_return do_let(value clauses, value body, value* out, env);
 static error_return make_lambda(string name, value, value* out, env);
 static error_return parse_lambda_list(value, struct closure* out);
 
@@ -83,6 +84,12 @@ error_return eval(value val, value* out, env env) {
 			} else if(func_sym == context_lang(env->ctx, "lambda")) {
 
 				return make_lambda(string_empty, val->value.cons.tl, out, env);
+
+			} else if(func_sym == context_lang(env->ctx, "let")) {
+
+				struct cons clause_cons;
+				try(as_cons(val->value.cons.tl, &clause_cons));
+				return do_let(clause_cons.hd, clause_cons.tl, out, env);
 
 			} else if(func_sym == context_lang(env->ctx, "named-lambda")) {
 
@@ -167,7 +174,7 @@ error_return eval_list(value args, value* out, env env) {
 	return ok;
 }
 
-error_return do_cond(value val, value* out, env env) {
+static error_return do_cond(value val, value* out, env env) {
 	while(val) {
 		struct cons cons, clause;
 		try(as_cons(val, &cons));
@@ -183,6 +190,25 @@ error_return do_cond(value val, value* out, env env) {
 
 	*out = NIL;
 	return ok;
+}
+
+static error_return do_let(value clauses, value body, value* out, env e) {
+	env local_env = env_clone(e);
+
+	while(clauses) {
+		struct cons clauses_cons, clause_cons;
+		symbol name;
+		value val;
+		try(as_cons(clauses, &clauses_cons));
+		clauses = clauses_cons.tl;
+		try(as_cons(clauses_cons.hd, &clause_cons));
+		try(as_symbol(clause_cons.hd, &name));
+
+		try(eval_body(clause_cons.tl, &val, e));
+		env_add(local_env, name, val);
+	}
+
+	return eval_body(body, out, local_env);
 }
 
 static error_return make_lambda(string name, value val, value* out, env env) {
