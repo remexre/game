@@ -49,10 +49,11 @@ context make_context(void) {
 	string defun__name = string_from_static_cstr(NAME); \
 	symbol defun__sym = package_intern_symbol(pkg, defun__name); \
 	defun__sym->flags |= HAS_FUNCTION; \
-	defun__sym->function = native_to_value(FUNC, defun__name); \
+	defun__sym->function = native_to_value(lisp_##FUNC, defun__name); \
 } while(0)
 
 	DEFUN("atom", atom);
+	DEFUN("exit", exit);
 	DEFUN("funcall", funcall);
 	DEFUN("print", print);
 	DEFUN("set", set);

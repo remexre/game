@@ -62,8 +62,11 @@ error_return eval(value val, value* out, env env) {
 
 			try(as_symbol(val->value.cons.hd, &func_sym));
 			if(func_sym == context_lang(env->ctx, "cond")) {
+
 				return do_cond(val->value.cons.tl, out, env);
+
 			} else if(func_sym == context_lang(env->ctx, "function")) {
+
 				value sym_val;
 				try(parse_args(string_from_static_cstr("function"), val->value.cons.tl,
 					1, 0, NULL, &sym_val));
@@ -76,22 +79,33 @@ error_return eval(value val, value* out, env env) {
 				}
 				*out = sym->function;
 				return ok;
+
 			} else if(func_sym == context_lang(env->ctx, "lambda")) {
+
 				return make_lambda(string_empty, val->value.cons.tl, out, env);
+
 			} else if(func_sym == context_lang(env->ctx, "named-lambda")) {
+
 				string name;
 				struct cons lambda_cons;
 				try(as_cons(val->value.cons.tl, &lambda_cons));
 				try(as_string(lambda_cons.hd, &name));
 				return make_lambda(name, lambda_cons.tl, out, env);
+
 			} else if(func_sym == context_lang(env->ctx, "quote")) {
+
 				return parse_args(string_from_static_cstr("quote"), val->value.cons.tl,
 					1, 0, NULL, out);
+
 			} else if(!(func_sym->flags & HAS_FUNCTION)) {
+
 				return make_error(UNBOUND_FUNC, func_sym->fq_name);
+
 			} else {
+
 				try(eval_list(val->value.cons.tl, &args, env));
 				return apply(func_sym->function, args, out, env->ctx);
+
 			}
 		}
 	case TAG_SYMBOL:

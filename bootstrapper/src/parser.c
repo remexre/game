@@ -95,7 +95,7 @@ parse_rule(list_rest, value) {
 		case ')':
 			try(advance(src, &first));
 			try(eat_whitespace(src));
-			return nreverse_list(make_list(1, *out), out, ctx);
+			return lisp_nreverse_list(make_list(1, *out), out, ctx);
 		default:
 			try(parse_expr(src, ctx, &head));
 			*out = make_cons(head, *out);
@@ -196,7 +196,7 @@ parse_rule(exprs, value) {
 		try(parse_expr(src, ctx, &head));
 		*out = make_cons(head, *out);
 	}
-	try(nreverse_list(make_list(1, *out), out, ctx));
+	try(lisp_nreverse_list(make_list(1, *out), out, ctx));
 	return ok;
 }
 

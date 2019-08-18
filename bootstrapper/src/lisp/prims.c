@@ -3,6 +3,7 @@
 #include "args.h"
 #include "eval.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include "../common.h"
 
 native_func(atom) {
@@ -10,6 +11,17 @@ native_func(atom) {
 	try(parse_args(string_from_static_cstr("atom"), args, 1, 0, NULL, &val));
 	*out = context_bool(ctx, !val || val->tag != TAG_CONS);
 	return ok;
+}
+
+native_func(exit) {
+	UNUSED(out);
+	UNUSED(ctx);
+
+	value arg = fixnum_to_value(0);
+	int64_t code;
+	try(parse_args(string_from_static_cstr("exit"), args, 0, 1, NULL, &arg));
+	try(as_fixnum(arg, &code));
+	exit(code);
 }
 
 native_func(funcall) {

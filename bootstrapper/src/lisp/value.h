@@ -45,7 +45,7 @@ struct func {
 	};
 };
 
-#define native_func(NAME) error_return NAME(value args, value* out, context ctx)
+#define native_func(NAME) error_return lisp_##NAME(value args, value* out, context ctx)
 
 struct cons {
 	value hd;

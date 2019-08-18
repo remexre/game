@@ -16,8 +16,14 @@ error_return parse_args(string name, value args, size_t required, size_t optiona
 		args = cons.tl;
 	}
 
-	// TODO optional.
-	expect(!optional, "TODO: Optional args");
+	dotimes(optional) {
+		value* out = va_arg(ap, value*);
+		struct cons cons;
+		if(as_cons(args, &cons).code != OK)
+			continue;
+		*out = cons.hd;
+		args = cons.tl;
+	}
 
 	if(rest) {
 		*rest = args;

@@ -5,6 +5,7 @@
 #include "../util.h"
 
 native_func(atom);
+native_func(exit);
 native_func(funcall);
 native_func(function);
 native_func(print);
