@@ -9,7 +9,7 @@ native_func(nreverse_list) {
 	try(parse_args(string_from_static_cstr("nreverse"), args, 1, 0, NULL, &val));
 
 	value prev = NIL;
-	while(!null(val)) {
+	while(val) {
 		struct cons* cons;
 		try(as_cons_ref(val, &cons));
 		value next = cons->tl;

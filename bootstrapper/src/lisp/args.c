@@ -21,7 +21,7 @@ error_return parse_args(string name, value args, size_t required, size_t optiona
 
 	if(rest) {
 		*rest = args;
-	} else if(!null(args)) {
+	} else if(args) {
 		return make_error(ARGN_MISMATCH,
 			string_cat(string_from_static_cstr("Too many arguments to "), name));
 	}

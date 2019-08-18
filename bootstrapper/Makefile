@@ -11,7 +11,7 @@ all: compile
 clean:
 	test ! -d out || rm -r out
 	test ! -d tmp || rm -r tmp
-compile: out/game
+compile: out/game out/game-debug
 watch:
 	watchexec -cre c,h,py $(MAKE)
 .PHONY: all clean compile watch
@@ -34,7 +34,7 @@ tmp/%.rel.o: src/%.c
 
 tmp/%.d: src/%.c
 	@set -e; mkdir -p $(dir $@); rm -f $@; \
-		$(CC) -M $(CPPFLAGS) $< > $@.$$$$; \
-		sed 's,\($*\)\.o[ :]*,tmp/\1.dbg.o tmp/\1.rel.o $@ : ,g' < $@.$$$$ > $@; \
+		$(CC) -M $(CFLAGS) $< > $@.$$$$; \
+		sed 's,$(notdir $*)\.o[ :]*,tmp/$*.dbg.o tmp/$*.rel.o $@ : ,g' < $@.$$$$ > $@; \
 		rm -f $@.$$$$
 include $(patsubst %,tmp/%.d,$(UNITS) main)

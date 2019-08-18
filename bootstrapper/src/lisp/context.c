@@ -55,6 +55,7 @@ context make_context(void) {
 	DEFUN("atom", atom);
 	DEFUN("funcall", funcall);
 	DEFUN("print", print);
+	DEFUN("set", set);
 	DEFUN("set-symbol-function", set_symbol_function);
 
 	return ctx;

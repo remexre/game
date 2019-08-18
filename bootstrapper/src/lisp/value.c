@@ -103,10 +103,8 @@ value make_list(size_t n, ...) {
 	va_start(ap, n);
 	value iter = out;
 	dotimes(n) {
-		struct cons* cons;
-		expect_ok(as_cons_ref(iter, &cons), "impossible");
-		cons->hd = va_arg(ap, value);
-		iter = cons->tl;
+		iter->value.cons.hd = va_arg(ap, value);
+		iter = iter->value.cons.tl;
 	}
 	va_end(ap);
 
@@ -154,8 +152,6 @@ error_return as_symbol(value val, symbol* out) {
 	*out = val->value.symbol;
 	return ok;
 }
-
-bool null(value val) { return !val; }
 
 static void write_value_to_buffer(buffer* buf, value val) {
 	if(!val) {

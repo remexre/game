@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include "../common.h"
 
+static error_return do_cond(value, value* out, env);
 static error_return make_lambda(string name, value, value* out, env);
 static error_return parse_lambda_list(value, struct closure* out);
 
@@ -35,7 +36,7 @@ error_return apply(value func_val, value args, value* out, context ctx) {
 
 		if(func.closure.has_rest)
 			env_add(env, func.closure.rest, args);
-		else if(!null(args))
+		else if(args)
 			return make_error(ARGN_MISMATCH,
 				string_cat(string_from_static_cstr("Too many arguments to "), name));
 		return eval_body(func.closure.body, out, env);
@@ -52,7 +53,7 @@ error_return eval(value val, value* out, env env) {
 
 	switch(val->tag) {
 	case TAG_CONS:
-		if(null(val)) {
+		if(!val) {
 			*out = NIL;
 			return ok;
 		} else {
@@ -61,7 +62,7 @@ error_return eval(value val, value* out, env env) {
 
 			try(as_symbol(val->value.cons.hd, &func_sym));
 			if(func_sym == context_lang(env->ctx, "cond")) {
-				todo;
+				return do_cond(val->value.cons.tl, out, env);
 			} else if(func_sym == context_lang(env->ctx, "lambda")) {
 				return make_lambda(string_empty, val->value.cons.tl, out, env);
 			} else if(func_sym == context_lang(env->ctx, "named-lambda")) {
@@ -96,8 +97,9 @@ error_return eval(value val, value* out, env env) {
 }
 
 error_return eval_body(value val, value* out, env env) {
+	*out = NIL;
 	struct cons cons;
-	while(!null(val)) {
+	while(val) {
 		try(as_cons(val, &cons));
 		try(eval(cons.hd, out, env));
 		val = cons.tl;
@@ -107,7 +109,7 @@ error_return eval_body(value val, value* out, env env) {
 
 // TODO: Make this much less hacky...
 error_return eval_list(value args, value* out, env env) {
-	if(null(args)) {
+	if(!args) {
 		*out = NIL;
 		return ok;
 	}
@@ -118,7 +120,7 @@ error_return eval_list(value args, value* out, env env) {
 	struct cons* out_cons;
 	value iter = *out;
 
-	while(!null(args)) {
+	while(args) {
 		try(as_cons(args, &args_cons));
 		try(as_cons_ref(iter, &out_cons));
 		try(eval(args_cons.hd, &out_cons->hd, env));
@@ -129,6 +131,24 @@ error_return eval_list(value args, value* out, env env) {
 
 	out_cons->tl = NIL;
 
+	return ok;
+}
+
+error_return do_cond(value val, value* out, env env) {
+	while(val) {
+		struct cons cons, clause;
+		try(as_cons(val, &cons));
+		try(as_cons(cons.hd, &clause));
+
+		value taken;
+		try(eval(clause.hd, &taken, env));
+		if(taken)
+			return eval_body(clause.tl, out, env);
+
+		val = cons.tl;
+	}
+
+	*out = NIL;
 	return ok;
 }
 
@@ -158,7 +178,7 @@ static error_return parse_lambda_list(value val, struct closure* out) {
 	symbol sym;
 	while(1) {
 		if(mode == 0) {
-			if(null(val))
+			if(!val)
 				return ok;
 			try(as_cons(val, &cons));
 			try(as_symbol(cons.hd, &sym));

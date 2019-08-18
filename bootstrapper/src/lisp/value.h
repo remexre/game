@@ -105,7 +105,6 @@ error_return as_float(value val, double* out);
 error_return as_function(value val, struct func* out);
 error_return as_string(value, string* out);
 error_return as_symbol(value, symbol* out);
-bool null(value);
 
 string show_value(value, bool newline);
 
