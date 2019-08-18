@@ -18,10 +18,11 @@ package context_def_package(context ctx, string name);
 
 symbol context_intern_symbol(context ctx, string name);
 symbol package_intern_symbol(package pkg, string name);
+error_return package_get_symbol(package pkg, string name, symbol* out);
 
 string package_name(package);
 
-symbol context_quote(context ctx);
+symbol context_lang(context ctx, const char* name);
 value context_t(context ctx);
 
 #endif

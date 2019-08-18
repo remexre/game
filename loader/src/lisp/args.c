@@ -17,10 +17,10 @@ error_return parse_args(string name, value args, size_t required, size_t optiona
 	}
 
 	// TODO optional.
+	expect(!optional, "TODO: Optional args");
 
 	if(rest) {
-		value* out = va_arg(ap, value*);
-		*out = args;
+		*rest = args;
 	} else if(!null(args)) {
 		return make_error(ARGN_MISMATCH,
 			string_cat(string_from_static_cstr("Too many arguments to "), name));

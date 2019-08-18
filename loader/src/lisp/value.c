@@ -1,6 +1,7 @@
 #include "../buffer.h"
 #include "value.h"
 #include <gc.h>
+#include <stdio.h>
 #include "../common.h"
 
 #define check_type(EXPR, TAG) do { \
@@ -23,12 +24,21 @@
 	} \
 } while(0)
 
+value closure_to_value(struct closure closure, string name) {
+	struct func* func = GC_malloc(sizeof(struct func));
+	func->name = name;
+	func->is_closure = true;
+	func->closure = closure;
+	return add_tag((uint64_t) func, TAG_FUNCTION);
+}
+
 value fixnum_to_value(int32_t n) {
 	return add_tag(n, TAG_FIXNUM);
 }
 
-value native_to_value(error (*native)(value, value*, context)) {
+value native_to_value(error (*native)(value, value*, context), string name) {
 	struct func* func = GC_malloc(sizeof(struct func));
+	func->name = name;
 	func->is_closure = false;
 	func->native = native;
 	return add_tag((uint64_t) func, TAG_FUNCTION);
@@ -99,6 +109,13 @@ error_return as_function(value val, struct func* out) {
 	return ok;
 }
 
+error_return as_string(value val, string* out) {
+	check_type(val, TAG_STRING);
+	string* str = (string*) del_tag(val);
+	*out = *str;
+	return ok;
+}
+
 error_return as_symbol(value val, symbol* out) {
 	check_type(val, TAG_SYMBOL);
 	*out = (symbol) del_tag(val);
@@ -107,24 +124,30 @@ error_return as_symbol(value val, symbol* out) {
 
 bool null(value val) { return !val.n; }
 
-static void show_value_helper(buffer* buf, value val) {
-	struct cons cons;
-	symbol sym;
+static void write_value_to_buffer(buffer* buf, value val) {
+	union value_data data;
 	switch(get_tag(val)) {
 	case TAG_CONS:
 		if(null(val)) {
 			buffer_append_cstr(buf, "()");
 		} else {
-			expect_ok(as_cons(val, &cons), "inconsistent type-check");
+			expect_ok(as_cons(val, &data.cons), "inconsistent type-check");
 			buffer_append_char(buf, '(');
-			show_value_helper(buf, cons.hd);
+			write_value_to_buffer(buf, data.cons.hd);
 			buffer_append_cstr(buf, " . ");
-			show_value_helper(buf, cons.tl);
+			write_value_to_buffer(buf, data.cons.tl);
 			buffer_append_char(buf, ')');
 		}
 		break;
 	case TAG_FUNCTION:
-		buffer_append_cstr(buf, "#<function>");
+		expect_ok(as_function(val, &data.func), "inconsistent type-check");
+		buffer_append_cstr(buf, "#<function-");
+		buffer_append_cstr(buf, data.func.is_closure ? "closure" : "native");
+		if(data.func.name.len) {
+			buffer_append_char(buf, ' ');
+			buffer_append_string(buf, data.func.name);
+		}
+		buffer_append_char(buf, '>');
 		break;
 	// case TAG_FIXNUM:
 	// case TAG_FLOAT:
@@ -132,10 +155,8 @@ static void show_value_helper(buffer* buf, value val) {
 		buffer_append_cstr(buf, "#<object>");
 		break;
 	case TAG_SYMBOL:
-		expect_ok(as_symbol(val, &sym), "inconsistent type-check");
-		buffer_append_string(buf, package_name(sym->package));
-		buffer_append_cstr(buf, "::");
-		buffer_append_string(buf, sym->name);
+		expect_ok(as_symbol(val, &data.sym), "inconsistent type-check");
+		buffer_append_string(buf, data.sym->fq_name);
 		break;
 	// case TAG_STRING:
 	// case TAG_VECTOR:
@@ -145,9 +166,10 @@ static void show_value_helper(buffer* buf, value val) {
 	}
 }
 
-string show_value(value val) {
+string show_value(value val, bool newline) {
 	buffer buf = make_buffer(64);
-	show_value_helper(&buf, val);
-	buffer_append_char(&buf, '\n');
+	write_value_to_buffer(&buf, val);
+	if(newline)
+		buffer_append_char(&buf, '\n');
 	return buffer_to_string(buf);
 }

@@ -1,29 +1,50 @@
 #include "eval.h"
 #include "../io.h"
 #include "args.h"
+#include <gc.h>
 #include <stdio.h>
 #include "../common.h"
 
-static native_func(quote);
+static error_return make_lambda(string name, value, value* out, env);
+static error_return parse_lambda_list(value, struct closure* out);
 
-error_return apply(value func_val, value args, value* out, env env) {
+error_return apply(value func_val, value args, value* out, context ctx) {
 	printf("APPLY:\n\tFUNC:");
-	string_fputs(show_value(func_val), stdout);
+	string_fputs(show_value(func_val, true), stdout);
 	printf("\tARGS:");
-	string_fputs(show_value(args), stdout);
+	string_fputs(show_value(args, true), stdout);
 
 	struct func func;
 	try(as_function(func_val, &func));
 	if(func.is_closure) {
-		todo;
+		string name = show_value(func_val, false);
+		env env = env_clone(func.closure.env);
+
+		upto(i, func.closure.num_required) {
+			struct cons cons;
+			if(as_cons(args, &cons).code != OK)
+				return make_error(ARGN_MISMATCH,
+					string_cat(string_from_static_cstr("Too few arguments to "), name));
+			env_add(env, func.closure.requireds[i], cons.hd);
+			args = cons.tl;
+		}
+
+		expect(func.closure.num_optional == 0, "TODO: parse args");
+
+		if(func.closure.has_rest)
+			env_add(env, func.closure.rest, args);
+		else if(!null(args))
+			return make_error(ARGN_MISMATCH,
+				string_cat(string_from_static_cstr("Too many arguments to "), name));
+		return eval_body(func.closure.body, out, env);
 	} else {
-		return func.native(args, out, env->ctx);
+		return func.native(args, out, ctx);
 	}
 }
 
 error_return eval(value val, value* out, env env) {
 	printf("EVAL: ");
-	string_fputs(show_value(val), stdout);
+	string_fputs(show_value(val, true), stdout);
 
 	union value_data data;
 	switch(get_tag(val)) {
@@ -37,18 +58,26 @@ error_return eval(value val, value* out, env env) {
 			value args;
 
 			try(as_symbol(data.cons.hd, &func_sym));
-			if(func_sym == context_quote(env->ctx)) {
-				return apply(native_to_value(quote), data.cons.tl, out, env);
-			} else if(null(func_sym->function)) {
+			if(func_sym == context_lang(env->ctx, "lambda")) {
+				return make_lambda(string_empty, data.cons.tl, out, env);
+			} else if(func_sym == context_lang(env->ctx, "named-lambda")) {
+				string name;
+				struct cons lambda_cons;
+				try(as_cons(data.cons.tl, &lambda_cons));
+				try(as_string(lambda_cons.hd, &name));
+				return make_lambda(name, lambda_cons.tl, out, env);
+			} else if(func_sym == context_lang(env->ctx, "quote")) {
+				return parse_args(string_from_static_cstr("quote"), data.cons.tl, 1, 0, NULL, out);
+			} else if(!(func_sym->flags & HAS_FUNCTION)) {
 				return make_error(UNBOUND_FUNC, func_sym->fq_name);
 			} else {
 				try(eval_list(data.cons.tl, &args, env));
-				return apply(func_sym->function, args, out, env);
+				return apply(func_sym->function, args, out, env->ctx);
 			}
 		}
 	case TAG_SYMBOL:
 		expect_ok(as_symbol(val, &data.sym), "inconsistent type-check");
-		todo;
+		return env_get(env, data.sym, out);
 	case TAG_FUNCTION:
 	case TAG_FIXNUM:
 	case TAG_FLOAT:
@@ -99,10 +128,47 @@ error_return eval_list(value args, value* out, env env) {
 	return ok;
 }
 
-// NOTE: This is run as a fexpr.
-static native_func(quote) {
-	value val;
-	try(parse_args(string_from_static_cstr("quote"), args, 1, 0, false, &val));
-	*out = val;
+static error_return make_lambda(string name, value val, value* out, env env) {
+	struct cons cons;
+	try(as_cons(val, &cons));
+
+	struct closure closure;
+	closure.num_required = 0;
+	closure.num_optional = 0;
+	closure.has_rest = false;
+	closure.requireds = GC_malloc(0);
+	closure.optionals = GC_malloc(0);
+	try(parse_lambda_list(cons.hd, &closure));
+
+	closure.env = env;
+	closure.body = cons.tl;
+	*out = closure_to_value(closure, name);
 	return ok;
+}
+
+static error_return parse_lambda_list(value val, struct closure* out) {
+	// 0 -> required, 1 -> optional, 2 -> rest, 3 -> done
+	int mode = 0;
+
+	struct cons cons;
+	symbol sym;
+	while(1) {
+		if(mode == 0) {
+			if(null(val))
+				return ok;
+			try(as_cons(val, &cons));
+			try(as_symbol(cons.hd, &sym));
+			val = cons.tl;
+			out->requireds = GC_realloc(out->requireds, sizeof(symbol) * (out->num_required + 1));
+			out->requireds[out->num_required++] = sym;
+		} else if(mode == 1) {
+			todo;
+		} else if(mode == 2) {
+			todo;
+		} else if(mode == 3) {
+			todo;
+		} else {
+			unreachable;
+		}
+	}
 }

@@ -46,7 +46,7 @@ int main(int argc, char **argv) {
 		"Error in main file");
 
 	printf("Evaluated to: ");
-	string_fputs(show_value(result), stdout);
+	string_fputs(show_value(result, true), stdout);
 
 	return 0;
 }

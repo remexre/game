@@ -68,7 +68,7 @@ error_return eat_whitespace(string* src) {
 }
 
 bool is_symbolish(char ch) {
-	return ch == '*' || ch == '+' || ch == '-' || ch == '.' || ch == '/'
+	return ch == '&' || ch == '*' || ch == '+' || ch == '-' || ch == '.' || ch == '/'
 		|| ('0' <= ch && ch <= '9') || ch == ':' || ('<' <= ch && ch <= 'Z') || ch == '_'
 		|| ('a' <= ch && ch <= 'z');
 }
@@ -102,11 +102,17 @@ parse_rule(symbolish, value) {
 		try(advance(src, &ch));
 	}
 
+	*out = symbolish_to_value(buffer_to_string(buf), ctx);
+	return eat_whitespace(src);
+}
+
+value symbolish_to_value(string str, context ctx) {
+	// TODO: Check if buf is a lambda-list keyword.
+	// TODO: Check if buf is namespaced (this handles keywords too).
 	// TODO: Check if buf represents a number.
 
-	symbol sym = context_intern_symbol(ctx, buffer_to_string(buf));
-	*out = symbol_to_value(sym);
-	return eat_whitespace(src);
+	symbol sym = context_intern_symbol(ctx, str);
+	return symbol_to_value(sym);
 }
 
 parse_rule(expr, value) {

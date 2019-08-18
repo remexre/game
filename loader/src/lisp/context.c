@@ -1,5 +1,5 @@
 #include "context.h"
-#include "preds.h"
+#include "prims.h"
 #include "value.h"
 #include <gc.h>
 #include "../common.h"
@@ -36,8 +36,26 @@ context make_context(void) {
 
 	// Initialize the LANG package.
 	package pkg = context_current_package(ctx);
+
+	symbol nil = package_intern_symbol(pkg, string_from_static_cstr("nil"));
+	nil->flags |= HAS_GLOBAL;
+	nil->global = NIL;
+
 	symbol t = package_intern_symbol(pkg, string_from_static_cstr("t"));
+	t->flags |= HAS_GLOBAL;
 	t->global = symbol_to_value(t);
+
+#define DEFUN(NAME, FUNC) do { \
+	string defun__name = string_from_static_cstr(NAME); \
+	symbol defun__sym = package_intern_symbol(pkg, defun__name); \
+	defun__sym->flags |= HAS_FUNCTION; \
+	defun__sym->function = native_to_value(FUNC, defun__name); \
+} while(0)
+
+	DEFUN("atom", atom);
+	DEFUN("funcall", funcall);
+	DEFUN("print", print);
+	DEFUN("set-symbol-function", set_symbol_function);
 
 	return ctx;
 }
@@ -84,17 +102,16 @@ symbol package_intern_symbol(package pkg, string name) {
 }
 
 static symbol make_symbol(package pkg, string name) {
+	expect(pkg, "make_symbol must be called with a non-null package");
+
 	symbol symbol = GC_malloc(sizeof(*symbol));
 	symbol->name = name;
 	symbol->name_hash = djb2a(symbol->name);
 	symbol->fq_name = string_cat(pkg->name,
 		string_cat(string_from_static_cstr("::"), symbol->name));
 	symbol->fq_hash = djb2a(symbol->fq_name);
-	symbol->class = NIL;
-	symbol->function = NIL;
-	symbol->global = NIL;
-	symbol->macro = NIL;
 	symbol->package = pkg;
+	symbol->flags = 0;
 	return symbol;
 }
 
@@ -102,9 +119,9 @@ string package_name(package pkg) {
 	return pkg->name;
 }
 
-symbol context_quote(context ctx) {
+symbol context_lang(context ctx, const char* name) {
 	package pkg = context_def_package(ctx, string_from_static_cstr("lang"));
-	return package_intern_symbol(pkg, string_from_static_cstr("quote"));
+	return package_intern_symbol(pkg, string_from_cstr(name));
 }
 
 value context_t(context ctx) {

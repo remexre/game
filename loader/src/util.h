@@ -12,6 +12,7 @@
 #define compile_assert(COND, NAME) extern char NAME[(COND) ? 1 : -1]
 #define upto(I, N) for(size_t I = 0; I < (N); I++)
 #define dotimes(N) upto(dotimes__i, N)
+#define UNUSED(NAME) ((void)(NAME))
 
 #define expect(COND, MSG) do { \
 	fail_at_error(AT, error_add_msg(error_expect(COND, TOSTRING(COND)), \
@@ -29,6 +30,13 @@
 
 #define todo do { \
 	return make_error(TODO, string_from_static_cstr(AT)); \
+} while(0)
+
+#define unreachable do { \
+	fail_at_error(AT, (error) { \
+		.code = TODO, \
+		.msg = string_from_static_cstr("unreachable") \
+	}); \
 } while(0)
 
 #define try(EXPR) do { \

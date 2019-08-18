@@ -6,5 +6,6 @@
 
 error_return parse_one(string, context, value*);
 error_return parse_all(string, context, value*);
+value symbolish_to_value(string, context);
 
 #endif

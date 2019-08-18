@@ -3,8 +3,10 @@
 #include "../common.h"
 
 native_func(nreverse_list) {
+	UNUSED(ctx);
+
 	value val;
-	try(parse_args(string_from_static_cstr("nreverse"), args, 1, 0, false, &val));
+	try(parse_args(string_from_static_cstr("nreverse"), args, 1, 0, NULL, &val));
 
 	value prev = NIL;
 	while(!null(val)) {

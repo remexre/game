@@ -19,7 +19,8 @@ struct env {
 };
 
 env make_env(context ctx);
-env env_add(env env, symbol name, value val);
-error env_get(env env, symbol name, value* out);
+void env_add(env, symbol, value);
+env env_clone(env);
+error_return env_get(env, symbol, value* out);
 
 #endif

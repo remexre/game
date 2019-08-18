@@ -1,6 +1,6 @@
-CFLAGS := -fPIC -g -O3 -Wall -Werror -Wimplicit-fallthrough
+CFLAGS := -fPIC -g -O3 -Wall -Werror -Wimplicit-fallthrough -Wunused-parameter
 LDFLAGS := -flto -fPIC -lgc
-UNITS := buffer io lexer lisp/args lisp/context lisp/env lisp/eval lisp/lists lisp/preds lisp/tags \
+UNITS := buffer io lexer lisp/args lisp/context lisp/env lisp/eval lisp/lists lisp/prims lisp/tags \
 	lisp/value parser util
 
 all: compile check
