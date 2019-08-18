@@ -5,6 +5,10 @@
 #include "../util.h"
 
 native_func(atom);
+native_func(car);
+native_func(cdr);
+native_func(cons);
+native_func(eq);
 native_func(exit);
 native_func(funcall);
 native_func(function);

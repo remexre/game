@@ -13,6 +13,74 @@ native_func(atom) {
 	return ok;
 }
 
+native_func(car) {
+	UNUSED(ctx);
+
+	value val;
+	try(parse_args(string_from_static_cstr("car"), args, 1, 0, NULL, &val));
+
+	struct cons cons;
+	try(as_cons(val, &cons));
+
+	*out = cons.hd;
+	return ok;
+}
+
+native_func(cdr) {
+	UNUSED(ctx);
+
+	value val;
+	try(parse_args(string_from_static_cstr("cdr"), args, 1, 0, NULL, &val));
+
+	struct cons cons;
+	try(as_cons(val, &cons));
+
+	*out = cons.tl;
+	return ok;
+}
+
+native_func(cons) {
+	UNUSED(ctx);
+
+	value car, cdr;
+	try(parse_args(string_from_static_cstr("cons"), args, 2, 0, NULL, &car, &cdr));
+	*out = make_cons(car, cdr);
+	return ok;
+}
+
+native_func(eq) {
+	value l, r;
+	try(parse_args(string_from_static_cstr("eq"), args, 2, 0, NULL, &l, &r));
+	if(!l || !r) {
+		*out = context_bool(ctx, l == r);
+		return ok;
+	} else if(l->tag != r->tag) {
+		*out = NIL;
+		return ok;
+	} else {
+		switch(l->tag) {
+		case TAG_FIXNUM:
+			*out = context_bool(ctx, l->value.fixnum == r->value.fixnum);
+			return ok;
+		case TAG_FLOAT:
+			*out = context_bool(ctx, l->value.float_ == r->value.float_);
+			return ok;
+		case TAG_SYMBOL:
+			*out = context_bool(ctx, l->value.symbol == r->value.symbol);
+			return ok;
+		case TAG_CONS:
+		case TAG_FUNCTION:
+		case TAG_OBJECT:
+		case TAG_STRING:
+		case TAG_VECTOR:
+			*out = NIL;
+			return ok;
+		default: return errorf(TYPE_ERROR, "Can't eq unknown tag %02x", l->tag);
+		}
+	}
+}
+
+
 native_func(exit) {
 	UNUSED(out);
 	UNUSED(ctx);

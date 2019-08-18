@@ -53,6 +53,10 @@ context make_context(void) {
 } while(0)
 
 	DEFUN("atom", atom);
+	DEFUN("car", car);
+	DEFUN("cdr", cdr);
+	DEFUN("cons", cons);
+	DEFUN("eq", eq);
 	DEFUN("exit", exit);
 	DEFUN("funcall", funcall);
 	DEFUN("print", print);
