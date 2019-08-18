@@ -7,6 +7,9 @@ LDFLAGS_REL := -fsanitize=address
 UNITS := buffer io lexer lisp/args lisp/context lisp/env lisp/eval lisp/lists lisp/prims \
 	lisp/value parser util
 
+CFLAGS += -Isrc/ext/linenoise
+UNITS += ext/linenoise/linenoise 
+
 all: compile
 clean:
 	test ! -d out || rm -r out

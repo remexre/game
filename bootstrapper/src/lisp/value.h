@@ -3,7 +3,6 @@
 
 #include "context.h"
 #include "env.h"
-#include "symbol.h"
 #include "../util.h"
 #include <stdint.h>
 

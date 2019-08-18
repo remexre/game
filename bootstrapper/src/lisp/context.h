@@ -1,7 +1,6 @@
 #ifndef GAME_LISP_CONTEXT_H
 #define GAME_LISP_CONTEXT_H 1
 
-#include "symbol.h"
 #include "../util.h"
 
 #define PKGTAB_BUCKETS 256
@@ -9,6 +8,7 @@
 
 typedef struct context_data* context;
 typedef struct package_data* package;
+typedef struct symbol_data* symbol;
 typedef struct value* value;
 
 context make_context(void);

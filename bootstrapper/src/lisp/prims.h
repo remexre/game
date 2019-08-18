@@ -8,6 +8,8 @@ native_func(atom);
 native_func(funcall);
 native_func(print);
 native_func(set);
-native_func(set_symbol_function);
+native_func(set_class);
+native_func(set_function);
+native_func(set_macro);
 
 #endif

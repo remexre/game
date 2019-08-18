@@ -54,19 +54,52 @@ native_func(set) {
 	return ok;
 }
 
-native_func(set_symbol_function) {
+native_func(set_class) {
 	UNUSED(ctx);
 
-	value sym_val;
-	value func_val;
-	try(parse_args(string_from_static_cstr("set-symbol-function"), args, 2, 0, NULL,
-		&sym_val, &func_val));
+	value sym_val, val;
+	try(parse_args(string_from_static_cstr("set-class"), args, 2, 0, NULL,
+		&sym_val, &val));
+
+	symbol sym;
+	try(as_symbol(sym_val, &sym));
+
+	sym->flags |= HAS_CLASS;
+	sym->class = val;
+
+	*out = NIL;
+	return ok;
+}
+
+native_func(set_function) {
+	UNUSED(ctx);
+
+	value sym_val, val;
+	try(parse_args(string_from_static_cstr("set-function"), args, 2, 0, NULL,
+		&sym_val, &val));
 
 	symbol sym;
 	try(as_symbol(sym_val, &sym));
 
 	sym->flags |= HAS_FUNCTION;
-	sym->function = func_val;
+	sym->function = val;
+
+	*out = NIL;
+	return ok;
+}
+
+native_func(set_macro) {
+	UNUSED(ctx);
+
+	value sym_val, val;
+	try(parse_args(string_from_static_cstr("set-macro"), args, 2, 0, NULL,
+		&sym_val, &val));
+
+	symbol sym;
+	try(as_symbol(sym_val, &sym));
+
+	sym->flags |= HAS_MACRO;
+	sym->macro = val;
 
 	*out = NIL;
 	return ok;

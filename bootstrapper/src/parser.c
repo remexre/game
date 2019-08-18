@@ -60,7 +60,7 @@ static error_return eat_whitespace(string* src) {
 	error err;
 	while(1) {
 		err = peek(src, &peek_char);
-		if(err.code != 0)
+		if(err.code != OK)
 			break;
 		if(!is_whitespace(peek_char))
 			break;
@@ -110,8 +110,8 @@ parse_rule(symbolish, string) {
 	buffer buf = make_buffer(32);
 	char ch;
 	while(1) {
-		try(peek(src, &ch));
-		if(!is_symbolish(ch))
+		error err = peek(src, &ch);
+		if(err.code != OK || !is_symbolish(ch))
 			break;
 		buffer_append_char(&buf, ch);
 		try(advance(src, &ch));
