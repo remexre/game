@@ -119,12 +119,16 @@ string package_name(package pkg) {
 	return pkg->name;
 }
 
+value context_bool(context ctx, bool b) {
+	if(b) {
+		package pkg = context_def_package(ctx, string_from_static_cstr("lang"));
+		return symbol_to_value(package_intern_symbol(pkg, string_from_static_cstr("t")));
+	} else {
+		return NIL;
+	}
+}
+
 symbol context_lang(context ctx, const char* name) {
 	package pkg = context_def_package(ctx, string_from_static_cstr("lang"));
 	return package_intern_symbol(pkg, string_from_cstr(name));
-}
-
-value context_t(context ctx) {
-	package pkg = context_def_package(ctx, string_from_static_cstr("lang"));
-	return symbol_to_value(package_intern_symbol(pkg, string_from_static_cstr("t")));
 }

@@ -6,13 +6,10 @@
 
 #define check_type(EXPR, TAG) do { \
 	value check_type__value = EXPR; \
-	tag check_type__tag = TAG; \
-	string check_type__found = tag_name(get_tag(check_type__value)); \
+	enum tag check_type__tag = TAG; \
+	string check_type__found = get_tag_name(check_type__value); \
 	bool check_type__error = false; \
-	if(null(check_type__value)) { \
-		check_type__found = string_from_static_cstr("nil"); \
-		check_type__error = true; \
-	} else if(get_tag(check_type__value) != check_type__tag) { \
+	if(!check_type__value || check_type__value->tag != check_type__tag) { \
 		check_type__error = true; \
 	} \
 	if(check_type__error) { \
@@ -24,42 +21,69 @@
 	} \
 } while(0)
 
-value closure_to_value(struct closure closure, string name) {
-	struct func* func = GC_malloc(sizeof(struct func));
-	func->name = name;
-	func->is_closure = true;
-	func->closure = closure;
-	return add_tag((uint64_t) func, TAG_FUNCTION);
+string get_tag_name(value val) {
+	return val ? tag_name(val->tag) : string_from_static_cstr("nil");
 }
 
-value fixnum_to_value(int32_t n) {
-	return add_tag(n, TAG_FIXNUM);
+string tag_name(enum tag tag) {
+	switch(tag) {
+	case TAG_CONS: return string_from_static_cstr("cons");
+	case TAG_FIXNUM: return string_from_static_cstr("fixnum");
+	case TAG_FUNCTION: return string_from_static_cstr("function");
+	case TAG_FLOAT: return string_from_static_cstr("float");
+	case TAG_OBJECT: return string_from_static_cstr("object");
+	case TAG_SYMBOL: return string_from_static_cstr("symbol");
+	case TAG_STRING: return string_from_static_cstr("string");
+	case TAG_VECTOR: return string_from_static_cstr("vector");
+	default: return string_from_static_cstr("unknown tag");
+	}
+}
+
+value closure_to_value(struct closure closure, string name) {
+	value val = GC_malloc(sizeof(struct value));
+	val->tag = TAG_FUNCTION;
+	val->value.func.name = name;
+	val->value.func.is_closure = true;
+	val->value.func.closure = closure;
+	return val;
+}
+
+value fixnum_to_value(int64_t n) {
+	value val = GC_malloc(sizeof(struct value));
+	val->tag = TAG_FIXNUM;
+	val->value.fixnum = n;
+	return val;
 }
 
 value native_to_value(error (*native)(value, value*, context), string name) {
-	struct func* func = GC_malloc(sizeof(struct func));
-	func->name = name;
-	func->is_closure = false;
-	func->native = native;
-	return add_tag((uint64_t) func, TAG_FUNCTION);
+	value val = GC_malloc(sizeof(struct value));
+	val->tag = TAG_FUNCTION;
+	val->value.func.name = name;
+	val->value.func.is_closure = false;
+	val->value.func.native = native;
+	return val;
 }
 
 value string_to_value(string str) {
-	string* ptr = GC_malloc(sizeof(string));
-	*ptr = str;
-	return add_tag((uint64_t) ptr, TAG_STRING);
+	value val = GC_malloc(sizeof(struct value));
+	val->tag = TAG_STRING;
+	val->value.string = str;
+	return val;
 }
 
 value symbol_to_value(symbol sym) {
-	return add_tag((uint64_t) sym, TAG_SYMBOL);
+	value val = GC_malloc(sizeof(struct value));
+	val->tag = TAG_SYMBOL;
+	val->value.symbol = sym;
+	return val;
 }
 
 value make_cons(value hd, value tl) {
-	struct cons* cons = GC_malloc(sizeof(struct cons));
-	cons->hd = hd;
-	cons->tl = tl;
-	uint64_t untagged = (uint64_t) cons;
-	return add_tag(untagged, TAG_CONS);
+	value val = GC_malloc(sizeof(struct value));
+	val->tag = TAG_CONS;
+	val->value.cons.hd = hd;
+	val->value.cons.tl = tl;
+	return val;
 }
 
 value make_list(size_t n, ...) {
@@ -84,68 +108,62 @@ value make_list(size_t n, ...) {
 
 error_return as_cons(value val, struct cons* out) {
 	check_type(val, TAG_CONS);
-	struct cons* cons = (struct cons*) del_tag(val);
-	*out = *cons;
+	*out = val->value.cons;
 	return ok;
 }
 
 error_return as_cons_ref(value val, struct cons** out) {
 	check_type(val, TAG_CONS);
-	struct cons* cons = (struct cons*) del_tag(val);
-	*out = cons;
+	*out = &val->value.cons;
 	return ok;
 }
 
-error_return as_fixnum(value val, int32_t* out) {
+error_return as_fixnum(value val, int64_t* out) {
 	check_type(val, TAG_FIXNUM);
-	*out = (int32_t) del_tag(val);
+	*out = val->value.fixnum;
 	return ok;
 }
 
 error_return as_function(value val, struct func* out) {
 	check_type(val, TAG_FUNCTION);
-	struct func* func = (struct func*) del_tag(val);
-	*out = *func;
+	*out = val->value.func;
 	return ok;
 }
 
 error_return as_string(value val, string* out) {
 	check_type(val, TAG_STRING);
-	string* str = (string*) del_tag(val);
-	*out = *str;
+	*out = val->value.string;
 	return ok;
 }
 
 error_return as_symbol(value val, symbol* out) {
 	check_type(val, TAG_SYMBOL);
-	*out = (symbol) del_tag(val);
+	*out = val->value.symbol;
 	return ok;
 }
 
-bool null(value val) { return !val.n; }
+bool null(value val) { return !val; }
 
 static void write_value_to_buffer(buffer* buf, value val) {
-	union value_data data;
-	switch(get_tag(val)) {
+	if(!val) {
+		buffer_append_cstr(buf, "()");
+		return;
+	}
+
+	switch(val->tag) {
 	case TAG_CONS:
-		if(null(val)) {
-			buffer_append_cstr(buf, "()");
-		} else {
-			expect_ok(as_cons(val, &data.cons), "inconsistent type-check");
-			buffer_append_char(buf, '(');
-			write_value_to_buffer(buf, data.cons.hd);
-			buffer_append_cstr(buf, " . ");
-			write_value_to_buffer(buf, data.cons.tl);
-			buffer_append_char(buf, ')');
-		}
+		buffer_append_char(buf, '(');
+		write_value_to_buffer(buf, val->value.cons.hd);
+		buffer_append_cstr(buf, " . ");
+		write_value_to_buffer(buf, val->value.cons.tl);
+		buffer_append_char(buf, ')');
 		break;
 	case TAG_FUNCTION:
-		expect_ok(as_function(val, &data.func), "inconsistent type-check");
 		buffer_append_cstr(buf, "#<function-");
-		buffer_append_cstr(buf, data.func.is_closure ? "closure" : "native");
-		if(data.func.name.len) {
+		buffer_append_cstr(buf, val->value.func.is_closure ? "closure" : "native");
+		if(val->value.func.name.len) {
 			buffer_append_char(buf, ' ');
-			buffer_append_string(buf, data.func.name);
+			buffer_append_string(buf, val->value.func.name);
 		}
 		buffer_append_char(buf, '>');
 		break;
@@ -155,13 +173,13 @@ static void write_value_to_buffer(buffer* buf, value val) {
 		buffer_append_cstr(buf, "#<object>");
 		break;
 	case TAG_SYMBOL:
-		expect_ok(as_symbol(val, &data.sym), "inconsistent type-check");
-		buffer_append_string(buf, data.sym->fq_name);
+		buffer_append_string(buf, val->value.symbol->fq_name);
 		break;
 	// case TAG_STRING:
 	// case TAG_VECTOR:
 	default:
-		buffer_append_string(buf, stringf("#<unknown-value %016lx>", val.n));
+		buffer_append_string(buf, stringf("#<unknown-value %02x:%016lx>",
+			val->tag, val->value.fixnum));
 		break;
 	}
 }

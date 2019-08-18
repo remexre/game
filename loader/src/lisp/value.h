@@ -4,11 +4,23 @@
 #include "context.h"
 #include "env.h"
 #include "symbol.h"
-#include "tags.h"
 #include "../util.h"
 #include <stdint.h>
 
-extern const value NIL;
+enum tag {
+	TAG_CONS,
+	TAG_FIXNUM,
+	TAG_FUNCTION,
+	TAG_FLOAT,
+	TAG_OBJECT,
+	TAG_SYMBOL,
+	TAG_STRING,
+	TAG_VECTOR
+};
+
+string tag_name(enum tag);
+
+static const value NIL = NULL;
 
 struct optional_param {
 	symbol name;
@@ -44,7 +56,14 @@ struct cons {
 union value_data {
 	struct cons cons;
 	struct func func;
-	symbol sym;
+	int64_t fixnum;
+	string string;
+	symbol symbol;
+};
+
+struct value {
+	enum tag tag;
+	union value_data value;
 };
 
 enum symbol_flags {
@@ -68,12 +87,8 @@ struct symbol_data {
 	value macro;
 };
 
-value add_tag(uint64_t, tag);
-uint64_t del_tag(value);
-tag get_tag(value);
-
 value closure_to_value(struct closure, string name);
-value fixnum_to_value(int32_t);
+value fixnum_to_value(int64_t);
 value native_to_value(error (*)(value, value*, context), string name);
 value string_to_value(string);
 value symbol_to_value(symbol);
@@ -83,7 +98,7 @@ value make_list(size_t, ...);
 
 error_return as_cons(value, struct cons* out);
 error_return as_cons_ref(value, struct cons** out);
-error_return as_fixnum(value val, int32_t* out);
+error_return as_fixnum(value val, int64_t* out);
 error_return as_function(value val, struct func* out);
 error_return as_string(value, string* out);
 error_return as_symbol(value, symbol* out);

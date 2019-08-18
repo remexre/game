@@ -8,12 +8,7 @@
 native_func(atom) {
 	value val;
 	try(parse_args(string_from_static_cstr("atom"), args, 1, 0, NULL, &val));
-
-	if(null(val) || get_tag(val) != TAG_CONS)
-		*out = context_t(ctx);
-	else
-		*out = NIL;
-
+	*out = context_bool(ctx, null(val) || val->tag != TAG_CONS);
 	return ok;
 }
 

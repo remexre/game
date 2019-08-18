@@ -47,7 +47,7 @@ error_return eval(value val, value* out, env env) {
 	string_fputs(show_value(val, true), stdout);
 
 	union value_data data;
-	switch(get_tag(val)) {
+	switch(val->tag) {
 	case TAG_CONS:
 		if(null(val)) {
 			*out = NIL;
@@ -76,8 +76,8 @@ error_return eval(value val, value* out, env env) {
 			}
 		}
 	case TAG_SYMBOL:
-		expect_ok(as_symbol(val, &data.sym), "inconsistent type-check");
-		return env_get(env, data.sym, out);
+		expect_ok(as_symbol(val, &data.symbol), "inconsistent type-check");
+		return env_get(env, data.symbol, out);
 	case TAG_FUNCTION:
 	case TAG_FIXNUM:
 	case TAG_FLOAT:
@@ -87,7 +87,7 @@ error_return eval(value val, value* out, env env) {
 		*out = val;
 		return ok;
 	default:
-		return errorf(TYPE_ERROR, "Can't eval unknown tag %d", get_tag(val));
+		return errorf(TYPE_ERROR, "Can't eval unknown tag %02x", val->tag);
 	}
 }
 

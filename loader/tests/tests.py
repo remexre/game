@@ -16,33 +16,6 @@ def test(func):
         num_tests += 1
 
 
-def sign_extended(n: int) -> bool:
-    top = n >> 48
-    return (top == 0) or (top == 0xffff)
-
-
-@test
-@given(st.integers(min_value=0, max_value=0xffffffffffff),
-       st.integers(min_value=0, max_value=7))
-def test_tagging_high_0(n, tag):
-    value = bindings.add_tag(n, tag)
-    n2 = bindings.del_tag(value)
-    assert bindings.get_tag(value) == tag
-    assert n2 == n
-    assert sign_extended(n2)
-
-
-@test
-@given(st.integers(min_value=0xffff000000000000, max_value=0xffffffffffffffff),
-       st.integers(min_value=0, max_value=7))
-def test_tagging_high_1(n, tag):
-    value = bindings.add_tag(n, tag)
-    n2 = bindings.del_tag(value)
-    assert bindings.get_tag(value) == tag
-    assert n2 == n
-    assert sign_extended(n2)
-
-
 fixnums = st.integers(min_value=-0x80000000, max_value=0x7fffffff)
 strings = st.characters(blacklist_categories=('Cs',), min_codepoint=1)
 

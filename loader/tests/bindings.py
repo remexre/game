@@ -118,53 +118,6 @@ def def_foreign(name):
 lib.memcpy.argtypes = [c_void_p, c_void_p, c_size_t]
 lib.memcpy.restype = c_void_p
 
-# lisp.h
-
-lib.add_tag.argtypes = [c_ulonglong, c_byte]
-lib.add_tag.restype = Value
-
-
-def add_tag(n: int, tag: int) -> Value:
-    return lib.add_tag(n, tag)
-
-
-lib.del_tag.argtypes = [Value]
-lib.del_tag.restype = c_ulonglong
-
-
-def del_tag(value: Value) -> int:
-    return lib.del_tag(value)
-
-
-lib.get_tag.argtypes = [Value]
-lib.get_tag.restype = c_byte
-
-
-def get_tag(value: Value) -> int:
-    return lib.get_tag(value)
-
-
-# package make_package(string name);
-# symbol make_symbol(package package, string name);
-# symbol package_get_symbol(package pkg, string name);
-
-lib.fixnum_to_value.argtypes = [c_int]
-lib.fixnum_to_value.restype = Value
-
-# value string_to_value(string);
-# value symbol_to_value(symbol);
-
-lib.make_cons.argtypes = [Value, Value]
-lib.make_cons.restype = Value
-
-lib.as_cons.argtypes = [Value, c_void_p]
-lib.as_cons.restype = Error
-
-lib.as_fixnum.argtypes = [Value, c_void_p]
-lib.as_fixnum.restype = Error
-
-lib.null.argtypes = [Value]
-lib.null.restype = bool
 
 # lisp/lists.h
 
