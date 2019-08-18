@@ -1,8 +1,8 @@
 (set-macro 'defmacro
   (named-lambda defmacro (name args &body foo)
-    ''todo))
+    (cons 'print (cons ''todo-defmacro (cons (cons 'quote (cons name nil)) nil)))))
 
 (defmacro let* (clauses &body foo)
-  ''todo)
+  '(print 'todo))
 
 (in-package 'user)
