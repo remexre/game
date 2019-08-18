@@ -7,8 +7,8 @@
 
 static error_return do_cond(value, value* out, env);
 static error_return do_let(value clauses, value body, value* out, env);
-static error_return make_lambda(string name, value, value* out, env);
-static error_return parse_lambda_list(value, struct closure* out);
+static error_return make_lambda(symbol name, value, value* out, env);
+static error_return parse_lambda_list(value, struct closure* out, context ctx);
 
 error_return apply(value func_val, value args, value* out, context ctx) {
 #ifndef NDEBUG
@@ -83,7 +83,7 @@ error_return eval(value val, value* out, env env) {
 
 			} else if(func_sym == context_lang(env->ctx, "lambda")) {
 
-				return make_lambda(string_empty, val->value.cons.tl, out, env);
+				return make_lambda(NULL, val->value.cons.tl, out, env);
 
 			} else if(func_sym == context_lang(env->ctx, "let")) {
 
@@ -93,10 +93,10 @@ error_return eval(value val, value* out, env env) {
 
 			} else if(func_sym == context_lang(env->ctx, "named-lambda")) {
 
-				string name;
+				symbol name;
 				struct cons lambda_cons;
 				try(as_cons(val->value.cons.tl, &lambda_cons));
-				try(as_string(lambda_cons.hd, &name));
+				try(as_symbol(lambda_cons.hd, &name));
 				return make_lambda(name, lambda_cons.tl, out, env);
 
 			} else if(func_sym == context_lang(env->ctx, "quote")) {
@@ -211,7 +211,7 @@ static error_return do_let(value clauses, value body, value* out, env e) {
 	return eval_body(body, out, local_env);
 }
 
-static error_return make_lambda(string name, value val, value* out, env env) {
+static error_return make_lambda(symbol name, value val, value* out, env env) {
 	struct cons cons;
 	try(as_cons(val, &cons));
 
@@ -221,7 +221,7 @@ static error_return make_lambda(string name, value val, value* out, env env) {
 	closure.has_rest = false;
 	closure.requireds = GC_malloc(0);
 	closure.optionals = GC_malloc(0);
-	try(parse_lambda_list(cons.hd, &closure));
+	try(parse_lambda_list(cons.hd, &closure, env->ctx));
 
 	closure.env = env;
 	closure.body = cons.tl;
@@ -229,7 +229,7 @@ static error_return make_lambda(string name, value val, value* out, env env) {
 	return ok;
 }
 
-static error_return parse_lambda_list(value val, struct closure* out) {
+static error_return parse_lambda_list(value val, struct closure* out, context ctx) {
 	// 0 -> required, 1 -> optional, 2 -> rest, 3 -> done
 	int mode = 0;
 
@@ -242,14 +242,37 @@ static error_return parse_lambda_list(value val, struct closure* out) {
 			try(as_cons(val, &cons));
 			try(as_symbol(cons.hd, &sym));
 			val = cons.tl;
+
+			if(is_lambda_list_keyword(ctx, sym)) {
+				if(string_cmp(sym->name, string_from_static_cstr("optional")) == 0)
+					mode = 1;
+				else if(string_cmp(sym->name, string_from_static_cstr("body")) == 0)
+					mode = 2;
+				else if(string_cmp(sym->name, string_from_static_cstr("rest")) == 0)
+					mode = 2;
+				else
+					return make_error(SYNTAX_ERROR, string_cat(
+						string_from_static_cstr("Invalid lambda list keyword: &"),
+						sym->name));
+				continue;
+			}
+
+
 			out->requireds = GC_realloc(out->requireds, sizeof(symbol) * (out->num_required + 1));
 			out->requireds[out->num_required++] = sym;
 		} else if(mode == 1) {
 			todo;
 		} else if(mode == 2) {
-			todo;
+			try(as_cons(val, &cons));
+			try(as_symbol(cons.hd, &sym));
+			val = cons.tl;
+			mode = 3;
+
+			out->has_rest = true;
+			out->rest = sym;
 		} else if(mode == 3) {
-			todo;
+			try(as_nil(val));
+			return ok;
 		} else {
 			unreachable;
 		}

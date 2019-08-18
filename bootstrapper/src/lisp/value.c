@@ -39,7 +39,7 @@ string tag_name(enum tag tag) {
 	}
 }
 
-value closure_to_value(struct closure closure, string name) {
+value closure_to_value(struct closure closure, symbol name) {
 	value val = GC_malloc(sizeof(struct value));
 	val->tag = TAG_FUNCTION;
 	val->value.func.name = name;
@@ -62,7 +62,7 @@ value float_to_value(double n) {
 	return val;
 }
 
-value native_to_value(error (*native)(value, value*, context), string name) {
+value native_to_value(error (*native)(value, value*, context), symbol name) {
 	value val = GC_malloc(sizeof(struct value));
 	val->tag = TAG_FUNCTION;
 	val->value.func.name = name;
@@ -141,6 +141,13 @@ error_return as_function(value val, struct func* out) {
 	return ok;
 }
 
+error_return as_nil(value val) {
+	if(!val)
+		return ok;
+	return make_error(TYPE_ERROR,
+		string_cat(string_from_static_cstr("Expected nil, found"), get_tag_name(val)));
+}
+
 error_return as_string(value val, string* out) {
 	check_type(val, TAG_STRING);
 	*out = val->value.string;
@@ -170,9 +177,9 @@ static void write_value_to_buffer(buffer* buf, value val) {
 	case TAG_FUNCTION:
 		buffer_append_cstr(buf, "#<function-");
 		buffer_append_cstr(buf, val->value.func.is_closure ? "closure" : "native");
-		if(val->value.func.name.len) {
+		if(val->value.func.name) {
 			buffer_append_char(buf, ' ');
-			buffer_append_string(buf, val->value.func.name);
+			buffer_append_string(buf, val->value.func.name->fq_name);
 		}
 		buffer_append_char(buf, '>');
 		break;

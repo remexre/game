@@ -108,4 +108,7 @@ error_return error_errno(int err);
 
 error_return error_expect(bool cond, const char* expr);
 
+__attribute__((noinline))
+void bp(void);
+
 #endif

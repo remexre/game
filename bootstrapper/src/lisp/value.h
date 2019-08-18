@@ -37,7 +37,7 @@ struct closure {
 };
 
 struct func {
-	string name;
+	symbol name;
 	bool is_closure;
 	union {
 		struct closure closure;
@@ -87,10 +87,10 @@ struct symbol_data {
 	value macro;
 };
 
-value closure_to_value(struct closure, string name);
+value closure_to_value(struct closure, symbol name);
 value fixnum_to_value(int64_t);
 value float_to_value(double);
-value native_to_value(error (*)(value, value*, context), string name);
+value native_to_value(error (*)(value, value*, context), symbol name);
 value string_to_value(string);
 value symbol_to_value(symbol);
 
@@ -102,6 +102,7 @@ error_return as_cons_ref(value, struct cons** out);
 error_return as_fixnum(value val, int64_t* out);
 error_return as_float(value val, double* out);
 error_return as_function(value val, struct func* out);
+error_return as_nil(value);
 error_return as_string(value, string* out);
 error_return as_symbol(value, symbol* out);
 

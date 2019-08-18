@@ -15,6 +15,7 @@ static bool is_symbolish(char);
 static error_return parse_fixnum(string, int64_t*);
 static error_return parse_float(string, double*);
 
+parse_rule(lambda_list_keyword, value);
 parse_rule(list_rest, value);
 parse_rule(symbolish, string);
 parse_rule(symbolish_value, value);
@@ -84,7 +85,20 @@ static error_return parse_fixnum(string str, int64_t* out) {
 	return ok;
 }
 
-static error_return parse_float(string str, double* out) { UNUSED(str); *out = 1234; todo; }
+static error_return parse_float(string str, double* out) { UNUSED(str); *out = 1234.0; todo; }
+
+parse_rule(lambda_list_keyword, value) {
+	string str;
+	try(parse_symbolish(src, ctx, &str));
+
+	if(string_contains_char(str, ':'))
+		return make_error(SYNTAX_ERROR,
+			string_cat(string_from_static_cstr("Invalid lambda list keyword: "), str));
+
+	package pkg = context_def_package(ctx, string_from_static_cstr("lambda-list-keyword"));
+	*out = symbol_to_value(package_intern_symbol(pkg, str));
+	return ok;
+}
 
 parse_rule(list_rest, value) {
 	char first;
@@ -172,7 +186,9 @@ parse_rule(expr, value) {
 	char first;
 	try(peek(src, &first));
 	switch(first) {
-	// TODO: lambda-list keywords
+	case '&':
+		try(advance(src, &first));
+		return parse_lambda_list_keyword(src, ctx, out);
 	case '\'':
 		try(advance(src, &first));
 		try(eat_whitespace(src));

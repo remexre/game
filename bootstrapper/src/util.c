@@ -181,3 +181,6 @@ error_return error_expect(bool cond, const char* expr) {
 		return ok;
 	return make_error(EXPECTATION_FAILED, string_from_static_cstr(expr));
 }
+
+__attribute__((noinline))
+void bp(void) {}

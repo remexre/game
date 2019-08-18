@@ -14,6 +14,7 @@ typedef struct value* value;
 context make_context(void);
 
 package context_current_package(context ctx);
+void context_set_current_package(context ctx, string name);
 package context_def_package(context ctx, string name);
 
 symbol context_gensym(context ctx);
@@ -27,5 +28,8 @@ string package_name(package);
 
 value context_bool(context ctx, bool);
 symbol context_lang(context ctx, const char* name);
+
+bool is_keyword(context, symbol);
+bool is_lambda_list_keyword(context, symbol);
 
 #endif

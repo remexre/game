@@ -29,6 +29,11 @@ env env_clone(env old) {
 }
 
 error_return env_get(env env, symbol name, value* out) {
+	if(is_keyword(env->ctx, name)) {
+		*out = symbol_to_value(name);
+		return ok;
+	}
+
 	struct env_mapping_link* bucket = env->lexical[name->fq_hash % LEXICAL_BUCKETS];
 	while(bucket) {
 		if(string_cmp(name->fq_name, bucket->name->fq_name) == 0) {

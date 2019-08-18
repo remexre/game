@@ -36,9 +36,10 @@ context make_context(void) {
 	upto(i, PKGTAB_BUCKETS)
 		ctx->pkgtab[i] = NULL;
 
-	// Create the gensym and keyword packages.
+	// Create the gensym, keyword, and lambda-list keyword packages.
 	context_def_package(ctx, string_from_static_cstr("gensym"));
 	context_def_package(ctx, string_from_static_cstr("keyword"));
+	context_def_package(ctx, string_from_static_cstr("lambda-list-keyword"));
 
 	// Initialize the lang package.
 	package pkg = context_current_package(ctx);
@@ -55,7 +56,7 @@ context make_context(void) {
 	string defun__name = string_from_static_cstr(NAME); \
 	symbol defun__sym = package_intern_symbol(pkg, defun__name); \
 	defun__sym->flags |= HAS_FUNCTION; \
-	defun__sym->function = native_to_value(lisp_##FUNC, defun__name); \
+	defun__sym->function = native_to_value(lisp_##FUNC, defun__sym); \
 } while(0)
 
 	DEFUN("atom", atom);
@@ -66,10 +67,11 @@ context make_context(void) {
 	DEFUN("exit", exit);
 	DEFUN("funcall", funcall);
 	DEFUN("gensym", gensym);
+	DEFUN("in-package", in_package);
 	DEFUN("print", print);
-	DEFUN("set", set);
 	DEFUN("set-class", set_class);
 	DEFUN("set-function", set_function);
+	DEFUN("set-global", set_global);
 	DEFUN("set-macro", set_macro);
 
 	return ctx;
@@ -77,6 +79,10 @@ context make_context(void) {
 
 package context_current_package(context ctx) {
 	return context_def_package(ctx, ctx->current_package);
+}
+
+void context_set_current_package(context ctx, string name) {
+	ctx->current_package = name;
 }
 
 #define HASHMAP_GET_OR_INSERT(TABLE, LINK, LINK_FIELD, BUCKETS, MAKE) do { \
@@ -169,4 +175,14 @@ value context_bool(context ctx, bool b) {
 symbol context_lang(context ctx, const char* name) {
 	package pkg = context_def_package(ctx, string_from_static_cstr("lang"));
 	return package_intern_symbol(pkg, string_from_cstr(name));
+}
+
+bool is_keyword(context ctx, symbol sym) {
+	package keywords = context_def_package(ctx, string_from_static_cstr("keyword"));
+	return sym->package == keywords;
+}
+
+bool is_lambda_list_keyword(context ctx, symbol sym) {
+	package keywords = context_def_package(ctx, string_from_static_cstr("lambda-list-keyword"));
+	return sym->package == keywords;
 }

@@ -104,6 +104,18 @@ native_func(gensym) {
 	return ok;
 }
 
+native_func(in_package) {
+	value sym_val;
+	try(parse_args(string_from_static_cstr("gensym"), args, 1, 0, NULL, &sym_val));
+
+	symbol sym;
+	try(as_symbol(sym_val, &sym));
+
+	context_set_current_package(ctx, sym->name);
+	*out = NIL;
+	return ok;
+}
+
 native_func(print) {
 	UNUSED(ctx);
 
@@ -118,23 +130,6 @@ native_func(print) {
 		string_fputs(show_value(cons.hd, false), stdout);
 	}
 	putc('\n', stdout);
-
-	*out = NIL;
-	return ok;
-}
-
-native_func(set) {
-	UNUSED(ctx);
-
-	value sym_val, val;
-	try(parse_args(string_from_static_cstr("set"), args, 2, 0, NULL,
-		&sym_val, &val));
-
-	symbol sym;
-	try(as_symbol(sym_val, &sym));
-
-	sym->flags |= HAS_GLOBAL;
-	sym->global = val;
 
 	*out = NIL;
 	return ok;
@@ -169,6 +164,23 @@ native_func(set_function) {
 
 	sym->flags |= HAS_FUNCTION;
 	sym->function = val;
+
+	*out = NIL;
+	return ok;
+}
+
+native_func(set_global) {
+	UNUSED(ctx);
+
+	value sym_val, val;
+	try(parse_args(string_from_static_cstr("set-global"), args, 2, 0, NULL,
+		&sym_val, &val));
+
+	symbol sym;
+	try(as_symbol(sym_val, &sym));
+
+	sym->flags |= HAS_GLOBAL;
+	sym->global = val;
 
 	*out = NIL;
 	return ok;

@@ -57,7 +57,10 @@ int main(int argc, char **argv) {
 		linenoiseHistorySetMaxLen(1000);
 		linenoiseSetMultiLine(1);
 		while(1) {
-			char* line = linenoise("> ");
+			string prompt = package_name(context_current_package(ctx));
+			prompt = string_cat(prompt, string_from_static_cstr("> "));
+
+			char* line = linenoise(cstr_from_string(prompt));
 			if(!line) break;
 			linenoiseHistoryAdd(line);
 			string src_str = string_from_cstr(line);

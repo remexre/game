@@ -13,10 +13,11 @@ native_func(exit);
 native_func(funcall);
 native_func(function);
 native_func(gensym);
+native_func(in_package);
 native_func(print);
-native_func(set);
 native_func(set_class);
 native_func(set_function);
+native_func(set_global);
 native_func(set_macro);
 
 #endif
