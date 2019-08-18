@@ -56,7 +56,6 @@ error_return eval(value val, value* out, env env) {
 			*out = NIL;
 			return ok;
 		} else {
-			expect_ok(as_cons(val, &val->value.cons), "inconsistent type-check");
 			symbol func_sym;
 			value args;
 
