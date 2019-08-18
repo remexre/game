@@ -4,18 +4,20 @@
 #include <stdlib.h>
 #include "common.h"
 
-#define parse_rule(NAME, TY) error_return parse_##NAME(string* src, context ctx, TY* out)
+#define parse_rule(NAME, TY) static error_return parse_##NAME(string* src, context ctx, TY* out)
 
-bool eof(string*);
-parse_rule(peek, char);
-parse_rule(advance, char);
-bool is_whitespace(char);
-error_return eat_whitespace(string*);
+static bool eof(string*);
+static bool is_whitespace(char);
+static error_return eat_whitespace(string*);
 
-bool is_symbolish(char);
+static bool is_symbolish(char);
+
+static error_return parse_fixnum(string, int64_t*);
+static error_return parse_float(string, double*);
 
 parse_rule(list_rest, value);
-parse_rule(symbolish, value);
+parse_rule(symbolish, string);
+parse_rule(symbolish_value, value);
 parse_rule(expr, value);
 parse_rule(exprs, value);
 parse_rule(quoted, value);
@@ -30,7 +32,7 @@ error_return parse_all(string src, context ctx, value* out) {
 	return parse_exprs(&src, ctx, out);
 }
 
-bool eof(string* src) {
+static bool eof(string* src) {
 	return string_len(*src) == 0;
 }
 
@@ -49,11 +51,11 @@ error_return advance(string* src, char* out) {
 	return ok;
 }
 
-bool is_whitespace(char c) {
+static bool is_whitespace(char c) {
 	return c <= ' ';
 }
 
-error_return eat_whitespace(string* src) {
+static error_return eat_whitespace(string* src) {
 	char peek_char;
 	error err;
 	while(1) {
@@ -68,10 +70,21 @@ error_return eat_whitespace(string* src) {
 }
 
 bool is_symbolish(char ch) {
-	return ch == '&' || ch == '*' || ch == '+' || ch == '-' || ch == '.' || ch == '/'
+	return ch == '*' || ch == '+' || ch == '-' || ch == '.' || ch == '/'
 		|| ('0' <= ch && ch <= '9') || ch == ':' || ('<' <= ch && ch <= 'Z') || ch == '_'
 		|| ('a' <= ch && ch <= 'z');
 }
+
+static error_return parse_fixnum(string str, int64_t* out) {
+	*out = 0;
+	upto(i, str.len) {
+		*out *= 10;
+		*out += string_get(str, i) - '0';
+	}
+	return ok;
+}
+
+static error_return parse_float(string str, double* out) { UNUSED(str); *out = 1234; todo; }
 
 parse_rule(list_rest, value) {
 	char first;
@@ -91,8 +104,10 @@ parse_rule(list_rest, value) {
 	}
 }
 
-parse_rule(symbolish, value) {
-	buffer buf = make_buffer(64);
+parse_rule(symbolish, string) {
+	UNUSED(ctx);
+
+	buffer buf = make_buffer(32);
 	char ch;
 	while(1) {
 		try(peek(src, &ch));
@@ -102,23 +117,62 @@ parse_rule(symbolish, value) {
 		try(advance(src, &ch));
 	}
 
-	*out = symbolish_to_value(buffer_to_string(buf), ctx);
+	*out = buffer_to_string(buf);
 	return eat_whitespace(src);
 }
 
-value symbolish_to_value(string str, context ctx) {
-	// TODO: Check if buf is a lambda-list keyword.
-	// TODO: Check if buf is namespaced (this handles keywords too).
-	// TODO: Check if buf represents a number.
+parse_rule(symbolish_value, value) {
+	string str;
+	try(parse_symbolish(src, ctx, &str));
+	return symbolish_to_value(str, ctx, out);
+}
 
-	symbol sym = context_intern_symbol(ctx, str);
-	return symbol_to_value(sym);
+error_return symbolish_to_value(string str, context ctx, value* out) {
+	expect(str.len > 0, "symbolish_to_value should be called on non-empty strings");
+
+	if(string_contains_char(str, ':')) {
+		// TODO: Check if buf is namespaced (this handles keywords too).
+		unreachable;
+	}
+
+	bool numberish = true;
+	size_t decimals = 0;
+	upto(i, str.len) {
+		char ch = string_get(str, i);
+		if(ch == '.') {
+			decimals++;
+		} else if(!('0' <= ch && ch <= '9')) {
+			numberish = false;
+			break;
+		}
+	}
+
+	if(numberish) {
+		if(decimals == 0) {
+			int64_t n;
+			try(parse_fixnum(str, &n));
+			*out = fixnum_to_value(n);
+			return ok;
+		} else if(decimals == 1) {
+			double n;
+			try(parse_float(str, &n));
+			*out = float_to_value(n);
+			return ok;
+		} else {
+			return make_error(SYNTAX_ERROR,
+				string_cat(string_from_static_cstr("Invalid number: "), str));
+		}
+	}
+
+	*out = symbol_to_value(context_intern_symbol(ctx, str));
+	return ok;
 }
 
 parse_rule(expr, value) {
 	char first;
 	try(peek(src, &first));
 	switch(first) {
+	// TODO: lambda-list keywords
 	case '\'':
 		try(advance(src, &first));
 		try(eat_whitespace(src));
@@ -130,7 +184,7 @@ parse_rule(expr, value) {
 		return parse_list_rest(src, ctx, out);
 	default:
 		if(is_symbolish(first))
-			return parse_symbolish(src, ctx, out);
+			return parse_symbolish_value(src, ctx, out);
 		return errorf(SYNTAX_ERROR, "Unexpected character: 0x%02x", (int) first);
 	}
 }

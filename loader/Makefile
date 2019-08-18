@@ -1,6 +1,6 @@
 CFLAGS := -fPIC -Wall -Werror -Wimplicit-fallthrough -Wunused-parameter
 CFLAGS_DBG := -g -Og -fsanitize=address,undefined
-CFLAGS_REL := -O3 -fsanitize=address
+CFLAGS_REL := -DNDEBUG -O3 -fsanitize=address
 LDFLAGS := -flto -fPIC -lgc
 LDFLAGS_DBG := -fsanitize=address,undefined
 LDFLAGS_REL := -fsanitize=address

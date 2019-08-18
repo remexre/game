@@ -9,10 +9,12 @@ static error_return make_lambda(string name, value, value* out, env);
 static error_return parse_lambda_list(value, struct closure* out);
 
 error_return apply(value func_val, value args, value* out, context ctx) {
+#ifndef NDEBUG
 	printf("APPLY:\n\tFUNC:");
 	string_fputs(show_value(func_val, true), stdout);
 	printf("\tARGS:");
 	string_fputs(show_value(args, true), stdout);
+#endif
 
 	struct func func;
 	try(as_function(func_val, &func));
@@ -43,8 +45,10 @@ error_return apply(value func_val, value args, value* out, context ctx) {
 }
 
 error_return eval(value val, value* out, env env) {
+#ifndef NDEBUG
 	printf("EVAL: ");
 	string_fputs(show_value(val, true), stdout);
+#endif
 
 	union value_data data;
 	switch(val->tag) {

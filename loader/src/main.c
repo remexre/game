@@ -45,8 +45,10 @@ int main(int argc, char **argv) {
 	expect_ok(eval_body(main_src, &result, env),
 		"Error in main file");
 
-	printf("Evaluated to: ");
-	string_fputs(show_value(result, true), stdout);
+	if(result) {
+		printf("Evaluated to: ");
+		string_fputs(show_value(result, true), stdout);
+	}
 
 	return 0;
 }

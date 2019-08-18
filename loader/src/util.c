@@ -109,6 +109,13 @@ char* cstr_from_string(string str) {
 	return out;
 }
 
+bool string_contains_char(string str, char ch) {
+	upto(i, str.len)
+		if(string_get(str, i) == ch)
+			return true;
+	return false;
+}
+
 hash djb2a(string str) {
 	hash out = 5381;
 	upto(i, string_len(str))

@@ -55,6 +55,13 @@ value fixnum_to_value(int64_t n) {
 	return val;
 }
 
+value float_to_value(double n) {
+	value val = GC_malloc(sizeof(struct value));
+	val->tag = TAG_FLOAT;
+	val->value.float_ = n;
+	return val;
+}
+
 value native_to_value(error (*native)(value, value*, context), string name) {
 	value val = GC_malloc(sizeof(struct value));
 	val->tag = TAG_FUNCTION;
@@ -124,6 +131,12 @@ error_return as_fixnum(value val, int64_t* out) {
 	return ok;
 }
 
+error_return as_float(value val, double* out) {
+	check_type(val, TAG_FLOAT);
+	*out = val->value.float_;
+	return ok;
+}
+
 error_return as_function(value val, struct func* out) {
 	check_type(val, TAG_FUNCTION);
 	*out = val->value.func;
@@ -167,8 +180,12 @@ static void write_value_to_buffer(buffer* buf, value val) {
 		}
 		buffer_append_char(buf, '>');
 		break;
-	// case TAG_FIXNUM:
-	// case TAG_FLOAT:
+	case TAG_FIXNUM:
+		buffer_append_string(buf, stringf("%ld", val->value.fixnum));
+		break;
+	case TAG_FLOAT:
+		buffer_append_string(buf, stringf("%f", val->value.float_));
+		break;
 	case TAG_OBJECT:
 		buffer_append_cstr(buf, "#<object>");
 		break;

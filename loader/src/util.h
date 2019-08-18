@@ -70,6 +70,7 @@ string string_sub(string, size_t, size_t);
 char string_get(string, size_t);
 size_t string_len(string);
 char* cstr_from_string(string);
+bool string_contains_char(string, char);
 
 typedef unsigned long long hash;
 
