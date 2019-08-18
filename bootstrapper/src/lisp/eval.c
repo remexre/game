@@ -62,7 +62,9 @@ error_return eval(value val, value* out, env env) {
 			value args;
 
 			try(as_symbol(data.cons.hd, &func_sym));
-			if(func_sym == context_lang(env->ctx, "lambda")) {
+			if(func_sym == context_lang(env->ctx, "cond")) {
+				todo;
+			} else if(func_sym == context_lang(env->ctx, "lambda")) {
 				return make_lambda(string_empty, data.cons.tl, out, env);
 			} else if(func_sym == context_lang(env->ctx, "named-lambda")) {
 				string name;
