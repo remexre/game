@@ -50,40 +50,39 @@ error_return eval(value val, value* out, env env) {
 	string_fputs(show_value(val, true), stdout);
 #endif
 
-	union value_data data;
 	switch(val->tag) {
 	case TAG_CONS:
 		if(null(val)) {
 			*out = NIL;
 			return ok;
 		} else {
-			expect_ok(as_cons(val, &data.cons), "inconsistent type-check");
+			expect_ok(as_cons(val, &val->value.cons), "inconsistent type-check");
 			symbol func_sym;
 			value args;
 
-			try(as_symbol(data.cons.hd, &func_sym));
+			try(as_symbol(val->value.cons.hd, &func_sym));
 			if(func_sym == context_lang(env->ctx, "cond")) {
 				todo;
 			} else if(func_sym == context_lang(env->ctx, "lambda")) {
-				return make_lambda(string_empty, data.cons.tl, out, env);
+				return make_lambda(string_empty, val->value.cons.tl, out, env);
 			} else if(func_sym == context_lang(env->ctx, "named-lambda")) {
 				string name;
 				struct cons lambda_cons;
-				try(as_cons(data.cons.tl, &lambda_cons));
+				try(as_cons(val->value.cons.tl, &lambda_cons));
 				try(as_string(lambda_cons.hd, &name));
 				return make_lambda(name, lambda_cons.tl, out, env);
 			} else if(func_sym == context_lang(env->ctx, "quote")) {
-				return parse_args(string_from_static_cstr("quote"), data.cons.tl, 1, 0, NULL, out);
+				return parse_args(string_from_static_cstr("quote"), val->value.cons.tl,
+					1, 0, NULL, out);
 			} else if(!(func_sym->flags & HAS_FUNCTION)) {
 				return make_error(UNBOUND_FUNC, func_sym->fq_name);
 			} else {
-				try(eval_list(data.cons.tl, &args, env));
+				try(eval_list(val->value.cons.tl, &args, env));
 				return apply(func_sym->function, args, out, env->ctx);
 			}
 		}
 	case TAG_SYMBOL:
-		expect_ok(as_symbol(val, &data.symbol), "inconsistent type-check");
-		return env_get(env, data.symbol, out);
+		return env_get(env, val->value.symbol, out);
 	case TAG_FUNCTION:
 	case TAG_FIXNUM:
 	case TAG_FLOAT:
