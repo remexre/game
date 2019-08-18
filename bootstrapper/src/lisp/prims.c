@@ -6,6 +6,12 @@
 #include <stdlib.h>
 #include "../common.h"
 
+native_func(apply_1) {
+	value func_val, args_val;
+	try(parse_args(string_from_static_cstr("apply-1"), args, 2, 0, NULL, &func_val, &args_val));
+	return apply(func_val, args_val, out, ctx);
+}
+
 native_func(atom) {
 	value val;
 	try(parse_args(string_from_static_cstr("atom"), args, 1, 0, NULL, &val));
@@ -104,15 +110,94 @@ native_func(gensym) {
 	return ok;
 }
 
+native_func(get_class) {
+	UNUSED(ctx);
+
+	value val;
+	try(parse_args(string_from_static_cstr("get-class"), args, 1, 0, NULL, &val));
+	symbol sym;
+	try(as_symbol(val, &sym));
+	if(!(sym->flags & HAS_CLASS))
+		return make_error(UNBOUND_CLASS, sym->fq_name);
+	*out = sym->function;
+	return ok;
+}
+
+native_func(get_function) {
+	UNUSED(ctx);
+
+	value val;
+	try(parse_args(string_from_static_cstr("get-function"), args, 1, 0, NULL, &val));
+	symbol sym;
+	try(as_symbol(val, &sym));
+	if(!(sym->flags & HAS_FUNCTION))
+		return make_error(UNBOUND_FUNC, sym->fq_name);
+	*out = sym->function;
+	return ok;
+}
+
+native_func(get_global) {
+	UNUSED(ctx);
+
+	value val;
+	try(parse_args(string_from_static_cstr("get-global"), args, 1, 0, NULL, &val));
+	symbol sym;
+	try(as_symbol(val, &sym));
+	if(!(sym->flags & HAS_GLOBAL))
+		return make_error(UNBOUND_VAR, sym->fq_name);
+	*out = sym->global;
+	return ok;
+}
+
+native_func(get_macro) {
+	UNUSED(ctx);
+
+	value val;
+	try(parse_args(string_from_static_cstr("get-macro"), args, 1, 0, NULL, &val));
+	symbol sym;
+	try(as_symbol(val, &sym));
+	if(!(sym->flags & HAS_MACRO))
+		return make_error(UNBOUND_MACRO, sym->fq_name);
+	*out = sym->macro;
+	return ok;
+}
+
+
 native_func(in_package) {
 	value sym_val;
-	try(parse_args(string_from_static_cstr("gensym"), args, 1, 0, NULL, &sym_val));
+	try(parse_args(string_from_static_cstr("in-package"), args, 1, 0, NULL, &sym_val));
 
 	symbol sym;
 	try(as_symbol(sym_val, &sym));
 
 	context_set_current_package(ctx, sym->name);
 	*out = NIL;
+	return ok;
+}
+
+native_func(nreverse_list) {
+	UNUSED(ctx);
+
+	value val;
+	try(parse_args(string_from_static_cstr("nreverse"), args, 1, 0, NULL, &val));
+
+	value prev = NIL;
+	while(val) {
+		struct cons* cons;
+		try(as_cons_ref(val, &cons));
+		value next = cons->tl;
+		cons->tl = prev;
+		prev = val;
+		val = next;
+	}
+	*out = prev;
+	return ok;
+}
+
+native_func(null) {
+	value val;
+	try(parse_args(string_from_static_cstr("null"), args, 1, 0, NULL, &val));
+	*out = context_bool(ctx, !val);
 	return ok;
 }
 

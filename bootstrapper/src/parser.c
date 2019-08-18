@@ -1,6 +1,6 @@
 #include "parser.h"
 #include "buffer.h"
-#include "lisp/lists.h"
+#include "lisp/prims.h"
 #include <stdlib.h>
 #include "common.h"
 
@@ -8,7 +8,7 @@
 
 static bool eof(string*);
 static bool is_whitespace(char);
-static error_return eat_whitespace(string*);
+static error_return eat_ignored(string*);
 
 static bool is_symbolish(char);
 
@@ -24,12 +24,12 @@ parse_rule(exprs, value);
 parse_rule(quoted, value);
 
 error_return parse_one(string src, context ctx, value* out) {
-	try(eat_whitespace(&src));
+	try(eat_ignored(&src));
 	return parse_expr(&src, ctx, out);
 }
 
 error_return parse_all(string src, context ctx, value* out) {
-	try(eat_whitespace(&src));
+	try(eat_ignored(&src));
 	return parse_exprs(&src, ctx, out);
 }
 
@@ -56,6 +56,17 @@ static bool is_whitespace(char c) {
 	return c <= ' ';
 }
 
+static error_return eat_comment(string* src) {
+	char peek_char;
+	error err;
+	while(1) {
+		err = advance(src, &peek_char);
+		if(err.code != OK || peek_char == '\n')
+			break;
+	}
+	return ok;
+}
+
 static error_return eat_whitespace(string* src) {
 	char peek_char;
 	error err;
@@ -66,6 +77,23 @@ static error_return eat_whitespace(string* src) {
 		if(!is_whitespace(peek_char))
 			break;
 		try(advance(src, &peek_char));
+	}
+	return ok;
+}
+
+static error_return eat_ignored(string* src) {
+	char peek_char;
+	error err;
+	while(1) {
+		err = peek(src, &peek_char);
+		if(err.code != OK)
+			break;
+		if(is_whitespace(peek_char))
+			try(eat_whitespace(src));
+		else if(peek_char == ';')
+			try(eat_comment(src));
+		else
+			break;
 	}
 	return ok;
 }
@@ -108,7 +136,7 @@ parse_rule(list_rest, value) {
 		switch(first) {
 		case ')':
 			try(advance(src, &first));
-			try(eat_whitespace(src));
+			try(eat_ignored(src));
 			return lisp_nreverse_list(make_list(1, *out), out, ctx);
 		default:
 			try(parse_expr(src, ctx, &head));
@@ -132,7 +160,7 @@ parse_rule(symbolish, string) {
 	}
 
 	*out = buffer_to_string(buf);
-	return eat_whitespace(src);
+	return eat_ignored(src);
 }
 
 parse_rule(symbolish_value, value) {
@@ -191,11 +219,11 @@ parse_rule(expr, value) {
 		return parse_lambda_list_keyword(src, ctx, out);
 	case '\'':
 		try(advance(src, &first));
-		try(eat_whitespace(src));
+		try(eat_ignored(src));
 		return parse_quoted(src, ctx, out);
 	case '(':
 		try(advance(src, &first));
-		try(eat_whitespace(src));
+		try(eat_ignored(src));
 		*out = NIL;
 		return parse_list_rest(src, ctx, out);
 	default:

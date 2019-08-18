@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include "common.h"
 
 #define MAKE_MIN(TY) TY min_##TY(TY x, TY y) { return x < y ? x : y; }
@@ -134,14 +135,16 @@ static string error_prefix(error_code code) {
 	case SYSCALL_FAILED: return string_from_static_cstr("System call failed: ");
 	case TODO: return string_from_static_cstr("TODO: ");
 	case TYPE_ERROR: return string_from_static_cstr("Type error: ");
+	case UNBOUND_CLASS: return string_from_static_cstr("Unbound class: ");
 	case UNBOUND_FUNC: return string_from_static_cstr("Unbound function: ");
+	case UNBOUND_MACRO: return string_from_static_cstr("Unbound macro: ");
 	case UNBOUND_VAR: return string_from_static_cstr("Unbound variable: ");
 	default: return stringf("Unknown error (%d): ", code);
 	}
 }
 
 error_return make_error(error_code code, string msg) {
-	return (error) { .code = code, .msg = string_cat(error_prefix(code), msg) };
+	return (error) { .code = code, .msg = string_cat(error_prefix(code), msg), .data = NULL };
 }
 
 error_return errorf(error_code code, const char* format, ...) {
@@ -159,7 +162,11 @@ void fail_at_error(const char* at, error err) {
 	fputs("At ", stderr);
 	fputs(at, stderr);
 	fputs(": ", stderr);
+	if(isatty(STDERR_FILENO))
+		fputs("\x1b[1;31m", stderr);
 	string_fputs(err.msg, stderr);
+	if(isatty(STDERR_FILENO))
+		fputs("\x1b[0m", stderr);
 	fputs("\n", stderr);
 	exit(err.code);
 }
@@ -167,7 +174,8 @@ void fail_at_error(const char* at, error err) {
 error_return error_add_msg(error err, string msg) {
 	return (error) {
 		.code = err.code,
-		.msg = string_cat(msg, string_cat(string_from_static_cstr(": "), err.msg))
+		.msg = string_cat(msg, string_cat(string_from_static_cstr(": "), err.msg)),
+		.data = NULL
 	};
 }
 

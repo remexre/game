@@ -1,6 +1,7 @@
 #include "eval.h"
 #include "../io.h"
 #include "args.h"
+#include "../parser.h"
 #include <gc.h>
 #include <stdio.h>
 #include "../common.h"
@@ -9,6 +10,14 @@ static error_return do_cond(value, value* out, env);
 static error_return do_let(value clauses, value body, value* out, env);
 static error_return make_lambda(symbol name, value, value* out, env);
 static error_return parse_lambda_list(value, struct closure* out, context ctx);
+
+error_return eval_string(string src, value* out, env env) {
+	value forms, result;
+	try(parse_all(src, env->ctx, &forms));
+	try(eval_body(forms, &result, env));
+	if(out) *out = result;
+	return ok;
+}
 
 error_return apply(value func_val, value args, value* out, context ctx) {
 #ifndef NDEBUG
@@ -52,74 +61,72 @@ error_return eval(value val, value* out, env env) {
 	string_fputs(show_value(val, true), stdout);
 #endif
 
+	if(!val) {
+		*out = NIL;
+		return ok;
+	}
+
+	symbol func_sym;
+	value args;
 	switch(val->tag) {
 	case TAG_CONS:
-		if(!val) {
-			*out = NIL;
+		try(as_symbol(val->value.cons.hd, &func_sym));
+		if(func_sym == context_lang(env->ctx, "cond")) {
+
+			return do_cond(val->value.cons.tl, out, env);
+
+		} else if(func_sym == context_lang(env->ctx, "function")) {
+
+			value sym_val;
+			try(parse_args(string_from_static_cstr("function"), val->value.cons.tl,
+				1, 0, NULL, &sym_val));
+
+			symbol sym;
+			try(as_symbol(sym_val, &sym));
+
+			if(!(sym->flags & HAS_FUNCTION))
+				return make_error(UNBOUND_FUNC, sym->fq_name);
+			*out = sym->function;
 			return ok;
+
+		} else if(func_sym == context_lang(env->ctx, "lambda")) {
+
+			return make_lambda(NULL, val->value.cons.tl, out, env);
+
+		} else if(func_sym == context_lang(env->ctx, "let")) {
+
+			struct cons clause_cons;
+			try(as_cons(val->value.cons.tl, &clause_cons));
+			return do_let(clause_cons.hd, clause_cons.tl, out, env);
+
+		} else if(func_sym == context_lang(env->ctx, "named-lambda")) {
+
+			symbol name;
+			struct cons lambda_cons;
+			try(as_cons(val->value.cons.tl, &lambda_cons));
+			try(as_symbol(lambda_cons.hd, &name));
+			return make_lambda(name, lambda_cons.tl, out, env);
+
+		} else if(func_sym == context_lang(env->ctx, "quote")) {
+
+			return parse_args(string_from_static_cstr("quote"), val->value.cons.tl,
+				1, 0, NULL, out);
+
+		} else if(func_sym->flags & HAS_MACRO) {
+
+			value src;
+			try(apply(func_sym->macro, val->value.cons.tl, &src, env->ctx));
+			return eval(src, out, env);
+
+		} else if(!(func_sym->flags & HAS_FUNCTION)) {
+
+			return make_error(UNBOUND_FUNC, func_sym->fq_name);
+
 		} else {
-			symbol func_sym;
-			value args;
 
-			try(as_symbol(val->value.cons.hd, &func_sym));
-			if(func_sym == context_lang(env->ctx, "cond")) {
+			try(eval_list(val->value.cons.tl, &args, env));
+			return apply(func_sym->function, args, out, env->ctx);
 
-				return do_cond(val->value.cons.tl, out, env);
-
-			} else if(func_sym == context_lang(env->ctx, "function")) {
-
-				value sym_val;
-				try(parse_args(string_from_static_cstr("function"), val->value.cons.tl,
-					1, 0, NULL, &sym_val));
-
-				symbol sym;
-				try(as_symbol(sym_val, &sym));
-
-				if(!(sym->flags & HAS_FUNCTION)) {
-					return make_error(UNBOUND_FUNC, sym->fq_name);
-				}
-				*out = sym->function;
-				return ok;
-
-			} else if(func_sym == context_lang(env->ctx, "lambda")) {
-
-				return make_lambda(NULL, val->value.cons.tl, out, env);
-
-			} else if(func_sym == context_lang(env->ctx, "let")) {
-
-				struct cons clause_cons;
-				try(as_cons(val->value.cons.tl, &clause_cons));
-				return do_let(clause_cons.hd, clause_cons.tl, out, env);
-
-			} else if(func_sym == context_lang(env->ctx, "named-lambda")) {
-
-				symbol name;
-				struct cons lambda_cons;
-				try(as_cons(val->value.cons.tl, &lambda_cons));
-				try(as_symbol(lambda_cons.hd, &name));
-				return make_lambda(name, lambda_cons.tl, out, env);
-
-			} else if(func_sym == context_lang(env->ctx, "quote")) {
-
-				return parse_args(string_from_static_cstr("quote"), val->value.cons.tl,
-					1, 0, NULL, out);
-
-			} else if(func_sym->flags & HAS_MACRO) {
-
-				value src;
-				try(apply(func_sym->macro, val->value.cons.tl, &src, env->ctx));
-				return eval(src, out, env);
-
-			} else if(!(func_sym->flags & HAS_FUNCTION)) {
-
-				return make_error(UNBOUND_FUNC, func_sym->fq_name);
-
-			} else {
-
-				try(eval_list(val->value.cons.tl, &args, env));
-				return apply(func_sym->function, args, out, env->ctx);
-
-			}
 		}
 	case TAG_SYMBOL:
 		return env_get(env, val->value.symbol, out);

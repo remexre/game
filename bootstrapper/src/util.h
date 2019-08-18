@@ -35,7 +35,8 @@
 #define unreachable do { \
 	fail_at_error(AT, (error) { \
 		.code = TODO, \
-		.msg = string_from_static_cstr("unreachable") \
+		.msg = string_from_static_cstr("unreachable"), \
+		.data = NULL \
 	}); \
 } while(0)
 
@@ -84,13 +85,16 @@ typedef enum {
 	SYSCALL_FAILED,
 	TODO,
 	TYPE_ERROR,
+	UNBOUND_CLASS,
 	UNBOUND_FUNC,
+	UNBOUND_MACRO,
 	UNBOUND_VAR
 } error_code;
 
 typedef struct {
 	error_code code;
 	string msg;
+	void* data;
 } error;
 
 #define error_return __attribute__((warn_unused_result)) error

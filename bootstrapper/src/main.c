@@ -1,16 +1,14 @@
+#include "buffer.h"
 #include "io.h"
-#include "lisp/context.h"
 #include "lisp/env.h"
 #include "lisp/eval.h"
-#include "lisp/value.h"
-#include "parser.h"
+#include "../tmp/lang.lisp.h"
 #include <linenoise.h>
 #include <stdlib.h>
 #include <stdnoreturn.h>
 #include <unistd.h>
 #include "common.h"
 
-static void show_error(error);
 static noreturn void usage(int argc, char **argv);
 
 int main(int argc, char **argv) {
@@ -29,29 +27,21 @@ int main(int argc, char **argv) {
 		}
 	}
 
-	if(optind + 1 != argc)
+	if(!repl && optind == argc)
 		usage(argc, argv);
-	string main_file_path = string_from_static_cstr(argv[optind]);
-
-	string main_file_src;
-	expect_ok(read_file(main_file_path, &main_file_src),
-		"Couldn't read main file");
 
 	context ctx = make_context();
-
-	value main_src;
-	expect_ok(parse_all(main_file_src, ctx, &main_src),
-		"Couldn't parse main file");
-
-	value result;
 	env env = make_env(ctx);
-	expect_ok(eval_body(main_src, &result, env),
-		"Error in main file");
 
-	if(result) {
-		printf("Main file evaluated to: ");
-		string_fputs(show_value(result, true), stdout);
+	string lang_lisp_src = (string) { .len = lang_lisp_len, .data = (char*) lang_lisp };
+	expect_ok(eval_string(lang_lisp_src, NULL, env), "Error evaluating lang file");
+
+	buffer cli_src = make_buffer(64);
+	for(size_t i = optind; i < argc; i++) {
+		buffer_append_cstr(&cli_src, argv[i]);
+		buffer_append_char(&cli_src, ' ');
 	}
+	expect_ok(eval_string(buffer_to_string(cli_src), NULL, env), "Error evaluating command line");
 
 	if(repl) {
 		linenoiseHistorySetMaxLen(1000);
@@ -60,22 +50,21 @@ int main(int argc, char **argv) {
 			string prompt = package_name(context_current_package(ctx));
 			prompt = string_cat(prompt, string_from_static_cstr("> "));
 
-			char* line = linenoise(cstr_from_string(prompt));
-			if(!line) break;
-			linenoiseHistoryAdd(line);
-			string src_str = string_from_cstr(line);
-			linenoiseFree(line);
+			char* line_cstr = linenoise(cstr_from_string(prompt));
+			if(!line_cstr) break;
+			linenoiseHistoryAdd(line_cstr);
+			string line = string_from_cstr(line_cstr);
+			linenoiseFree(line_cstr);
 
-			value src;
-			error err = parse_all(src_str, ctx, &src);
+			value result;
+			error err = eval_string(line, &result, env);
 			if(err.code != OK) {
-				show_error(err);
-				continue;
-			}
-
-			err = eval_body(src, &result, env);
-			if(err.code != OK) {
-				show_error(err);
+				if(isatty(STDERR_FILENO))
+					fputs("\x1b[1;31m", stderr);
+				string_fputs(err.msg, stderr);
+				if(isatty(STDERR_FILENO))
+					fputs("\x1b[0m", stderr);
+				fputs("\n", stderr);
 				continue;
 			}
 
@@ -87,17 +76,11 @@ int main(int argc, char **argv) {
 	return 0;
 }
 
-static void show_error(error err) {
-	if(isatty(STDERR_FILENO))
-		fputs("\x1b[1;31m", stderr);
-	string_fputs(err.msg, stderr);
-	if(isatty(STDERR_FILENO))
-		fputs("\x1b[0m", stderr);
-	fputs("\n", stderr);
-}
-
 static noreturn void usage(int argc, char **argv) {
-	fprintf(stderr, "Usage: %s [flags] main-file-path\n",
+	fprintf(stderr, "Usage: %s [flags] exprs...\n",
 		argc ? argv[0] : "game");
+	fprintf(stderr, "Flags:\n");
+	fprintf(stderr, "  -h  Shows this help message.\n");
+	fprintf(stderr, "  -r  Starts a REPL. If no exprs are provided, this must be set.\n");
 	exit(1);
 }

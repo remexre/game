@@ -59,6 +59,7 @@ context make_context(void) {
 	defun__sym->function = native_to_value(lisp_##FUNC, defun__sym); \
 } while(0)
 
+	DEFUN("apply-1", apply_1);
 	DEFUN("atom", atom);
 	DEFUN("car", car);
 	DEFUN("cdr", cdr);
@@ -67,7 +68,12 @@ context make_context(void) {
 	DEFUN("exit", exit);
 	DEFUN("funcall", funcall);
 	DEFUN("gensym", gensym);
+	DEFUN("get-class", get_class);
+	DEFUN("get-function", get_function);
+	DEFUN("get-global", get_global);
+	DEFUN("get-macro", get_macro);
 	DEFUN("in-package", in_package);
+	DEFUN("null", null);
 	DEFUN("print", print);
 	DEFUN("set-class", set_class);
 	DEFUN("set-function", set_function);
