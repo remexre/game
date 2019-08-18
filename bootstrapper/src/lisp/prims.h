@@ -6,6 +6,7 @@
 
 native_func(atom);
 native_func(funcall);
+native_func(function);
 native_func(print);
 native_func(set);
 native_func(set_class);

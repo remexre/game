@@ -63,6 +63,19 @@ error_return eval(value val, value* out, env env) {
 			try(as_symbol(val->value.cons.hd, &func_sym));
 			if(func_sym == context_lang(env->ctx, "cond")) {
 				return do_cond(val->value.cons.tl, out, env);
+			} else if(func_sym == context_lang(env->ctx, "function")) {
+				value sym_val;
+				try(parse_args(string_from_static_cstr("function"), val->value.cons.tl,
+					1, 0, NULL, &sym_val));
+
+				symbol sym;
+				try(as_symbol(sym_val, &sym));
+
+				if(!(sym->flags & HAS_FUNCTION)) {
+					return make_error(UNBOUND_FUNC, sym->fq_name);
+				}
+				*out = sym->function;
+				return ok;
 			} else if(func_sym == context_lang(env->ctx, "lambda")) {
 				return make_lambda(string_empty, val->value.cons.tl, out, env);
 			} else if(func_sym == context_lang(env->ctx, "named-lambda")) {
