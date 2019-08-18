@@ -1,14 +1,12 @@
-SUBDIRS := loader
+SUBDIRS := bootstrapper
 
-all: compile check
-check:
-	@$(foreach d,$(SUBDIRS),$(MAKE) -C $(d) $@ || exit 1;)
+all: compile
 clean:
 	@$(foreach d,$(SUBDIRS),$(MAKE) -C $(d) $@ || exit 1;)
 compile:
 	@$(foreach d,$(SUBDIRS),$(MAKE) -C $(d) $@ || exit 1;)
-.PHONY: all check clean compile
+.PHONY: all clean compile
 
 run: compile
-	./loader/out/game src/main.lisp
+	./bootstrapper/out/game src/main.lisp
 .PHONY: run
