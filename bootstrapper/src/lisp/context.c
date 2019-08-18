@@ -8,6 +8,7 @@ static package make_package(string);
 static symbol make_symbol(package, string);
 
 struct context_data {
+	size_t next_gensym;
 	string current_package;
 	struct pkgtab_link* pkgtab[PKGTAB_BUCKETS];
 };
@@ -30,11 +31,16 @@ struct symtab_link {
 context make_context(void) {
 	// Initialize the context.
 	context ctx = GC_malloc(sizeof(struct context_data));
+	ctx->next_gensym = 0;
 	ctx->current_package = string_from_static_cstr("lang");
 	upto(i, PKGTAB_BUCKETS)
 		ctx->pkgtab[i] = NULL;
 
-	// Initialize the LANG package.
+	// Create the gensym and keyword packages.
+	context_def_package(ctx, string_from_static_cstr("gensym"));
+	context_def_package(ctx, string_from_static_cstr("keyword"));
+
+	// Initialize the lang package.
 	package pkg = context_current_package(ctx);
 
 	symbol nil = package_intern_symbol(pkg, string_from_static_cstr("nil"));
@@ -59,6 +65,7 @@ context make_context(void) {
 	DEFUN("eq", eq);
 	DEFUN("exit", exit);
 	DEFUN("funcall", funcall);
+	DEFUN("gensym", gensym);
 	DEFUN("print", print);
 	DEFUN("set", set);
 	DEFUN("set-class", set_class);
@@ -101,12 +108,35 @@ static package make_package(string name) {
 	return package;
 }
 
+symbol context_gensym(context ctx) {
+	package pkg = context_def_package(ctx, string_from_static_cstr("gensym"));
+	while(1) {
+		string name = stringf("G%lu", ctx->next_gensym++);
+		if(unsafe_package_get_symbol(pkg, name))
+			continue;
+		return package_intern_symbol(pkg, name);
+	}
+}
+
 symbol context_intern_symbol(context ctx, string name) {
 	return package_intern_symbol(context_current_package(ctx), name);
 }
 
 symbol package_intern_symbol(package pkg, string name) {
 	HASHMAP_GET_OR_INSERT(pkg->symtab, symtab_link, sym, SYMTAB_BUCKETS, make_symbol(pkg, name));
+}
+
+symbol unsafe_package_get_symbol(package pkg, string name) {
+	hash h = djb2a(name);
+	struct symtab_link** entry = &pkg->symtab[h % SYMTAB_BUCKETS];
+	struct symtab_link* iter = *entry;
+	while(iter) {
+		if(string_cmp(iter->sym->name, name) == 0)
+			return iter->sym;
+		iter = iter->next;
+	}
+
+	return NULL;
 }
 
 static symbol make_symbol(package pkg, string name) {

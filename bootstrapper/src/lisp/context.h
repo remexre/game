@@ -16,9 +16,12 @@ context make_context(void);
 package context_current_package(context ctx);
 package context_def_package(context ctx, string name);
 
+symbol context_gensym(context ctx);
 symbol context_intern_symbol(context ctx, string name);
 symbol package_intern_symbol(package pkg, string name);
-error_return package_get_symbol(package pkg, string name, symbol* out);
+
+// Violates the invariant that symbol is a non-null type.
+symbol unsafe_package_get_symbol(package pkg, string name);
 
 string package_name(package);
 

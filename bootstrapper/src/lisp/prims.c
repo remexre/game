@@ -98,6 +98,12 @@ native_func(funcall) {
 	return apply(func_val, args_val, out, ctx);
 }
 
+native_func(gensym) {
+	try(parse_args(string_from_static_cstr("gensym"), args, 0, 0, NULL));
+	*out = symbol_to_value(context_gensym(ctx));
+	return ok;
+}
+
 native_func(print) {
 	UNUSED(ctx);
 
