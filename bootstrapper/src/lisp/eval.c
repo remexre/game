@@ -97,6 +97,12 @@ error_return eval(value val, value* out, env env) {
 				return parse_args(string_from_static_cstr("quote"), val->value.cons.tl,
 					1, 0, NULL, out);
 
+			} else if(func_sym->flags & HAS_MACRO) {
+
+				value src;
+				try(apply(func_sym->macro, val->value.cons.tl, &src, env->ctx));
+				return eval(src, out, env);
+
 			} else if(!(func_sym->flags & HAS_FUNCTION)) {
 
 				return make_error(UNBOUND_FUNC, func_sym->fq_name);
