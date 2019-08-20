@@ -89,6 +89,13 @@ value symbol_to_value(symbol sym) {
 	return val;
 }
 
+value host_to_value(void* ptr) {
+	value val = GC_malloc(sizeof(struct value));
+	val->tag = TAG_HOST;
+	val->value.host = ptr;
+	return val;
+}
+
 value make_cons(value hd, value tl) {
 	value val = GC_malloc(sizeof(struct value));
 	val->tag = TAG_CONS;
@@ -170,6 +177,12 @@ error_return as_string(context ctx, value val, string* out) {
 error_return as_symbol(value val, symbol* out) {
 	check_type(val, TAG_SYMBOL);
 	*out = val->value.symbol;
+	return ok;
+}
+
+error_return as_host(value val, void** out) {
+	check_type(val, TAG_HOST);
+	*out = val->value.host;
 	return ok;
 }
 

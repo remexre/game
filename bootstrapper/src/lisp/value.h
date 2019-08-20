@@ -74,6 +74,7 @@ union value_data {
 	double float_;
 	symbol symbol;
 	vector vector;
+	void* host;
 };
 
 struct value {
@@ -109,6 +110,7 @@ value float_to_value(double);
 value native_to_value(error (*)(value, value*, context), symbol name);
 value string_to_value(string);
 value symbol_to_value(symbol);
+value host_to_value(void*);
 
 value make_cons(value, value);
 value make_list(size_t, ...);
@@ -121,6 +123,7 @@ error_return as_function(value val, struct func* out);
 error_return as_nil(value);
 error_return as_string(context, value, string* out);
 error_return as_symbol(value, symbol* out);
+error_return as_host(value val, void** out);
 
 string show_value(value, bool newline);
 
