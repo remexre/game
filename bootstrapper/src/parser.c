@@ -9,9 +9,7 @@
 
 #define parse_rule(NAME, TY) static error_return parse_##NAME(string* src, context ctx, TY* out)
 
-static bool eof(string*);
 static bool is_whitespace(char);
-static error_return eat_ignored(string*);
 
 static bool is_symbolish(char);
 
@@ -25,20 +23,10 @@ parse_rule(list_rest, value);
 parse_rule(symbolish, string);
 parse_rule(symbolish_value, value);
 parse_rule(expr, value);
-parse_rule(exprs, value);
 
-error_return parse_one(string src, context ctx, value* out) {
-	try(eat_ignored(&src));
-	return parse_expr(&src, ctx, out);
-}
-
-error_return parse_all(string src, context ctx, value* out) {
-	try(eat_ignored(&src));
-	return parse_exprs(&src, ctx, out);
-}
-
-static bool eof(string* src) {
-	return string_len(*src) == 0;
+error_return parse_one(string* src, context ctx, value* out) {
+	try(eat_ignored(src));
+	return parse_expr(src, ctx, out);
 }
 
 error_return peek(string* src, char* out) {
@@ -85,7 +73,7 @@ static error_return eat_whitespace(string* src) {
 	return ok;
 }
 
-static error_return eat_ignored(string* src) {
+error_return eat_ignored(string* src) {
 	char peek_char;
 	error err;
 	while(1) {
@@ -272,17 +260,6 @@ parse_rule(expr, value) {
 			return parse_symbolish_value(src, ctx, out);
 		return errorf(SYNTAX_ERROR, "Unexpected character: 0x%02x", (int) first);
 	}
-}
-
-parse_rule(exprs, value) {
-	*out = NIL;
-	while(!eof(src)) {
-		value head;
-		try(parse_expr(src, ctx, &head));
-		*out = make_cons(head, *out);
-	}
-	try(lisp_nreverse_list(make_list(1, *out), out, ctx));
-	return ok;
 }
 
 static error_return parse_prefix_rm(string* src, context ctx, const char* name, value* out) {

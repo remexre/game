@@ -13,9 +13,14 @@ static error_return parse_lambda_list(value, struct closure* out, context ctx);
 
 error_return eval_string(string src, value* out, env e) {
 	value forms, result;
-	try(parse_all(src, e->ctx, &forms));
-	try(eval_body(forms, &result, e));
-	if(out) *out = result;
+	while(1) {
+		try(eat_ignored(&src));
+		if(!src.len)
+			break;
+		try(parse_one(&src, e->ctx, &forms));
+		try(eval(forms, &result, e));
+		if(out) *out = result;
+	}
 	return ok;
 }
 
