@@ -9,17 +9,23 @@
 static const char* glfwLastError = NULL;
 static void glfwErrorCallback(int errorCode, const char* description) {
 	UNUSED(errorCode);
-	if(isatty(STDERR_FILENO))
-		fputs("\x1b[1;31m", stderr);
-	fputs(description, stderr);
-	if(isatty(STDERR_FILENO))
-		fputs("\x1b[0m", stderr);
+	if(glfwLastError) {
+		if(isatty(STDERR_FILENO))
+			fputs("\x1b[1;31m", stderr);
+		fputs(glfwLastError, stderr);
+		if(isatty(STDERR_FILENO))
+			fputs("\x1b[0m", stderr);
+		putc('\n', stderr);
+	}
 	glfwLastError = description;
+}
+
+void glfwPreinit(void) {
+	glfwSetErrorCallback(glfwErrorCallback);
 }
 
 native_func(glfw_init) {
 	try(parse_args(string_from_static_cstr("glfwInit"), args, 0, 0, NULL));
-	glfwSetErrorCallback(glfwErrorCallback);
 	if(!glfwInit())
 		*out = symbol_to_value(context_intern_static(ctx, "gl-raw", "error-glfw-init-failed"));
 	else
@@ -50,15 +56,11 @@ native_func(glfw_create_window) {
 
 	GLFWwindow* window = glfwCreateWindow((int) width, (int) height, cstr_from_string(title),
 		full_screen ? glfwGetPrimaryMonitor() : NULL, NULL);
-	if(!window) {
+	if(window)
+		*out = host_to_value(window);
+	else
 		*out = symbol_to_value(context_intern_static(ctx, "gl-raw",
 			"error-glfw-create-window-failed"));
-		return ok;
-	}
-
-	// TODO
-	UNUSED(window);
-	*out = NIL;
 	return ok;
 }
 
@@ -70,5 +72,17 @@ native_func(glfw_destroy_window) {
 		&window_obj_val));
 
 	*out = NIL;
+	return ok;
+}
+
+native_func(glfw_get_error) {
+	UNUSED(ctx);
+
+	try(parse_args(string_from_static_cstr("glfw-get-error"), args, 0, 0, NULL));
+	if(glfwLastError)
+		*out = string_to_value(string_from_cstr(glfwLastError));
+	else
+		*out = NIL;
+	glfwLastError = NULL;
 	return ok;
 }

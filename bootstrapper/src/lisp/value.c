@@ -221,8 +221,10 @@ static void write_value_to_buffer(buffer* buf, value val) {
 	case TAG_SYMBOL:
 		buffer_append_string(buf, val->value.symbol->fq_name);
 		break;
-	// case TAG_STRING:
 	// case TAG_VECTOR:
+	case TAG_HOST:
+		buffer_append_string(buf, stringf("#<host-value at %p>", val->value.host));
+		break;
 	default:
 		buffer_append_string(buf, stringf("#<unknown-value %02x:%016lx>",
 			val->tag, val->value.fixnum));

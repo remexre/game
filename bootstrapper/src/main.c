@@ -3,6 +3,7 @@
 #include "lisp/args.h"
 #include "lisp/env.h"
 #include "lisp/eval.h"
+#include "lisp/gl.h"
 #include "../tmp/lang.lisp.h"
 #include <linenoise.h>
 #include <stdlib.h>
@@ -15,10 +16,16 @@ static native_func(linenoise);
 
 int main(int argc, char **argv) {
 	bool repl = false;
+	const char* history_path = NULL;
 
 	int c;
-	while((c = getopt(argc, argv, "hr")) != -1) {
+	while((c = getopt(argc, argv, "hH:r")) != -1) {
 		switch(c) {
+		case 'H':
+			if(history_path)
+				usage(argc, argv);
+			history_path = optarg;
+			break;
 		case 'r':
 			repl = true;
 			break;
@@ -31,6 +38,8 @@ int main(int argc, char **argv) {
 
 	if(!repl && optind == argc)
 		usage(argc, argv);
+
+	glfwPreinit();
 
 	context ctx = make_context();
 	env e = make_env(ctx);
@@ -52,6 +61,16 @@ int main(int argc, char **argv) {
 	if(repl) {
 		linenoiseHistorySetMaxLen(1000);
 		linenoiseSetMultiLine(1);
+
+		if(history_path && linenoiseHistoryLoad(history_path)) {
+			if(isatty(STDERR_FILENO))
+				fputs("\x1b[1;31m", stderr);
+			fputs("Failed to load history.\n", stderr);
+			if(isatty(STDERR_FILENO))
+				fputs("\x1b[0m", stderr);
+			fputs("\n", stderr);
+		}
+
 		while(1) {
 			string prompt = package_name(context_current_package(ctx));
 			prompt = string_cat(prompt, string_from_static_cstr("> "));
@@ -59,6 +78,7 @@ int main(int argc, char **argv) {
 			char* line_cstr = linenoise(cstr_from_string(prompt));
 			if(!line_cstr) break;
 			linenoiseHistoryAdd(line_cstr);
+			linenoiseHistorySave(history_path);
 			string line = string_from_cstr(line_cstr);
 			linenoiseFree(line_cstr);
 
@@ -86,8 +106,9 @@ static noreturn void usage(int argc, char **argv) {
 	fprintf(stderr, "Usage: %s [flags] exprs...\n",
 		argc ? argv[0] : "game");
 	fprintf(stderr, "Flags:\n");
-	fprintf(stderr, "  -h  Shows this help message.\n");
-	fprintf(stderr, "  -r  Starts a REPL. If no exprs are provided, this must be set.\n");
+	fprintf(stderr, "  -h       Shows this help message.\n");
+	fprintf(stderr, "  -H path  Uses the given file for history for the REPL.\n");
+	fprintf(stderr, "  -r       Starts a REPL. If no exprs are provided, this must be set.\n");
 	exit(1);
 }
 

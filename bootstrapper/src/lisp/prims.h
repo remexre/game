@@ -30,7 +30,9 @@ native_func(set_class);
 native_func(set_function);
 native_func(set_global);
 native_func(set_macro);
+native_func(sleep);
 native_func(symbol_name);
 native_func(symbol_package);
+native_func(unwind_protect_thunk);
 
 #endif

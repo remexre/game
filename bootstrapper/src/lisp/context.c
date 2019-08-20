@@ -84,8 +84,10 @@ context make_context(void) {
 	DEFUN("set-function", set_function);
 	DEFUN("set-global", set_global);
 	DEFUN("set-macro", set_macro);
+	DEFUN("sleep", sleep);
 	DEFUN("symbol-name", symbol_name);
 	DEFUN("symbol-package", symbol_package);
+	DEFUN("unwind-protect-thunk", unwind_protect_thunk);
 
 	// Initialize the gl-raw package.
 	pkg = context_def_package(ctx, string_from_static_cstr("gl-raw"));
@@ -94,6 +96,7 @@ context make_context(void) {
 	DEFUN("glfwTerminate", glfw_terminate);
 	DEFUN("glfwCreateWindow", glfw_create_window);
 	DEFUN("glfwDestroyWindow", glfw_destroy_window);
+	DEFUN("glfw-get-error", glfw_get_error);
 
 	return ctx;
 }

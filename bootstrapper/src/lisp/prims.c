@@ -4,6 +4,7 @@
 #include "eval.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include "../common.h"
 
 native_func(apply_1) {
@@ -342,6 +343,21 @@ native_func(set_macro) {
 	return ok;
 }
 
+native_func(sleep) {
+	UNUSED(ctx);
+
+	value time_val;
+	try(parse_args(string_from_static_cstr("sleep"), args, 1, 0, NULL, &time_val));
+
+	int64_t time;
+	try(as_fixnum(time_val, &time));
+
+	usleep(time * 1000);
+
+	*out = NIL;
+	return ok;
+}
+
 native_func(symbol_name) {
 	UNUSED(ctx);
 
@@ -366,4 +382,15 @@ native_func(symbol_package) {
 
 	*out = string_to_value(package_name(sym->package));
 	return ok;
+}
+
+native_func(unwind_protect_thunk) {
+	value protected, cleanup;
+	try(parse_args(string_from_static_cstr("unwind-protect-thunk"), args, 2, 0, NULL,
+		&protected, &cleanup));
+
+	value dummy;
+	error err = apply(protected, NIL, out, ctx);
+	try(apply(cleanup, NIL, &dummy, ctx));
+	return err;
 }
