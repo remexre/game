@@ -6,6 +6,8 @@
 #include "../util.h"
 #include <stdint.h>
 
+#define SLOTS_BUCKETS 8
+
 enum tag {
 	TAG_CONS,
 	TAG_FIXNUM,
@@ -52,6 +54,13 @@ struct cons {
 	value tl;
 };
 
+typedef struct object* object;
+
+struct object {
+	object class;
+	struct slots_link* slots[SLOTS_BUCKETS];
+};
+
 enum vector_type {
 	VT_CHAR,
 	VT_FLOAT,
@@ -67,14 +76,22 @@ typedef struct {
 	void* data;
 } vector;
 
+enum host_type {
+	GLFW_WINDOW
+};
+
 union value_data {
 	struct cons cons;
 	struct func func;
 	int64_t fixnum;
 	double float_;
+	object object;
 	symbol symbol;
 	vector vector;
-	void* host;
+	struct {
+		enum host_type type;
+		void* ptr;
+	} host;
 };
 
 struct value {
@@ -104,13 +121,18 @@ struct symbol_data {
 	value macro;
 };
 
+object make_object(object class);
+value get_slot(object, symbol);
+void set_slot(object, symbol, value);
+
 value closure_to_value(struct closure, symbol name);
 value fixnum_to_value(int64_t);
 value float_to_value(double);
 value native_to_value(error (*)(value, value*, context), symbol name);
+value object_to_value(object);
 value string_to_value(string);
 value symbol_to_value(symbol);
-value host_to_value(void*);
+value host_to_value(enum host_type, void*);
 
 value make_cons(value, value);
 value make_list(size_t, ...);
@@ -121,10 +143,12 @@ error_return as_fixnum(value val, int64_t* out);
 error_return as_float(value val, double* out);
 error_return as_function(value val, struct func* out);
 error_return as_nil(value);
+error_return as_object(value, object* out);
 error_return as_string(context, value, string* out);
 error_return as_symbol(value, symbol* out);
-error_return as_host(value val, void** out);
+error_return as_host(value val, enum host_type, void** out);
 
+string host_type_name(enum host_type);
 string show_value(value, bool newline);
 
 #endif

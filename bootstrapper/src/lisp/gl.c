@@ -57,7 +57,7 @@ native_func(glfw_create_window) {
 	GLFWwindow* window = glfwCreateWindow((int) width, (int) height, cstr_from_string(title),
 		full_screen ? glfwGetPrimaryMonitor() : NULL, NULL);
 	if(window)
-		*out = host_to_value(window);
+		*out = host_to_value(GLFW_WINDOW, window);
 	else
 		*out = symbol_to_value(context_intern_static(ctx, "gl-raw",
 			"error-glfw-create-window-failed"));
@@ -67,12 +67,26 @@ native_func(glfw_create_window) {
 native_func(glfw_destroy_window) {
 	UNUSED(ctx);
 
-	value window_obj_val;
+	value window_val;
 	try(parse_args(string_from_static_cstr("glfwDestroyWindow"), args, 1, 0, NULL,
-		&window_obj_val));
+		&window_val));
+
+	void* window_voidp;
+	try(as_host(window_val, GLFW_WINDOW, &window_voidp));
+
+	GLFWwindow* window = (GLFWwindow*) window_voidp;
+
+	glfwDestroyWindow(window);
 
 	*out = NIL;
 	return ok;
+}
+
+native_func(glfw_swap_buffers) {
+	UNUSED(ctx);
+
+	*out = args;
+	todo;
 }
 
 native_func(glfw_get_error) {

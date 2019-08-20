@@ -40,6 +40,39 @@ string tag_name(enum tag tag) {
 	}
 }
 
+struct slots_link {
+	symbol name;
+	value val;
+	struct slots_link* next;
+};
+
+object make_object(object class) {
+	object obj = GC_malloc(sizeof(struct object));
+	obj->class = class;
+	for(size_t i = 0; i < SLOTS_BUCKETS; i++)
+		obj->slots[i] = NULL;
+	return obj;
+}
+
+value get_slot(object obj, symbol name) {
+	struct slots_link* bucket = obj->slots[name->fq_hash % SLOTS_BUCKETS];
+	while(bucket) {
+		if(string_cmp(bucket->name->fq_name, name->fq_name) == 0)
+			return bucket->val;
+		bucket = bucket->next;
+	}
+	return NIL;
+}
+
+void set_slot(object obj, symbol name, value val) {
+	struct slots_link** bucket = &obj->slots[name->fq_hash % SLOTS_BUCKETS];
+	struct slots_link* link = GC_malloc(sizeof(struct slots_link));
+	link->name = name;
+	link->val = val;
+	link->next = *bucket;
+	*bucket = link->next;
+}
+
 value closure_to_value(struct closure closure, symbol name) {
 	value val = GC_malloc(sizeof(struct value));
 	val->tag = TAG_FUNCTION;
@@ -72,6 +105,13 @@ value native_to_value(error (*native)(value, value*, context), symbol name) {
 	return val;
 }
 
+value object_to_value(object obj) {
+	value val = GC_malloc(sizeof(struct value));
+	val->tag = TAG_OBJECT;
+	val->value.object = obj;
+	return val;
+}
+
 value string_to_value(string str) {
 	value val = GC_malloc(sizeof(struct value));
 	val->tag = TAG_VECTOR;
@@ -89,10 +129,11 @@ value symbol_to_value(symbol sym) {
 	return val;
 }
 
-value host_to_value(void* ptr) {
+value host_to_value(enum host_type type, void* ptr) {
 	value val = GC_malloc(sizeof(struct value));
 	val->tag = TAG_HOST;
-	val->value.host = ptr;
+	val->value.host.type = type;
+	val->value.host.ptr = ptr;
 	return val;
 }
 
@@ -159,6 +200,12 @@ error_return as_nil(value val) {
 		string_cat(string_from_static_cstr("Expected nil, found"), get_tag_name(val)));
 }
 
+error_return as_object(value val, object* out) {
+	check_type(val, TAG_OBJECT);
+	*out = val->value.object;
+	return ok;
+}
+
 error_return as_string(context ctx, value val, string* out) {
 	if(val && val->tag == TAG_VECTOR && val->value.vector.type == VT_CHAR) {
 		out->len = val->value.vector.len;
@@ -180,10 +227,25 @@ error_return as_symbol(value val, symbol* out) {
 	return ok;
 }
 
-error_return as_host(value val, void** out) {
+error_return as_host(value val, enum host_type type, void** out) {
 	check_type(val, TAG_HOST);
-	*out = val->value.host;
+	if(val->value.host.type != type) {
+		return make_error(TYPE_ERROR,
+			string_cat(string_from_static_cstr("Expected "),
+				string_cat(host_type_name(type),
+					string_cat(string_from_static_cstr(", found "),
+						host_type_name(val->value.host.type)))));
+	}
+
+	*out = val->value.host.ptr;
 	return ok;
+}
+
+string host_type_name(enum host_type type) {
+	switch(type) {
+	case GLFW_WINDOW: return string_from_static_cstr("GLFWwindow");
+	default: return string_from_static_cstr("unknown");
+	}
 }
 
 static void write_value_to_buffer(buffer* buf, value val) {
@@ -223,7 +285,9 @@ static void write_value_to_buffer(buffer* buf, value val) {
 		break;
 	// case TAG_VECTOR:
 	case TAG_HOST:
-		buffer_append_string(buf, stringf("#<host-value at %p>", val->value.host));
+		buffer_append_cstr(buf, "#<host-value ");
+		buffer_append_string(buf, host_type_name(val->value.host.type));
+		buffer_append_string(buf, stringf(" at %p>", val->value.host.ptr));
 		break;
 	default:
 		buffer_append_string(buf, stringf("#<unknown-value %02x:%016lx>",

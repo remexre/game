@@ -99,9 +99,27 @@
     (list 'quote form)
     (cons 'append (map #'process-quasiquote form))))
 
+(defmacro setq (name expr)
+  `(set-global ',name ,expr))
+
 (defmacro when-as (name expr &body body)
   `(let ((,name ,expr))
      (when ,name ,@body)))
+
+(defmacro with-gensyms (names &body body)
+  `(let ,(map (lambda (name) `(,name (gensym))) names)
+     ,@body))
+
+(defmacro defclass (name supers &rest slots)
+  `(progn
+     (set-class `,name (make-instance type))
+     ; TODO: set slots on the class
+     ))
+
+(defmacro new (name &rest slots)
+  `(make-instance (get-class ,name))
+  ; TODO: slots
+  )
 
 (defmacro defpackage (name &rest properties)
   `(progn
@@ -120,48 +138,11 @@
   `(progn
      ,@(map (lambda (sym) `(import (quote ,sym))) (exports-of pkg))))
 
-
-
 (defpackage :gl-mid
   (:use :gl-raw :lang))
-
-(in-package :gl-mid)
-
-(defun glfw-init ()
-  (when (eq (glfwInit) 'gl-raw:error-glfw-init-failed)
-    (throw it or something, idk)
-    (i guess i should implement the condition system?)))
-
-(defun glfw-create-window (&rest args)
-  (let ((win (apply #'glfwCreateWindow args)))
-    (when (eq win 'gl-raw:error-glfw-create-window-failed)
-      (throw it or something, idk)
-      (i guess i should implement a condition system?)
-      (prolly wont tho))
-    win))
-
-
 
 (defpackage :gl
   (:use :gl-mid :gl-raw :lang))
 
-(in-package :gl)
-
-(defmacro with-glfw (&body body)
-  `(unwind-protect
-    (progn
-      (glfw-init)
-      ,@body)
-    (glfwTerminate)))
-
-(defmacro with-glfw-window (window &body body)
-  `(let ((,(car window) (glfw-create-window ,@(cdr window))))
-     (unwind-protect (progn ,@body)
-       (glfwDestroyWindow ,(car window)))))
-
-
-
 (defpackage :user
   (:use :gl :lang))
-
-(in-package 'user)

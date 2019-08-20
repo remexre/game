@@ -4,6 +4,8 @@
 #include "lisp/env.h"
 #include "lisp/eval.h"
 #include "lisp/gl.h"
+#include "../tmp/gl.lisp.h"
+#include "../tmp/gl-mid.lisp.h"
 #include "../tmp/lang.lisp.h"
 #include <linenoise.h>
 #include <stdlib.h>
@@ -49,7 +51,15 @@ int main(int argc, char **argv) {
 	linenoise_sym->function = native_to_value(lisp_linenoise, linenoise_sym);
 
 	string lang_lisp_src = (string) { .len = lang_lisp_len, .data = (char*) lang_lisp };
-	expect_ok(eval_string(lang_lisp_src, NULL, e), "Error evaluating lang file");
+	expect_ok(eval_string(lang_lisp_src, NULL, e), "Error evaluating lang.lisp");
+
+	string gl_mid_lisp_src = (string) { .len = gl_mid_lisp_len, .data = (char*) gl_mid_lisp };
+	expect_ok(eval_string(gl_mid_lisp_src, NULL, e), "Error evaluating gl-mid.lisp");
+
+	string gl_lisp_src = (string) { .len = gl_lisp_len, .data = (char*) gl_lisp };
+	expect_ok(eval_string(gl_lisp_src, NULL, e), "Error evaluating gl.lisp");
+
+	context_set_current_package(ctx, string_from_static_cstr("user"));
 
 	buffer cli_src = make_buffer(64);
 	for(int i = optind; i < argc; i++) {

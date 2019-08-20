@@ -10,6 +10,7 @@ native_func(glfw_init);
 native_func(glfw_terminate);
 native_func(glfw_create_window);
 native_func(glfw_destroy_window);
+native_func(glfw_swap_buffers);
 native_func(glfw_get_error);
 
 native_func(gl_compile_shader);

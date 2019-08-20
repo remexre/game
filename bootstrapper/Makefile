@@ -8,6 +8,8 @@ LDFLAGS_REL := -fsanitize=address
 UNITS := buffer io lisp/args lisp/context lisp/env lisp/eval lisp/gl lisp/prims lisp/value parser \
 	util
 
+LISP_UNITS := gl gl-mid lang
+
 CFLAGS += -Isrc/ext/linenoise
 UNITS += ext/linenoise/linenoise 
 
@@ -38,13 +40,13 @@ tmp/%.rel.o: src/%.c
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) $(CFLAGS_REL) -c -o $@ $<
 
-tmp/lang.lisp.h: src/lang.lisp
+tmp/%.lisp.h: src/%.lisp
 	@mkdir -p $(dir $@)
-	cd src && xxd -i lang.lisp > ../$@
+	cd src && xxd -i $*.lisp > ../$@
 
-tmp/main.d: tmp/lang.lisp.h
-tmp/main.dbg.o: tmp/lang.lisp.h
-tmp/main.rel.o: tmp/lang.lisp.h
+tmp/main.d: $(patsubst %,tmp/%.lisp.h,$(LISP_UNITS))
+tmp/main.dbg.o: $(patsubst %,tmp/%.lisp.h,$(LISP_UNITS))
+tmp/main.rel.o: $(patsubst %,tmp/%.lisp.h,$(LISP_UNITS))
 
 tmp/%.d: src/%.c
 	@set -e; mkdir -p $(dir $@); rm -f $@; \

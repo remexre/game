@@ -46,6 +46,19 @@ native_func(cdr) {
 	return ok;
 }
 
+native_func(class_of) {
+	UNUSED(ctx);
+
+	value obj_val;
+	try(parse_args(string_from_static_cstr("class-of"), args, 1, 0, NULL, &obj_val));
+
+	object obj;
+	try(as_object(obj_val, &obj));
+
+	*out = object_to_value(obj->class);
+	return ok;
+}
+
 native_func(cons) {
 	UNUSED(ctx);
 
@@ -87,11 +100,15 @@ native_func(eq) {
 		case TAG_SYMBOL:
 			*out = context_bool(ctx, l->value.symbol == r->value.symbol);
 			return ok;
+		case TAG_OBJECT:
+			*out = context_bool(ctx, l->value.object == r->value.object);
+			return ok;
+		case TAG_HOST:
+			*out = context_bool(ctx, l->value.host.ptr == r->value.host.ptr);
+			return ok;
 		case TAG_CONS:
 		case TAG_FUNCTION:
-		case TAG_OBJECT:
 		case TAG_VECTOR:
-		case TAG_HOST:
 			*out = NIL;
 			return ok;
 		default: return errorf(TYPE_ERROR, "Can't eq unknown tag %02x", l->tag);
@@ -149,7 +166,7 @@ native_func(get_class) {
 	try(as_symbol(val, &sym));
 	if(!(sym->flags & HAS_CLASS))
 		return make_error(UNBOUND_CLASS, sym->fq_name);
-	*out = sym->function;
+	*out = sym->class;
 	return ok;
 }
 
@@ -192,6 +209,21 @@ native_func(get_macro) {
 	return ok;
 }
 
+native_func(get_slot) {
+	UNUSED(ctx);
+
+	value obj_val, name_val;
+	try(parse_args(string_from_static_cstr("get-slot"), args, 2, 0, NULL, &obj_val, &name_val));
+
+	object obj;
+	symbol name;
+	try(as_object(obj_val, &obj));
+	try(as_symbol(name_val, &name));
+
+	*out = get_slot(obj, name);
+	return ok;
+}
+
 native_func(import) {
 	value sym_val;
 	try(parse_args(string_from_static_cstr("import"), args, 1, 0, NULL, &sym_val));
@@ -227,6 +259,19 @@ native_func(in_package) {
 
 	context_set_current_package(ctx, sym->name);
 	*out = NIL;
+	return ok;
+}
+
+native_func(make_instance) {
+	UNUSED(ctx);
+
+	value class_val;
+	try(parse_args(string_from_static_cstr("make-instance"), args, 1, 0, NULL, &class_val));
+
+	object class;
+	try(as_object(class_val, &class));
+
+	*out = object_to_value(make_object(class));
 	return ok;
 }
 
@@ -338,6 +383,24 @@ native_func(set_macro) {
 
 	sym->flags |= HAS_MACRO;
 	sym->macro = val;
+
+	*out = NIL;
+	return ok;
+}
+
+native_func(set_slot) {
+	UNUSED(ctx);
+
+	value obj_val, name_val, val;
+	try(parse_args(string_from_static_cstr("set-slot"), args, 3, 0, NULL,
+		&obj_val, &name_val, &val));
+
+	object obj;
+	symbol name;
+	try(as_object(obj_val, &obj));
+	try(as_symbol(name_val, &name));
+
+	set_slot(obj, name, val);
 
 	*out = NIL;
 	return ok;

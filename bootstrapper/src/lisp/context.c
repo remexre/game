@@ -53,6 +53,13 @@ context make_context(void) {
 	t->flags |= HAS_GLOBAL;
 	t->global = symbol_to_value(t);
 
+	symbol type = package_intern_symbol(pkg, string_from_static_cstr("type"));
+	type->flags |= HAS_GLOBAL;
+
+	object type_object = make_object(NULL);
+	type_object->class = type_object;
+	type->global = type->class = object_to_value(type_object);
+
 #define DEFUN(NAME, FUNC) do { \
 	string defun__name = string_from_static_cstr(NAME); \
 	symbol defun__sym = package_intern_symbol(pkg, defun__name); \
@@ -64,6 +71,7 @@ context make_context(void) {
 	DEFUN("atom", atom);
 	DEFUN("car", car);
 	DEFUN("cdr", cdr);
+	DEFUN("class-of", class_of);
 	DEFUN("cons", cons);
 	DEFUN("define-package", define_package);
 	DEFUN("eq", eq);
@@ -75,15 +83,18 @@ context make_context(void) {
 	DEFUN("get-function", get_function);
 	DEFUN("get-global", get_global);
 	DEFUN("get-macro", get_macro);
+	DEFUN("get-slot", get_slot);
 	DEFUN("import", import);
 	DEFUN("import-to", import_to);
 	DEFUN("in-package", in_package);
+	DEFUN("make-instance", make_instance);
 	DEFUN("null", null);
 	DEFUN("print", print);
 	DEFUN("set-class", set_class);
 	DEFUN("set-function", set_function);
 	DEFUN("set-global", set_global);
 	DEFUN("set-macro", set_macro);
+	DEFUN("set-slot", set_slot);
 	DEFUN("sleep", sleep);
 	DEFUN("symbol-name", symbol_name);
 	DEFUN("symbol-package", symbol_package);
@@ -96,6 +107,7 @@ context make_context(void) {
 	DEFUN("glfwTerminate", glfw_terminate);
 	DEFUN("glfwCreateWindow", glfw_create_window);
 	DEFUN("glfwDestroyWindow", glfw_destroy_window);
+	DEFUN("glfwSwapBuffers", glfw_swap_buffers);
 	DEFUN("glfw-get-error", glfw_get_error);
 
 	return ctx;
