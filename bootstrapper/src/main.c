@@ -33,21 +33,21 @@ int main(int argc, char **argv) {
 		usage(argc, argv);
 
 	context ctx = make_context();
-	env env = make_env(ctx);
+	env e = make_env(ctx);
 
 	symbol linenoise_sym = context_intern_static(ctx, "linenoise", "linenoise");
 	linenoise_sym->flags |= HAS_FUNCTION;
 	linenoise_sym->function = native_to_value(lisp_linenoise, linenoise_sym);
 
 	string lang_lisp_src = (string) { .len = lang_lisp_len, .data = (char*) lang_lisp };
-	expect_ok(eval_string(lang_lisp_src, NULL, env), "Error evaluating lang file");
+	expect_ok(eval_string(lang_lisp_src, NULL, e), "Error evaluating lang file");
 
 	buffer cli_src = make_buffer(64);
-	for(size_t i = optind; i < argc; i++) {
+	for(int i = optind; i < argc; i++) {
 		buffer_append_cstr(&cli_src, argv[i]);
 		buffer_append_char(&cli_src, ' ');
 	}
-	expect_ok(eval_string(buffer_to_string(cli_src), NULL, env), "Error evaluating command line");
+	expect_ok(eval_string(buffer_to_string(cli_src), NULL, e), "Error evaluating command line");
 
 	if(repl) {
 		linenoiseHistorySetMaxLen(1000);
@@ -63,7 +63,7 @@ int main(int argc, char **argv) {
 			linenoiseFree(line_cstr);
 
 			value result;
-			error err = eval_string(line, &result, env);
+			error err = eval_string(line, &result, e);
 			if(err.code != OK) {
 				if(isatty(STDERR_FILENO))
 					fputs("\x1b[1;31m", stderr);

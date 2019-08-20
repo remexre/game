@@ -44,9 +44,9 @@ native_func(gl_make_window) {
 		return ok;
 	}
 
-	EGLContext context = eglCreateContext(display, config, EGL_NO_CONTEXT, NULL);
-	if(context == EGL_NO_CONTEXT) {
-		*out = symbol_to_value(context_intern_static(ctx, "gl-raw", "error-egl-create-context"));
+	EGLContext egl_ctx = eglCreateContext(display, config, EGL_NO_CONTEXT, NULL);
+	if(egl_ctx == EGL_NO_CONTEXT) {
+		*out = symbol_to_value(context_intern_static(ctx, "gl-raw", "error-egl-create-egl_ctx"));
 		return ok;
 	}
 
@@ -59,7 +59,7 @@ native_func(gl_make_window) {
 		return ok;
 	}
 
-	if(eglMakeCurrent(display, surface, surface, context) == EGL_FALSE) {
+	if(eglMakeCurrent(display, surface, surface, egl_ctx) == EGL_FALSE) {
 		*out = symbol_to_value(context_intern_static(ctx, "gl-raw", "error-egl-make-current"));
 		return ok;
 	}

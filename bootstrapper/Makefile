@@ -1,4 +1,5 @@
-CFLAGS := -fPIC -Wall -Werror -Wimplicit-fallthrough -Wunused-parameter
+CFLAGS := -fPIC -Wall -Werror -Wextra -Wdouble-promotion -Wduplicated-branches -Wduplicated-cond \
+	-Wformat=2 -Wjump-misses-init -Wlogical-op -Wnull-dereference -Wrestrict -Wshadow
 CFLAGS_DBG := -g -Og -fsanitize=address,undefined
 CFLAGS_REL := -DNDEBUG -O3 -fsanitize=address
 LDFLAGS := -flto -fPIC -lEGL -lgc -lX11

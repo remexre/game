@@ -5,15 +5,15 @@
 #include "../common.h"
 
 env make_env(context ctx) {
-	env env = GC_malloc(sizeof(struct env));
-	env->ctx = ctx;
+	env e = GC_malloc(sizeof(struct env));
+	e->ctx = ctx;
 	upto(i, LEXICAL_BUCKETS)
-		env->lexical[i] = NULL;
-	return env;
+		e->lexical[i] = NULL;
+	return e;
 }
 
-void env_add(env env, symbol name, value val) {
-	struct env_mapping_link** bucket = &env->lexical[name->fq_hash % LEXICAL_BUCKETS];
+void env_add(env e, symbol name, value val) {
+	struct env_mapping_link** bucket = &e->lexical[name->fq_hash % LEXICAL_BUCKETS];
 	struct env_mapping_link* link = GC_malloc(sizeof(struct env_mapping_link));
 	link->name = name;
 	link->val = val;
@@ -29,13 +29,13 @@ env env_clone(env old) {
 	return new;
 }
 
-error_return env_get(env env, symbol name, value* out) {
-	if(is_keyword(env->ctx, name)) {
+error_return env_get(env e, symbol name, value* out) {
+	if(is_keyword(e->ctx, name)) {
 		*out = symbol_to_value(name);
 		return ok;
 	}
 
-	struct env_mapping_link* bucket = env->lexical[name->fq_hash % LEXICAL_BUCKETS];
+	struct env_mapping_link* bucket = e->lexical[name->fq_hash % LEXICAL_BUCKETS];
 	while(bucket) {
 		if(string_cmp(name->fq_name, bucket->name->fq_name) == 0) {
 			*out = bucket->val;

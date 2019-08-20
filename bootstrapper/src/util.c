@@ -131,7 +131,7 @@ hash djb2a(string str) {
 	return out;
 }
 
-const error ok = { OK, { 0, NULL }};
+const error ok = { OK, { 0, NULL }, NULL };
 
 static string error_prefix(error_code code) {
 	switch(code) {

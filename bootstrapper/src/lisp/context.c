@@ -125,11 +125,11 @@ package context_def_package(context ctx, string name) {
 }
 
 static package make_package(string name) {
-	package package = GC_malloc(sizeof(*package));
-	package->name = name;
+	package pkg = GC_malloc(sizeof(*pkg));
+	pkg->name = name;
 	upto(i, SYMTAB_BUCKETS)
-		package->symtab[i] = NULL;
-	return package;
+		pkg->symtab[i] = NULL;
+	return pkg;
 }
 
 symbol context_gensym(context ctx) {
@@ -183,15 +183,15 @@ symbol unsafe_package_get_symbol(package pkg, string name) {
 static symbol make_symbol(package pkg, string name) {
 	expect(pkg, "make_symbol must be called with a non-null package");
 
-	symbol symbol = GC_malloc(sizeof(*symbol));
-	symbol->name = name;
-	symbol->name_hash = djb2a(symbol->name);
-	symbol->fq_name = string_cat(pkg->name,
-		string_cat(string_from_static_cstr(":"), symbol->name));
-	symbol->fq_hash = djb2a(symbol->fq_name);
-	symbol->package = pkg;
-	symbol->flags = 0;
-	return symbol;
+	symbol sym = GC_malloc(sizeof(*sym));
+	sym->name = name;
+	sym->name_hash = djb2a(sym->name);
+	sym->fq_name = string_cat(pkg->name,
+		string_cat(string_from_static_cstr(":"), sym->name));
+	sym->fq_hash = djb2a(sym->fq_name);
+	sym->package = pkg;
+	sym->flags = 0;
+	return sym;
 }
 
 string package_name(package pkg) {

@@ -176,7 +176,7 @@ parse_rule(symbolish_value, value) {
 error_return symbolish_to_value(string str, context ctx, value* out) {
 	expect(str.len > 0, "symbolish_to_value should be called on non-empty strings");
 
-	ssize_t colon_index = string_find_char(str, ':');
+	size_t colon_index = string_find_char(str, ':');
 	if(colon_index < str.len) {
 		string pkg_name = string_sub(str, 0, colon_index);
 		string name = string_sub(str, colon_index+1, str.len);
