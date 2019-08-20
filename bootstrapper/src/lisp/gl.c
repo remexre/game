@@ -1,72 +1,74 @@
 #include "gl.h"
 #include "args.h"
-#include "platform.h"
-#include <EGL/egl.h>
-#include <GLES/gl.h>
+#include <GLFW/glfw3.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include "../common.h"
 
-static EGLint const attribute_list[] = {
-	EGL_RED_SIZE, 1,
-	EGL_GREEN_SIZE, 1,
-	EGL_BLUE_SIZE, 1,
-	EGL_NONE
-};
+static const char* glfwLastError = NULL;
+static void glfwErrorCallback(int errorCode, const char* description) {
+	UNUSED(errorCode);
+	if(isatty(STDERR_FILENO))
+		fputs("\x1b[1;31m", stderr);
+	fputs(description, stderr);
+	if(isatty(STDERR_FILENO))
+		fputs("\x1b[0m", stderr);
+	glfwLastError = description;
+}
 
-native_func(gl_make_window) {
-	value display_name_value = NIL;
-	try(parse_args(string_from_static_cstr("glMakeWindow"), args, 0, 1, NULL, &display_name_value));
+native_func(glfw_init) {
+	try(parse_args(string_from_static_cstr("glfwInit"), args, 0, 0, NULL));
+	glfwSetErrorCallback(glfwErrorCallback);
+	if(!glfwInit())
+		*out = symbol_to_value(context_intern_static(ctx, "gl-raw", "error-glfw-init-failed"));
+	else
+		*out = NIL;
+	return ok;
+}
 
-	string display_name;
-	if(display_name_value) {
-		try(as_string(display_name_value, &display_name));
-	} else if(getenv("DISPLAY")) {
-		display_name = string_from_static_cstr(getenv("DISPLAY"));
-	} else {
-		*out = symbol_to_value(context_intern_static(ctx, "gl-raw", "error-x11-no-display"));
-		return ok;
-	}
+native_func(glfw_terminate) {
+	UNUSED(ctx);
 
-	EGLDisplay display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
-	if(display == EGL_NO_DISPLAY) {
-		*out = symbol_to_value(context_intern_static(ctx, "gl-raw", "error-egl-no-display"));
-		return ok;
-	}
-	if(eglInitialize(display, NULL, NULL) == EGL_FALSE) {
-		*out = symbol_to_value(context_intern_static(ctx, "gl-raw", "error-egl-init-failed"));
-		return ok;
-	}
+	try(parse_args(string_from_static_cstr("glfwTerminate"), args, 0, 0, NULL));
+	glfwTerminate();
+	*out = NIL;
+	return ok;
+}
 
-	EGLConfig config;
-	EGLint num_config;
-	if(eglChooseConfig(display, attribute_list, &config, 1, &num_config) == EGL_FALSE) {
-		*out = symbol_to_value(context_intern_static(ctx, "gl-raw", "error-egl-no-config"));
-		return ok;
-	}
+native_func(glfw_create_window) {
+	value width_val, height_val, title_val;
+	value full_screen = NIL;
+	try(parse_args(string_from_static_cstr("glfwCreateWindow"), args, 3, 1, NULL,
+		&width_val, &height_val, &title_val, &full_screen));
 
-	EGLContext egl_ctx = eglCreateContext(display, config, EGL_NO_CONTEXT, NULL);
-	if(egl_ctx == EGL_NO_CONTEXT) {
-		*out = symbol_to_value(context_intern_static(ctx, "gl-raw", "error-egl-create-egl_ctx"));
-		return ok;
-	}
+	int64_t width, height;
+	string title;
+	try(as_fixnum(width_val, &width));
+	try(as_fixnum(height_val, &height));
+	try(as_string(ctx, title_val, &title));
 
-	EGLNativeWindowType native_window;
-	try(createNativeWindow(display_name, &native_window));
-
-	EGLSurface surface = eglCreateWindowSurface(display, config, native_window, NULL);
-	if(surface == EGL_NO_SURFACE) {
-		*out = symbol_to_value(context_intern_static(ctx, "gl-raw", "error-egl-create-window-surface"));
-		return ok;
-	}
-
-	if(eglMakeCurrent(display, surface, surface, egl_ctx) == EGL_FALSE) {
-		*out = symbol_to_value(context_intern_static(ctx, "gl-raw", "error-egl-make-current"));
+	GLFWwindow* window = glfwCreateWindow((int) width, (int) height, cstr_from_string(title),
+		full_screen ? glfwGetPrimaryMonitor() : NULL, NULL);
+	if(!window) {
+		*out = symbol_to_value(context_intern_static(ctx, "gl-raw",
+			"error-glfw-create-window-failed"));
 		return ok;
 	}
 
 	// TODO
-	*out = NULL;
+	UNUSED(window);
+	*out = NIL;
 	return ok;
 }
 
-native_func(gl_get_constant);
+native_func(glfw_destroy_window) {
+	UNUSED(ctx);
+
+	value window_obj_val;
+	try(parse_args(string_from_static_cstr("glfwDestroyWindow"), args, 1, 0, NULL,
+		&window_obj_val));
+
+	*out = NIL;
+	return ok;
+}

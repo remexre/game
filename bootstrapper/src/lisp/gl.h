@@ -4,8 +4,10 @@
 #include "value.h"
 #include "../util.h"
 
-native_func(gl_make_window);
-native_func(gl_get_constant);
+native_func(glfw_init);
+native_func(glfw_terminate);
+native_func(glfw_create_window);
+native_func(glfw_destroy_window);
 
 native_func(gl_compile_shader);
 native_func(gl_get_shader);

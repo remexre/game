@@ -13,8 +13,8 @@ enum tag {
 	TAG_FLOAT,
 	TAG_OBJECT,
 	TAG_SYMBOL,
-	TAG_STRING,
-	TAG_VECTOR
+	TAG_VECTOR,
+	TAG_HOST
 };
 
 string tag_name(enum tag);
@@ -52,13 +52,28 @@ struct cons {
 	value tl;
 };
 
+enum vector_type {
+	VT_CHAR,
+	VT_FLOAT,
+	VT_INT,
+	VT_UINT,
+	VT_VALUE
+};
+
+typedef struct {
+	enum vector_type type;
+	size_t cap;
+	size_t len;
+	void* data;
+} vector;
+
 union value_data {
 	struct cons cons;
 	struct func func;
 	int64_t fixnum;
 	double float_;
-	string string;
 	symbol symbol;
+	vector vector;
 };
 
 struct value {
@@ -104,7 +119,7 @@ error_return as_fixnum(value val, int64_t* out);
 error_return as_float(value val, double* out);
 error_return as_function(value val, struct func* out);
 error_return as_nil(value);
-error_return as_string(value, string* out);
+error_return as_string(context, value, string* out);
 error_return as_symbol(value, symbol* out);
 
 string show_value(value, bool newline);

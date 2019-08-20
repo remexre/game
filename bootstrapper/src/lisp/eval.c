@@ -134,8 +134,8 @@ error_return eval(value val, value* out, env e) {
 	case TAG_FIXNUM:
 	case TAG_FLOAT:
 	case TAG_OBJECT:
-	case TAG_STRING:
 	case TAG_VECTOR:
+	case TAG_HOST:
 		*out = val;
 		return ok;
 	default:

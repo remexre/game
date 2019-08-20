@@ -101,13 +101,17 @@
 
 (defmacro defpackage (name &rest properties)
   `(progn
-     (define-package ,(symbol-name name))
+     (define-package ,name)
      ,@(flat-map
          (lambda (pkg)
            (map
-             (lambda (sym) `(import-to ,(symbol-name name) (quote ,sym)))
-             (exports-of (symbol-name pkg))))
+             (lambda (sym) `(import-to ,name (quote ,sym)))
+             (exports-of pkg)))
          (assoc-value :use properties))))
+
+(defmacro use-package (pkg)
+  `(progn
+     ,@(map (lambda (sym) `(import (quote ,sym))) (exports-of pkg))))
 
 (defpackage :user
   (:use :lang))

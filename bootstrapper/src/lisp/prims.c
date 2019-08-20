@@ -59,7 +59,7 @@ native_func(define_package) {
 	try(parse_args(string_from_static_cstr("define-package"), args, 1, 0, NULL, &pkg_val));
 
 	string pkg_name;
-	try(as_string(pkg_val, &pkg_name));
+	try(as_string(ctx, pkg_val, &pkg_name));
 
 	context_def_package(ctx, pkg_name);
 	*out = NIL;
@@ -89,8 +89,8 @@ native_func(eq) {
 		case TAG_CONS:
 		case TAG_FUNCTION:
 		case TAG_OBJECT:
-		case TAG_STRING:
 		case TAG_VECTOR:
+		case TAG_HOST:
 			*out = NIL;
 			return ok;
 		default: return errorf(TYPE_ERROR, "Can't eq unknown tag %02x", l->tag);
@@ -119,7 +119,7 @@ native_func(exports_of) {
 	try(parse_args(string_from_static_cstr("exports-of"), args, 1, 0, NULL, &pkg_val));
 
 	string pkg_name;
-	try(as_string(pkg_val, &pkg_name));
+	try(as_string(ctx, pkg_val, &pkg_name));
 
 	package pkg = context_def_package(ctx, pkg_name);
 	*out = NIL;
@@ -210,7 +210,7 @@ native_func(import_to) {
 	symbol sym;
 	string pkg_name;
 	try(as_symbol(sym_val, &sym));
-	try(as_string(pkg_val, &pkg_name));
+	try(as_string(ctx, pkg_val, &pkg_name));
 
 	package_import_symbol(context_def_package(ctx, pkg_name), sym);
 	*out = NIL;

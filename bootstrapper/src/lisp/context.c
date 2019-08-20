@@ -90,7 +90,10 @@ context make_context(void) {
 	// Initialize the gl-raw package.
 	pkg = context_def_package(ctx, string_from_static_cstr("gl-raw"));
 
-	DEFUN("glMakeWindow", gl_make_window);
+	DEFUN("glfwInit", glfw_init);
+	DEFUN("glfwTerminate", glfw_terminate);
+	DEFUN("glfwCreateWindow", glfw_create_window);
+	DEFUN("glfwDestroyWindow", glfw_destroy_window);
 
 	return ctx;
 }

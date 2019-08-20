@@ -92,13 +92,11 @@ static noreturn void usage(int argc, char **argv) {
 }
 
 static native_func(linenoise) {
-	UNUSED(ctx);
-
 	value prompt_val;
 	try(parse_args(string_from_static_cstr("linenoise"), args, 1, 0, NULL, &prompt_val));
 
 	string prompt;
-	try(as_string(prompt_val, &prompt));
+	try(as_string(ctx, prompt_val, &prompt));
 
 	char* line_cstr = linenoise(cstr_from_string(prompt));
 	if(!line_cstr) {

@@ -2,11 +2,11 @@ CFLAGS := -fPIC -Wall -Werror -Wextra -Wdouble-promotion -Wduplicated-branches -
 	-Wformat=2 -Wjump-misses-init -Wlogical-op -Wnull-dereference -Wrestrict -Wshadow
 CFLAGS_DBG := -g -Og -fsanitize=address,undefined
 CFLAGS_REL := -DNDEBUG -O3 -fsanitize=address
-LDFLAGS := -flto -fPIC -lEGL -lgc -lX11
+LDFLAGS := -flto -fPIC -lgc -lGL -lglfw -lX11
 LDFLAGS_DBG := -fsanitize=address,undefined
 LDFLAGS_REL := -fsanitize=address
-UNITS := buffer io lisp/args lisp/context lisp/env lisp/eval lisp/gl lisp/platform lisp/prims \
-	lisp/value parser util
+UNITS := buffer io lisp/args lisp/context lisp/env lisp/eval lisp/gl lisp/prims lisp/value parser \
+	util
 
 CFLAGS += -Isrc/ext/linenoise
 UNITS += ext/linenoise/linenoise 

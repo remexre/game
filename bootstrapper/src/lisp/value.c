@@ -2,6 +2,7 @@
 #include "value.h"
 #include <gc.h>
 #include <stdio.h>
+#include <string.h>
 #include "../common.h"
 
 #define check_type(EXPR, TAG) do { \
@@ -33,8 +34,8 @@ string tag_name(enum tag tag) {
 	case TAG_FLOAT: return string_from_static_cstr("float");
 	case TAG_OBJECT: return string_from_static_cstr("object");
 	case TAG_SYMBOL: return string_from_static_cstr("symbol");
-	case TAG_STRING: return string_from_static_cstr("string");
 	case TAG_VECTOR: return string_from_static_cstr("vector");
+	case TAG_HOST: return string_from_static_cstr("host value");
 	default: return string_from_static_cstr("unknown tag");
 	}
 }
@@ -73,8 +74,11 @@ value native_to_value(error (*native)(value, value*, context), symbol name) {
 
 value string_to_value(string str) {
 	value val = GC_malloc(sizeof(struct value));
-	val->tag = TAG_STRING;
-	val->value.string = str;
+	val->tag = TAG_VECTOR;
+	val->value.vector.type = VT_CHAR;
+	val->value.vector.cap = str.len;
+	val->value.vector.len = str.len;
+	val->value.vector.data = cstr_from_string(str);
 	return val;
 }
 
@@ -148,10 +152,19 @@ error_return as_nil(value val) {
 		string_cat(string_from_static_cstr("Expected nil, found"), get_tag_name(val)));
 }
 
-error_return as_string(value val, string* out) {
-	check_type(val, TAG_STRING);
-	*out = val->value.string;
-	return ok;
+error_return as_string(context ctx, value val, string* out) {
+	if(val && val->tag == TAG_VECTOR && val->value.vector.type == VT_CHAR) {
+		out->len = val->value.vector.len;
+		char* data = GC_malloc(out->len);
+		out->data = memcpy(data, val->value.vector.data, out->len);
+		return ok;
+	} else if(val && val->tag == TAG_SYMBOL && is_keyword(ctx, val->value.symbol)) {
+		*out = val->value.symbol->name;
+		return ok;
+	} else {
+		return make_error(TYPE_ERROR,
+			string_cat(string_from_static_cstr("Expected string, found "), get_tag_name(val)));
+	}
 }
 
 error_return as_symbol(value val, symbol* out) {
