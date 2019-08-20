@@ -1,3 +1,6 @@
+#include "io.h"
+#include <stdio.h>
+
 #include "parser.h"
 #include "buffer.h"
 #include "lisp/prims.h"
@@ -120,7 +123,7 @@ parse_rule(lambda_list_keyword, value) {
 	string str;
 	try(parse_symbolish(src, ctx, &str));
 
-	if(string_contains_char(str, ':'))
+	if(string_find_char(str, ':') < str.len)
 		return make_error(SYNTAX_ERROR,
 			string_cat(string_from_static_cstr("Invalid lambda list keyword: "), str));
 
@@ -173,9 +176,20 @@ parse_rule(symbolish_value, value) {
 error_return symbolish_to_value(string str, context ctx, value* out) {
 	expect(str.len > 0, "symbolish_to_value should be called on non-empty strings");
 
-	if(string_contains_char(str, ':')) {
-		// TODO: Check if buf is namespaced (this handles keywords too).
-		unreachable;
+	ssize_t colon_index = string_find_char(str, ':');
+	if(colon_index < str.len) {
+		string pkg_name = string_sub(str, 0, colon_index);
+		string name = string_sub(str, colon_index+1, str.len);
+		if(string_len(pkg_name) == 0)
+			pkg_name = string_from_static_cstr("keyword");
+		if(string_len(name) == 0) {
+			return make_error(SYNTAX_ERROR,
+				string_cat(string_from_static_cstr("Invalid symbol: "), str));
+		}
+
+		symbol sym = package_intern_symbol(context_def_package(ctx, pkg_name), name);
+		*out = symbol_to_value(sym);
+		return ok;
 	}
 
 	bool numberish = true;

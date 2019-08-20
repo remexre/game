@@ -1,5 +1,6 @@
 #include "buffer.h"
 #include "io.h"
+#include "lisp/args.h"
 #include "lisp/env.h"
 #include "lisp/eval.h"
 #include "../tmp/lang.lisp.h"
@@ -10,6 +11,7 @@
 #include "common.h"
 
 static noreturn void usage(int argc, char **argv);
+static native_func(linenoise);
 
 int main(int argc, char **argv) {
 	bool repl = false;
@@ -32,6 +34,10 @@ int main(int argc, char **argv) {
 
 	context ctx = make_context();
 	env env = make_env(ctx);
+
+	symbol linenoise_sym = context_intern_static(ctx, "linenoise", "linenoise");
+	linenoise_sym->flags |= HAS_FUNCTION;
+	linenoise_sym->function = native_to_value(lisp_linenoise, linenoise_sym);
 
 	string lang_lisp_src = (string) { .len = lang_lisp_len, .data = (char*) lang_lisp };
 	expect_ok(eval_string(lang_lisp_src, NULL, env), "Error evaluating lang file");
@@ -83,4 +89,25 @@ static noreturn void usage(int argc, char **argv) {
 	fprintf(stderr, "  -h  Shows this help message.\n");
 	fprintf(stderr, "  -r  Starts a REPL. If no exprs are provided, this must be set.\n");
 	exit(1);
+}
+
+static native_func(linenoise) {
+	UNUSED(ctx);
+
+	value prompt_val;
+	try(parse_args(string_from_static_cstr("linenoise"), args, 1, 0, NULL, &prompt_val));
+
+	string prompt;
+	try(as_string(prompt_val, &prompt));
+
+	char* line_cstr = linenoise(cstr_from_string(prompt));
+	if(!line_cstr) {
+		*out = NIL;
+		return ok;
+	}
+	string line = string_from_cstr(line_cstr);
+	linenoiseFree(line_cstr);
+
+	*out = string_to_value(line);
+	return ok;
 }

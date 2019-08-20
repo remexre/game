@@ -111,10 +111,17 @@ char* cstr_from_string(string str) {
 }
 
 bool string_contains_char(string str, char ch) {
-	upto(i, str.len)
+	return string_find_char(str, ch) < str.len;
+}
+
+size_t string_find_char(string str, char ch) {
+	size_t i = 0;
+	while(i < str.len) {
 		if(string_get(str, i) == ch)
-			return true;
-	return false;
+			return i;
+		i++;
+	}
+	return i;
 }
 
 hash djb2a(string str) {
@@ -131,6 +138,7 @@ static string error_prefix(error_code code) {
 	case OK: return string_from_static_cstr("Success: ");
 	case ARGN_MISMATCH: return string_from_static_cstr("Argument number mismatch: ");
 	case EXPECTATION_FAILED: return string_from_static_cstr("Expectation failed: ");
+	case LANG: return string_from_static_cstr("Thrown error: ");
 	case SYNTAX_ERROR: return string_from_static_cstr("Syntax error: ");
 	case SYSCALL_FAILED: return string_from_static_cstr("System call failed: ");
 	case TODO: return string_from_static_cstr("TODO: ");

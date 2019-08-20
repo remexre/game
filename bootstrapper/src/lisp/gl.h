@@ -1,10 +1,10 @@
-#ifndef GAME_LISP_PRIMS_H
-#define GAME_LISP_PRIMS_H 1
+#ifndef GAME_LISP_GL_H
+#define GAME_LISP_GL_H 1
 
 #include "value.h"
 #include "../util.h"
 
-native_func(gl_get_context);
+native_func(gl_make_window);
 native_func(gl_get_constant);
 
 native_func(gl_compile_shader);

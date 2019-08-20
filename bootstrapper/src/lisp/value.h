@@ -67,10 +67,11 @@ struct value {
 };
 
 enum symbol_flags {
-	HAS_CLASS    = 1 << 0,
-	HAS_FUNCTION = 1 << 1,
-	HAS_GLOBAL   = 1 << 2,
-	HAS_MACRO    = 1 << 3
+	PRIVATE      = 1 << 0,
+	HAS_CLASS    = 1 << 1,
+	HAS_FUNCTION = 1 << 2,
+	HAS_GLOBAL   = 1 << 3,
+	HAS_MACRO    = 1 << 4
 };
 
 struct symbol_data {

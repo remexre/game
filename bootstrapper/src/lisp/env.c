@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include "env.h"
 #include "value.h"
 #include <gc.h>

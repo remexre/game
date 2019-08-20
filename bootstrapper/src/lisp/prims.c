@@ -54,6 +54,18 @@ native_func(cons) {
 	return ok;
 }
 
+native_func(define_package) {
+	value pkg_val;
+	try(parse_args(string_from_static_cstr("define-package"), args, 1, 0, NULL, &pkg_val));
+
+	string pkg_name;
+	try(as_string(pkg_val, &pkg_name));
+
+	context_def_package(ctx, pkg_name);
+	*out = NIL;
+	return ok;
+}
+
 native_func(eq) {
 	value l, r;
 	try(parse_args(string_from_static_cstr("eq"), args, 2, 0, NULL, &l, &r));
@@ -86,7 +98,6 @@ native_func(eq) {
 	}
 }
 
-
 native_func(exit) {
 	UNUSED(out);
 	UNUSED(ctx);
@@ -96,6 +107,24 @@ native_func(exit) {
 	try(parse_args(string_from_static_cstr("exit"), args, 0, 1, NULL, &arg));
 	try(as_fixnum(arg, &code));
 	exit(code);
+}
+
+static void exports_of_helper(symbol sym, void* lst_voidp) {
+	value* out = lst_voidp;
+	*out = make_cons(symbol_to_value(sym), *out);
+}
+
+native_func(exports_of) {
+	value pkg_val;
+	try(parse_args(string_from_static_cstr("exports-of"), args, 1, 0, NULL, &pkg_val));
+
+	string pkg_name;
+	try(as_string(pkg_val, &pkg_name));
+
+	package pkg = context_def_package(ctx, pkg_name);
+	*out = NIL;
+	package_get_exports(pkg, exports_of_helper, out);
+	return ok;
 }
 
 native_func(funcall) {
@@ -162,6 +191,31 @@ native_func(get_macro) {
 	return ok;
 }
 
+native_func(import) {
+	value sym_val;
+	try(parse_args(string_from_static_cstr("import"), args, 1, 0, NULL, &sym_val));
+
+	symbol sym;
+	try(as_symbol(sym_val, &sym));
+
+	context_import_symbol(ctx, sym);
+	*out = NIL;
+	return ok;
+}
+
+native_func(import_to) {
+	value sym_val, pkg_val;
+	try(parse_args(string_from_static_cstr("import-to"), args, 2, 0, NULL, &pkg_val, &sym_val));
+
+	symbol sym;
+	string pkg_name;
+	try(as_symbol(sym_val, &sym));
+	try(as_string(pkg_val, &pkg_name));
+
+	package_import_symbol(context_def_package(ctx, pkg_name), sym);
+	*out = NIL;
+	return ok;
+}
 
 native_func(in_package) {
 	value sym_val;
@@ -285,5 +339,31 @@ native_func(set_macro) {
 	sym->macro = val;
 
 	*out = NIL;
+	return ok;
+}
+
+native_func(symbol_name) {
+	UNUSED(ctx);
+
+	value sym_val;
+	try(parse_args(string_from_static_cstr("symbol-name"), args, 1, 0, NULL, &sym_val));
+
+	symbol sym;
+	try(as_symbol(sym_val, &sym));
+
+	*out = string_to_value(sym->name);
+	return ok;
+}
+
+native_func(symbol_package) {
+	UNUSED(ctx);
+
+	value sym_val;
+	try(parse_args(string_from_static_cstr("symbol-name"), args, 1, 0, NULL, &sym_val));
+
+	symbol sym;
+	try(as_symbol(sym_val, &sym));
+
+	*out = string_to_value(package_name(sym->package));
 	return ok;
 }

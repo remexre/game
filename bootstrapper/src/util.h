@@ -72,6 +72,7 @@ char string_get(string, size_t);
 size_t string_len(string);
 char* cstr_from_string(string);
 bool string_contains_char(string, char);
+size_t string_find_char(string, char); // str.len on failure
 
 typedef unsigned long long hash;
 
@@ -81,6 +82,7 @@ typedef enum {
 	OK = 0,
 	ARGN_MISMATCH,
 	EXPECTATION_FAILED,
+	LANG,
 	SYNTAX_ERROR,
 	SYSCALL_FAILED,
 	TODO,

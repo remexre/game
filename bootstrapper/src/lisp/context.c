@@ -1,4 +1,5 @@
 #include "context.h"
+#include "gl.h"
 #include "prims.h"
 #include "value.h"
 #include <gc.h>
@@ -64,14 +65,18 @@ context make_context(void) {
 	DEFUN("car", car);
 	DEFUN("cdr", cdr);
 	DEFUN("cons", cons);
+	DEFUN("define-package", define_package);
 	DEFUN("eq", eq);
 	DEFUN("exit", exit);
+	DEFUN("exports-of", exports_of);
 	DEFUN("funcall", funcall);
 	DEFUN("gensym", gensym);
 	DEFUN("get-class", get_class);
 	DEFUN("get-function", get_function);
 	DEFUN("get-global", get_global);
 	DEFUN("get-macro", get_macro);
+	DEFUN("import", import);
+	DEFUN("import-to", import_to);
 	DEFUN("in-package", in_package);
 	DEFUN("null", null);
 	DEFUN("print", print);
@@ -79,6 +84,13 @@ context make_context(void) {
 	DEFUN("set-function", set_function);
 	DEFUN("set-global", set_global);
 	DEFUN("set-macro", set_macro);
+	DEFUN("symbol-name", symbol_name);
+	DEFUN("symbol-package", symbol_package);
+
+	// Initialize the gl-raw package.
+	pkg = context_def_package(ctx, string_from_static_cstr("gl-raw"));
+
+	DEFUN("glMakeWindow", gl_make_window);
 
 	return ctx;
 }
@@ -138,6 +150,23 @@ symbol package_intern_symbol(package pkg, string name) {
 	HASHMAP_GET_OR_INSERT(pkg->symtab, symtab_link, sym, SYMTAB_BUCKETS, make_symbol(pkg, name));
 }
 
+void context_import_symbol(context ctx, symbol sym) {
+	package_import_symbol(context_current_package(ctx), sym);
+}
+
+void package_import_symbol(package pkg, symbol sym) {
+	struct symtab_link** entry = &pkg->symtab[sym->name_hash % SYMTAB_BUCKETS];
+	struct symtab_link* link = GC_malloc(sizeof(struct symtab_link));
+	link->sym = sym;
+	link->next = *entry;
+	*entry = link;
+}
+
+symbol context_intern_static(context ctx, const char* pkg_name, const char* name) {
+	package pkg = context_def_package(ctx, string_from_static_cstr(pkg_name));
+	return package_intern_symbol(pkg, string_from_static_cstr(name));
+}
+
 symbol unsafe_package_get_symbol(package pkg, string name) {
 	hash h = djb2a(name);
 	struct symtab_link** entry = &pkg->symtab[h % SYMTAB_BUCKETS];
@@ -158,7 +187,7 @@ static symbol make_symbol(package pkg, string name) {
 	symbol->name = name;
 	symbol->name_hash = djb2a(symbol->name);
 	symbol->fq_name = string_cat(pkg->name,
-		string_cat(string_from_static_cstr("::"), symbol->name));
+		string_cat(string_from_static_cstr(":"), symbol->name));
 	symbol->fq_hash = djb2a(symbol->fq_name);
 	symbol->package = pkg;
 	symbol->flags = 0;
@@ -167,6 +196,17 @@ static symbol make_symbol(package pkg, string name) {
 
 string package_name(package pkg) {
 	return pkg->name;
+}
+
+void package_get_exports(package pkg, void (*cb)(symbol, void*), void* closure) {
+	upto(i, SYMTAB_BUCKETS) {
+		struct symtab_link* link = pkg->symtab[i];
+		while(link) {
+			if(!(link->sym->flags & PRIVATE))
+				cb(link->sym, closure);
+			link = link->next;
+		}
+	}
 }
 
 value context_bool(context ctx, bool b) {
