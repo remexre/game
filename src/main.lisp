@@ -1,28 +1,37 @@
 (in-package #:game)
 
-(opts:define-opts
-  (:name        :help
-   :description "print this help text"
-   :short       #\h
-   :long        "help")
-  (:name        :swank
-   :description "start swank"
-   :long        "swank"))
+(def-key-callback quit-on-escape (window key scancode action mod-keys)
+  (declare (ignore window scancode mod-keys))
+  (when (and (eq key :escape) (eq action :press))
+    (set-window-should-close)))
 
-(defun cli-main ()
-  (multiple-value-bind (options args) (opts:get-opts)
-    (when (getf options :help)
-      (opts:describe
-        :prefix "QWERTY"
-        )
-      (opts:exit))
-    (main args (getf options :output-path))))
+(defun render ()
+  (gl:clear :color-buffer)
+  (gl:with-pushed-matrix
+    (gl:color 1 1 1)
+    (gl:rect -25 -25 25 25)))
 
-(defun main (src-paths output-path)
-  (declare (ignore output-path))
-  (let* ((parsed-modules (mapcar #'parse-file src-paths))
-         (loaded-modules nil))
-    (format t "parsed-modules = ~a~%" parsed-modules)
-    (dolist (module (toposort parsed-modules #'module-depends-on))
-      (resolve-names-for-module module loaded-modules)
-      (push (cons (name module) module) loaded-modules))))
+(defun set-viewport (width height)
+  (gl:viewport 0 0 width height)
+  (gl:matrix-mode :projection)
+  (gl:load-identity)
+  (gl:ortho -50 50 -50 50 -1 1)
+  (gl:matrix-mode :modelview)
+  (gl:load-identity))
+
+(def-window-size-callback update-viewport (window w h)
+  (declare (ignore window))
+  (set-viewport w h))
+
+(defun main ()
+  (with-body-in-main-thread ()
+    (with-init-window (:title "game" :width 600 :height 800)
+      (setf %gl:*gl-get-proc-address* #'get-proc-address)
+      (set-key-callback 'quit-on-escape)
+      (set-window-size-callback 'update-viewport)
+      (gl:clear-color 0 0 0 0)
+      (set-viewport 600 400)
+      (loop until (window-should-close-p)
+         do (render)
+         do (swap-buffers)
+         do (poll-events)))))
