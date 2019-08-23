@@ -7,7 +7,9 @@
   :build-operation "program-op"
   :build-pathname "out/game"
   :entry-point "game:main"
-  :depends-on (:cl-glfw3 :cl-opengl :trivial-main-thread)
+  :depends-on (:cl-glfw3 :cl-opengl :iterate :trivial-main-thread)
   :components ((:file "src/package")
                (:file "src/utils")
+               (:file "src/loop")
+               (:file "src/render")
                (:file "src/main")))

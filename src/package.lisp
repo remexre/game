@@ -1,5 +1,5 @@
 (defpackage #:game
-  (:use #:cl #:cl-glfw3 #:cl-opengl #:trivial-main-thread)
-  (:export
-    #:pprint-object-with-slots 
-    #:cli-main #:main #:swank))
+  (:use #:cl #:cl-glfw3 #:cl-opengl #:iterate #:trivial-main-thread)
+  (:export #:main #:swank)
+  (:shadowing-import-from :cl-opengl :finish)
+  (:shadowing-import-from :cl-glfw3 :terminate))
