@@ -1,9 +1,7 @@
 all:
-	sbcl --non-interactive --load load.lisp
+	sbcl --non-interactive --load load.lisp --eval '(asdf:make :game)'
 repl:
 	sbcl --load load.lisp
 run:
 	sbcl --load load.lisp --eval '(game:main)' --quit
-swank:
-	sbcl --load load.lisp --eval '(game:swank)'
-.PHONY: all repl run swank
+.PHONY: all repl run
