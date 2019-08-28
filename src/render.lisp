@@ -26,9 +26,8 @@
   #+nil
   (iter
     (for obj in-vector *render-objects*)
-    (format t "prog = ~a~%" (object/program obj))
-    (gl:use-program (object/program obj))
-    (gl:draw-arrays :triangles 0 (length (object/vertices obj)))))
+    (draw obj)
+    ))
 
 (defvar *projection-matrix* (identity-matrix 3))
 (defvar *view-matrix* (identity-matrix 3))

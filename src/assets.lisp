@@ -1,5 +1,12 @@
 (in-package #:game)
 
+(define-condition invalid-asset-field (error)
+  ((field :initarg :field :reader missing-asset-field/field)
+   (why   :initarg :why   :reader missing-asset-field/why))
+  (:report (lambda (condition stream)
+             (format stream "Invalid field ~a: ~a." (invalid-asset-field/field condition)
+                     (invalid-asset-field/why condition)))))
+
 (define-condition missing-asset-field (error)
   ((field :initarg :field :reader missing-asset-field/field))
   (:report (lambda (condition stream)
@@ -27,6 +34,10 @@
    (program  :initarg :program  :reader object/program)
    (vao      :initarg :vao      :reader object/vao)))
 
+(defmethod draw ((obj object))
+  (use-program (object/program obj))
+  (draw-vao (object/vao obj)))
+
 (defmethod print-object ((obj object) stream)
   (pprint-object-with-slots stream obj '(name program vao)))
 
@@ -40,8 +51,10 @@
 
 (defun load-assets-from (path)
   "Loads assets from the file at PATH."
-  (let ((*package* (symbol-package :keyword))
-        (*read-file-base* (directory-namestring path)))
+  (let ((*read-file-base* (directory-namestring path))
+        (keyword-read (lambda (&rest args)
+                        (let ((*package* (symbol-package :keyword)))
+                          (apply #'read args)))))
     (iter
-      (for form in-file path)
+      (for form in-file path using keyword-read)
       (collect (load-asset-from-form form)))))

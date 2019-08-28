@@ -11,7 +11,7 @@
    (path :initarg :path :reader shader-compile-error/path))
   (:report (lambda (condition stream)
              (with-slots (compile-log path) condition
-               (format stream "Failed to compile ~a:~%~a~&" path compile-log)))))
+               (format stream "Failed to compile ~a:~%~a" path compile-log)))))
 
 ; TODO: Add shader cache.
 (defun load-shader (shader-type path)
@@ -36,7 +36,7 @@
    (shaders :initarg :shaders :reader shader-link-error/shaders))
   (:report (lambda (condition stream)
              (with-slots (link-log shaders) condition
-               (format stream "Failed to link ~a:~%~a~&" shaders link-log)))))
+               (format stream "Failed to link ~a:~%~a" shaders link-log)))))
 
 (defun load-program (asset)
   (let* ((handle (gl:create-program))
@@ -54,3 +54,6 @@
           (program (make-program :handle handle :shaders shaders)))
       (finalize program free)
       program)))
+
+(defun use-program (program)
+  (gl:use-program (program-handle program)))
