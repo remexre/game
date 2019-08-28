@@ -7,21 +7,23 @@
   :build-operation "program-op"
   :build-pathname "out/game"
   :entry-point "game:main"
-  :depends-on (:alexandria :bordeaux-threads :cl-glfw3 :cl-opengl :iterate :swank :trivial-garbage
-               :trivial-main-thread)
+  :depends-on (:alexandria :bordeaux-threads :cl-glfw3 :cl-opengl :dissect :iterate :swank
+               :trivial-garbage :trivial-main-thread)
   :components ((:file "src/package")
 
                (:file "src/utils")
+               (:file "src/log")
                (:file "src/loop")
                (:file "src/swank-module")
                (:file "src/thunks")
 
-			   (:file "src/ogl-program")
-			   (:file "src/ogl-vabo")
-			   (:file "src/assets")
-
-               (:file "src/render-fps")
                (:file "src/render-math")
+			   (:file "src/ogl-program")
+               (:file "src/ogl-uniforms")
+			   (:file "src/ogl-vabo")
+               (:file "src/render-object")
+			   (:file "src/assets")
+               (:file "src/render-fps")
                (:file "src/render")
 
                (:file "src/main")))

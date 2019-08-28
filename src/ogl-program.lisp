@@ -13,7 +13,6 @@
              (with-slots (compile-log path) condition
                (format stream "Failed to compile ~a:~%~a" path compile-log)))))
 
-; TODO: Add shader cache.
 (defun load-shader (shader-type path)
   (let ((handle (gl:create-shader shader-type)))
     (with-simple-restart (retry "Retry compiling shader ~s." path)

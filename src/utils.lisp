@@ -6,6 +6,11 @@
 (defun aget* (item alist &key key)
   (cdr (assoc item alist :key key)))
 
+(defun append-to (&rest lists)
+  (iter
+    (for (hd . tl) on lists)
+    (appending (if tl (list hd) hd))))
+
 (defun float-vector (&rest items)
   (make-array (list (length items))
               :element-type 'single-float
@@ -38,3 +43,6 @@
     (let ((data (make-string (file-length stream))))
       (read-sequence data stream)
       data)))
+
+(defun take (seq n)
+  (subseq seq 0 n))

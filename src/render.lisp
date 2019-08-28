@@ -23,14 +23,14 @@
   (gl:depth-func :less)
   (gl:clear :color-buffer :depth-buffer)
 
-  #+nil
   (iter
     (for obj in-vector *render-objects*)
-    (draw obj)
-    ))
+    (draw obj)))
 
-(defvar *projection-matrix* (identity-matrix 3))
-(defvar *view-matrix* (identity-matrix 3))
+(defun bind-uniforms (uniforms)
+  (iter
+    (for (loc . data) in uniforms)
+    (bind-uniform data loc)))
 
 (defun set-viewport (width height)
   (gl:viewport 0 0 width height)

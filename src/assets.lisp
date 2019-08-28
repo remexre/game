@@ -22,6 +22,10 @@
   (or (aget* field-name (cddr asset))
       (error 'missing-asset-field :field field-name)))
 
+(defun load-uniforms (uniforms)
+  (lg t "ignoring uniforms ~a" uniforms)
+  nil)
+
 (defun load-vao (array-descriptors)
   (let ((vbo-bindings (make-array (length array-descriptors) :fill-pointer 0)))
     (iter
@@ -29,20 +33,9 @@
       (vector-push (cons loc (make-vbo size data :name name :type type)) vbo-bindings))
     (make-vao vbo-bindings)))
 
-(defclass object ()
-  ((name     :initarg :name     :reader object/name)
-   (program  :initarg :program  :reader object/program)
-   (vao      :initarg :vao      :reader object/vao)))
-
-(defmethod draw ((obj object))
-  (use-program (object/program obj))
-  (draw-vao (object/vao obj)))
-
-(defmethod print-object ((obj object) stream)
-  (pprint-object-with-slots stream obj '(name program vao)))
-
 (defun load-asset-object (asset)
   (make-instance 'object :name (cadr asset) :program (load-program asset)
+                 :uniforms (load-uniforms (ensure-asset-field* asset :uniforms))
                  :vao (load-vao (ensure-asset-field* asset :vertices))))
 
 (defun load-asset-from-form (form)
