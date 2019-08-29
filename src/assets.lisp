@@ -22,9 +22,39 @@
   (or (aget* field-name (cddr asset))
       (error 'missing-asset-field :field field-name)))
 
+(defun load-uniform (name ty data)
+  (declare (ignore name))
+  (let ((ctor (ecase ty
+                (:float #'make-uniform-float)
+                (:vec2  #'make-uniform-vec2)
+                (:vec3  #'make-uniform-vec3)
+                (:vec4  #'make-uniform-vec4)
+                (:int   #'make-uniform-int)
+                (:ivec2 #'make-uniform-ivec2)
+                (:ivec3 #'make-uniform-ivec3)
+                (:ivec4 #'make-uniform-ivec4)
+                (:mat2 #'make-uniform-mat2)
+                (:mat3 #'make-uniform-mat3)
+                (:mat4 #'make-uniform-mat4)
+                (:mat3x2 #'make-uniform-mat3x2)
+                (:mat4x2 #'make-uniform-mat4x2)
+                (:mat2x3 #'make-uniform-mat2x3)
+                (:mat4x3 #'make-uniform-mat4x3)
+                (:mat2x4 #'make-uniform-mat2x4)
+                (:mat3x4 #'make-uniform-mat3x4))))
+    (cond
+      ((equal data '(:identity))
+       (funcall ctor :contents (identity-matrix (ecase ty
+                                                  (:mat2 2)
+                                                  (:mat3 3)
+                                                  (:mat4 4)))))
+      (t
+       (funcall ctor :contents (coerce data 'vector))))))
+
 (defun load-uniforms (uniforms)
-  (lg t "ignoring uniforms ~a" uniforms)
-  nil)
+   (iter
+     (for (loc name ty . data) in uniforms)
+     (collect (cons loc (load-uniform name ty data)))))
 
 (defun load-vao (array-descriptors)
   (let ((vbo-bindings (make-array (length array-descriptors) :fill-pointer 0)))

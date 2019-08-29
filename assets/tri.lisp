@@ -12,5 +12,5 @@
       0.0 1.0 0.0
       0.0 0.0 1.0))
   (uniforms
-    (2 model vec4
+    (3 model mat4
      identity)))

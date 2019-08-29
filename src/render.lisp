@@ -61,8 +61,7 @@
     (setf %gl:*gl-get-proc-address* #'glfw:get-proc-address)
     (glfw:set-key-callback 'quit-on-escape)
     (glfw:set-window-size-callback 'update-viewport)
-    (set-viewport 800 600)
-    (add-render-objects (load-assets-from #p"assets/tri.lisp")))
+    (set-viewport 800 600))
   (stop-conditions
     (glfw:window-should-close-p))
   (body

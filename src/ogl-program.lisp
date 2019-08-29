@@ -21,7 +21,7 @@
       (unless (gl:get-shader handle :compile-status)
         (error 'shader-compile-error :compile-log (gl:get-shader-info-log handle) :path path
                :shader-type shader-type)))
-    (let ((free (lambda () (gl:delete-shader handle)))
+    (let ((free (lambda () (add-thunk (gl:delete-shader handle))))
           (shader (make-shader :handle handle :path path :type shader-type)))
       (finalize shader free)
       shader)))

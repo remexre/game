@@ -18,7 +18,7 @@
                (format stream "~a was expected to have ~a vertices" vbo expected)))))
 
 (defstruct (vbo (:constructor make-vbo-raw))
-  (name nil :type (or symbol null) :read-only t)
+  (name nil :type (or null symbol) :read-only t)
   (handle (error "Must provide HANDLE") :type fixnum :read-only t)
   (normalize (error "Must provide NORMALIZE") :type boolean :read-only t)
   (size (error "Must provide SIZE") :type fixnum :read-only t)

@@ -6,10 +6,13 @@
 (defun aget* (item alist &key key)
   (cdr (assoc item alist :key key)))
 
-(defun append-to (&rest lists)
+(defun cons* (&rest lists)
   (iter
-    (for (hd . tl) on lists)
-    (appending (if tl (list hd) hd))))
+    (for cell on lists)
+    (unless (cddr cell)
+      (setf (cdr cell) (cadr cell))
+      (finish)))
+  lists)
 
 (defun float-vector (&rest items)
   (make-array (list (length items))
