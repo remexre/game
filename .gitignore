@@ -1,0 +1,6 @@
+.*
+!.gitignore
+
+core.*
+out/
+target/
