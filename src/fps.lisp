@@ -1,13 +1,15 @@
 (in-package :game)
 
-(defvar *last-update-time* 0)
-(defvar *frames-since-last-update* 0)
+(defparameter *fps-counter* 0)
+(defparameter *fps-dt-sum* 0)
+(defvar *fps-averaging* 10
+  "Recalculates the FPS every *FPS-AVERAGING* frames.")
 
-(def-loop-body :fps ()
-  (let* ((now (get-internal-run-time))
-         (delta-ticks (- now *last-update-time*)))
-    (incf *frames-since-last-update*)
-    (when (> delta-ticks internal-time-units-per-second)
-      (setf (renderer:title *renderer*) (format nil "FPS: ~,2f" *frames-since-last-update*)
-            *frames-since-last-update* 0
-            *last-update-time* now))))
+(def-loop-body :fps (dt)
+  (incf *fps-counter*)
+  (incf *fps-dt-sum* (/ dt))
+
+  (when (eql *fps-counter* *fps-averaging*)
+    (setf (renderer:title *renderer*) (format nil "FPS: ~,2f" (/ *fps-dt-sum* *fps-averaging*))
+          *fps-counter* 0
+          *fps-dt-sum* 0)))

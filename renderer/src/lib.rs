@@ -1,5 +1,6 @@
-mod cmds;
+mod bufs;
 mod draw;
+mod flip;
 mod init;
 mod pass;
 
@@ -54,7 +55,10 @@ pub extern "C" fn renderer_init() -> Box<RendererState> {
 
 #[no_mangle]
 pub extern "C" fn renderer_exit(state: Box<RendererState>) {
-    drop(state);
+    catch_unwind(AssertUnwindSafe(|| drop(state))).unwrap_or_else(|e| {
+        eprintln!("Caught panic: {:?}", e);
+        exit(1);
+    })
 }
 
 #[no_mangle]

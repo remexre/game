@@ -2,12 +2,17 @@
   :author "Nathan Ringo <nathan@remexre.xyz>"
   :license "Apache-2.0/MIT"
   :serial t
+  :build-operation "program-op"
+  :build-pathname "target/game"
+  :entry-point "game:main"
   :depends-on (:alexandria :cffi :cl-fsnotify :iterate :swank :trivial-garbage)
   :components ((:file "src/packages")
 
                (:file "src/util/log")
 
                (:file "src/renderer/init")
+               (:file "src/renderer/bufs")
+               (:file "src/renderer/draw")
 
                (:file "src/loop")
                (:file "src/debug")
