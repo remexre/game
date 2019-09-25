@@ -8,11 +8,11 @@
                (:file "src/util/log")
 
                (:file "src/renderer/init")
-               (:file "src/renderer/flip")
 
                (:file "src/loop")
                (:file "src/debug")
                (:file "src/renderer")
+               (:file "src/fps")
                (:file "src/main")))
 
 ; vi: ft=lisp :

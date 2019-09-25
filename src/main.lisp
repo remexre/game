@@ -2,5 +2,5 @@
 
 (defun main ()
   (prn t "Stages: ~s" *loop-stages*)
-  (enable-loop-stage :renderer)
+  (enable-loop-stages :fps :renderer)
   (main-loop))

@@ -44,4 +44,9 @@
   (push name *loop-stages-enabled*) 
   (let ((init (cdr (assoc name *loop-inits*))))
     (when init
-      (funcall init))))
+      (funcall init)))
+  nil)
+
+(defun enable-loop-stages (&rest names)
+  (mapc #'enable-loop-stage names)
+  nil)

@@ -4,6 +4,7 @@
 (defparameter *should-reload* nil)
 
 (cffi:defcallback reload-signal-handler :void ((signo :int))
+  (declare (ignore signo))
   (setf *should-reload* t))
 
 (def-loop-init :debug ()

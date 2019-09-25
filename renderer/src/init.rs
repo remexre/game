@@ -1,7 +1,8 @@
-use crate::RendererState;
-use std::borrow::Cow;
+use crate::{pass::GameRenderPass, RendererState};
+use std::{borrow::Cow, sync::Arc};
 use vulkano::{
     device::{Device, DeviceExtensions, Features},
+    framebuffer::RenderPass,
     instance::{
         ApplicationInfo, Instance, PhysicalDevice, PhysicalDeviceType, QueueFamily, Version,
     },
@@ -130,6 +131,16 @@ impl RendererState {
         )
         .expect("Failed to create swapchain");
 
+        let render_pass = Arc::new(
+            RenderPass::new(
+                device.clone(),
+                GameRenderPass {
+                    color_format: swapchain.format(),
+                },
+            )
+            .expect("Failed to create render pass"),
+        );
+
         let cleanup_future = now(device.clone());
 
         RendererState {
@@ -140,7 +151,11 @@ impl RendererState {
             queue,
             surface,
             swapchain,
+            render_pass,
             recreate_swapchain: false,
+
+            command_buffer_builder: None,
+            image_num: std::usize::MAX,
 
             cleanup_future: Some(Box::new(cleanup_future)),
         }

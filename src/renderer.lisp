@@ -3,8 +3,8 @@
 (defvar *renderer*)
 
 (def-loop-init :renderer ()
-  (setf *renderer* (renderer:make-renderer)))
+  (setf *renderer* (make-renderer))
+  (setf (clear-color *renderer*) #(0.06125 0.06125 1.0 1.0)))
 
 (def-loop-body :renderer ()
-  (sleep 0.1)
   (renderer:flip *renderer*))
