@@ -15,7 +15,7 @@
   (state renderer-state))
 
 (defclass renderer ()
-  ((pointer :initarg :pointer :reader renderer-pointer)))
+  ((pointer :initarg :pointer :reader pointer)))
 
 (defun make-renderer ()
   (let* ((pointer (renderer-init))

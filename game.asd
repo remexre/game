@@ -6,12 +6,13 @@
   :components ((:file "src/packages")
 
                (:file "src/util/log")
-               (:file "src/util/reload")
 
                (:file "src/renderer/init")
+               (:file "src/renderer/flip")
 
                (:file "src/loop")
-               (:file "src/special")
+               (:file "src/debug")
+               (:file "src/renderer")
                (:file "src/main")))
 
 ; vi: ft=lisp :

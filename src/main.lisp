@@ -1,5 +1,6 @@
 (in-package :game)
 
 (defun main ()
-  (setf *renderer* (renderer:make-renderer))
-  (prn t "todo"))
+  (prn t "Stages: ~s" *loop-stages*)
+  (enable-loop-stage :renderer)
+  (main-loop))
