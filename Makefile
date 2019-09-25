@@ -1,6 +1,9 @@
-all: target/game target/release/librenderer.so
+CFLAGS := -Wall -Werror
+TOOLS := gefsModel
+
+all: target/game target/release/librenderer.so tools
 debug: target/debug/librenderer.so
-	sbcl \
+	sbcl --quit \
 		--eval "(ql:quickload :game)" \
 		--eval "(game::enable-loop-stage :debug)" \
 		--eval "(game:main)"
@@ -10,13 +13,22 @@ run: target/release/librenderer.so
 		--eval "(game:main)"
 run-release: target/game target/release/librenderer.so
 	target/game
+tools: $(patsubst %,target/tools/%,$(TOOLS))
 .PHONY: all debug run run-release
 
-watch:
+watch: target/debug/librenderer.so
 	tmux \
 		new-session -s game-debug -n game-debug 'sleep 3; cargo watch -x check -x build -s "pkill -10 sbcl"' \; \
-		split-window -t game-debug 'sbcl --eval "(ql:quickload :game)" --eval "(game::enable-loop-stage :debug)" --eval "(game:main)"'
+		split-window -t game-debug '$(MAKE) debug'
 .PHONY: watch
+
+target/tools/%: target/tools-tmp/%.o
+	@mkdir -p $(dir $@)
+	$(CC) $(LDFLAGS) -o $@ $^
+
+target/tools-tmp/%.o: tools/%.c
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) -c -o $@ $^
 
 target/game:
 	sbcl --non-interactive \

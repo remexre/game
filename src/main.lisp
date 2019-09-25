@@ -1,6 +1,5 @@
 (in-package :game)
 
 (defun main ()
-  (prn t "Stages: ~s" *loop-stages*)
-  (enable-loop-stages :fps :renderer)
+  (enable-loop-stages :events :renderer :fps)
   (main-loop))

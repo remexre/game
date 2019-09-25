@@ -6,6 +6,7 @@
 (defvar *loop-bodies* nil)
 
 (defvar *loop-last-time* 0)
+(defvar *continue-loop* t)
 
 (defun main-loop-1 ()
   (let* ((now (get-internal-run-time))
@@ -25,7 +26,17 @@
 
 (defun main-loop ()
   (setf *loop-last-time* (get-internal-run-time))
-  (loop (main-loop-1)))
+
+  ; hack so we don't get a div-by-zero...
+  (decf *loop-last-time* (max 1 (/ internal-time-units-per-second 100)))
+
+  (prn t "Available stages: ~a" *loop-stages*)
+  (prn t "  Enabled stages: ~a" *loop-stages-enabled*)
+
+  (setf *continue-loop* t)
+  (iter
+    (while *continue-loop*)
+    (main-loop-1)))
 
 (defmacro def-loop-init (name () &body body)
   (check-type name keyword)
@@ -38,7 +49,9 @@
   (check-type name keyword)
   `(progn
      (pushnew ,name *loop-stages*)
-     (push (cons ,name (lambda (,dt) ,@body)) *loop-bodies*)
+     (push (cons ,name (lambda (,dt)
+                         (declare (ignore ,dt))
+                         ,@body)) *loop-bodies*)
      nil))
 
 (defun enable-loop-stage (name)
@@ -47,7 +60,7 @@
     (error "No loop stage ~a found; was it defined?" name))
   (when (member name *loop-stages-enabled*)
     (error "Loop stage ~a was already enabled" name))
-  (push name *loop-stages-enabled*) 
+  (setf *loop-stages-enabled* (nconc *loop-stages-enabled* (list name)))
   (let ((init (cdr (assoc name *loop-inits*))))
     (when init
       (funcall init)))

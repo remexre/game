@@ -1,5 +1,6 @@
 mod bufs;
 mod draw;
+mod events;
 mod flip;
 mod init;
 mod pass;
@@ -28,6 +29,7 @@ use winit::{EventsLoop, Window};
 pub struct RendererState {
     device: Arc<Device>,
     event_loop: EventsLoop,
+    events: String,
     #[derivative(Debug = "ignore")]
     images: Vec<Arc<SwapchainImage<Window>>>,
     instance: Arc<Instance>,

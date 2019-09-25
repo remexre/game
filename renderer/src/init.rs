@@ -146,6 +146,7 @@ impl RendererState {
         RendererState {
             device,
             event_loop,
+            events: String::new(),
             images,
             instance,
             queue,

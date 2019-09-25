@@ -13,10 +13,12 @@
                (:file "src/renderer/init")
                (:file "src/renderer/bufs")
                (:file "src/renderer/draw")
+               (:file "src/renderer/events")
 
                (:file "src/loop")
                (:file "src/debug")
                (:file "src/renderer")
+               (:file "src/events")
                (:file "src/fps")
                (:file "src/main")))
 

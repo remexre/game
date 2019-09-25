@@ -6,7 +6,13 @@
 
 (defpackage :renderer
   (:use :cffi :cl :game-util :trivial-garbage)
-  (:export #:clear-color #:flip #:make-immutable-buffer #:make-renderer #:renderer #:title))
+  (:export #:clear-color #:flip #:make-renderer #:renderer #:title
+           #:immutable-buffer #:make-immutable-buffer
+           #:get-events))
+
+(defpackage :assets
+  (:use :cl :game-util :renderer)
+  (:export #:load-model #:model))
 
 (defpackage :game
   (:use :alexandria :cl :game-util :iterate :renderer)
