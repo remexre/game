@@ -5,7 +5,7 @@ use std::{
     process::exit,
     slice,
 };
-use winit::{Event, WindowEvent};
+use winit::{ElementState, Event, WindowEvent};
 
 #[no_mangle]
 pub extern "C" fn renderer_poll_events(state: &mut RendererState) -> usize {
@@ -43,9 +43,33 @@ fn lispify(out: &mut String, ev: Event) {
     match ev {
         Event::WindowEvent {
             window_id: _,
-            event: ev,
-        } => match ev {
+            event,
+        } => match event {
             WindowEvent::CloseRequested => writeln!(out, ":close-requested").unwrap(),
+            WindowEvent::KeyboardInput {
+                device_id: _,
+                input,
+            } => {
+                write!(out, "(:keyboard {} ", input.scancode).unwrap();
+                *out += match input.state {
+                    ElementState::Pressed => ":pressed",
+                    ElementState::Released => ":released",
+                };
+                *out += " (";
+                if input.modifiers.shift {
+                    *out += " :shift";
+                }
+                if input.modifiers.ctrl {
+                    *out += " :ctrl";
+                }
+                if input.modifiers.alt {
+                    *out += " :alt";
+                }
+                if input.modifiers.logo {
+                    *out += " :logo";
+                }
+                *out += "))\n";
+            }
             _ => {}
         },
         _ => {}

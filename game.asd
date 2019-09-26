@@ -5,7 +5,7 @@
   :build-operation "program-op"
   :build-pathname "target/game"
   :entry-point "game:main"
-  :depends-on (:alexandria :cffi :cl-fsnotify :iterate :swank :trivial-garbage)
+  :depends-on (:alexandria :cffi :iterate :swank :trivia :trivial-garbage :trivial-shell)
   :components ((:file "src/packages")
 
                (:file "src/util/log")
@@ -14,6 +14,8 @@
                (:file "src/renderer/bufs")
                (:file "src/renderer/draw")
                (:file "src/renderer/events")
+
+               (:file "src/assets/model")
 
                (:file "src/loop")
                (:file "src/debug")

@@ -5,7 +5,7 @@
            :type immutable-buffer)
    (path :accessor path :initarg :path :initform nil :type (or null pathname))))
 
-(defun load-model (path &key format)
+(defun load-model (renderer path &key format)
   (unless (pathnamep path)
     (setf path (pathname path)))
   (unless format
@@ -13,5 +13,7 @@
 
   (ecase format
     ((:vx)
-     (with-open-file (stream path :element-type 'unsigned-byte)
-       (prn :assets "POG ~s" stream)))))
+     (with-open-file (stream path :element-type '(unsigned-byte 8))
+       (let ((data (make-array (file-length stream) :element-type '(unsigned-byte 8))))
+         (read-sequence data stream)
+         (make-immutable-buffer renderer data :bytes t))))))
