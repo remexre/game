@@ -1,10 +1,11 @@
 (in-package :assets)
 
 (defclass prefab ()
-  (
-   (path :accessor path :initarg :path :initform nil :type (or null pathname))))
+  ((path     :accessor asset-path     :initarg :path     :initform nil :type (or null pathname))
+   (renderer :accessor asset-renderer :initarg :renderer               :type renderer)
+   (tree     :accessor tree           :initarg :tree                   :type render-tree)))
 
-(defun load-prefab (renderer path &key format)
+(defun load-prefab (path &key format (renderer *renderer*))
   (unless (pathnamep path)
     (setf path (pathname path)))
   (unless format
@@ -12,5 +13,11 @@
 
   (ecase format
     ((:json :pv)
-     (with-open-file (stream path)
-       (print (cl-json:decode-json stream))))))
+     (let* ((data (with-open-file (stream path)
+                    (cl-json:decode-json stream)))
+            (tree (load-tree (assv :render data) :renderer renderer)))
+       (make-instance 'prefab :path path :renderer renderer :tree tree)))))
+
+(defun load-tree (tree &key (renderer *renderer*))
+  (princ tree)
+  )

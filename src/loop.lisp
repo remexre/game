@@ -9,26 +9,32 @@
 (defvar *continue-loop* t)
 
 (defun main-loop-1 ()
-  (let* ((now (get-internal-run-time))
-         (dt (/ (- now *loop-last-time*) internal-time-units-per-second)))
-    (setf *loop-last-time* now)
-    (iter
-      (for name in *loop-stages-enabled*)
-      (for body = (cdr (assoc name *loop-bodies*)))
-      (when body
-        (restart-case (funcall body dt)
-          (continue ()
-            :report "Continue running the game loop."
-            nil)
-          (abort ()
-            :report (lambda (stream) (format stream "Disable the ~a stage." name))
-            (setf *loop-stages-enabled* (delete name *loop-stages-enabled*))))))))
+  (let ((now (get-internal-real-time)))
+    ; dirty hack so dt isn't ever <=0...
+    (cond
+      ((eql now *loop-last-time*)
+       (prn :warning "loop took less than ~a sec; hacking time!"
+            (/ internal-time-units-per-second))
+       (incf now))
+      ((< now *loop-last-time*)
+       (prn :warning "time went backwards... wtf...")
+       (setf now (1+ *loop-last-time*))))
+    (let ((dt (/ (- now *loop-last-time*) internal-time-units-per-second)))
+      (setf *loop-last-time* now)
+      (iter
+        (for name in *loop-stages-enabled*)
+        (for body = (assv name *loop-bodies*))
+        (when body
+          (restart-case (funcall body dt)
+            (continue ()
+              :report "Continue running the game loop."
+              nil)
+            (abort ()
+              :report (lambda (stream) (format stream "Disable the ~a stage." name))
+              (setf *loop-stages-enabled* (delete name *loop-stages-enabled*)))))))))
 
 (defun main-loop ()
-  (setf *loop-last-time* (get-internal-run-time))
-
-  ; hack so we don't get a div-by-zero...
-  (decf *loop-last-time* (max 1 (/ internal-time-units-per-second 100)))
+  (setf *loop-last-time* (get-internal-real-time))
 
   (prn t "Available stages: ~a" *loop-stages*)
   (prn t "  Enabled stages: ~a" *loop-stages-enabled*)
@@ -61,7 +67,7 @@
   (when (member name *loop-stages-enabled*)
     (error "Loop stage ~a was already enabled" name))
   (setf *loop-stages-enabled* (nconc *loop-stages-enabled* (list name)))
-  (let ((init (cdr (assoc name *loop-inits*))))
+  (let ((init (assv name *loop-inits*)))
     (when init
       (funcall init)))
   nil)
@@ -73,7 +79,7 @@
 (defun loop-rerun-init (name)
   (unless (member name *loop-stages-enabled*)
     (error "Loop stage ~a was not yet enabled" name))
-  (let ((init (cdr (assoc name *loop-inits*))))
+  (let ((init (assv name *loop-inits*)))
     (unless init
       (error "Loop stage ~a didn't have an init" name))
     (funcall init)))

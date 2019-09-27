@@ -2,7 +2,8 @@
 
 (defclass renderer ()
   ((pointer :initarg :pointer :reader pointer)
-   (clear-color :initform #(0.0 0.0 0.0 0.0) :accessor clear-color)))
+   (clear-color :initform #(0.0 0.0 0.0 0.0) :accessor clear-color)
+   (assets :initform nil :accessor assets)))
 
 (define-foreign-library renderer
   (t (:or "./librenderer.so"
@@ -17,6 +18,8 @@
 (defcfun "renderer_init" renderer-state)
 (defcfun "renderer_exit" :void
   (state renderer-state))
+
+(defvar *renderer* 'not-initialized)
 
 (defun make-renderer ()
   (let* ((pointer (renderer-init))

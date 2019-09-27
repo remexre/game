@@ -6,10 +6,8 @@
     (prn :events "~s" event))
   (setf *events* nil))
 
-(def-loop-body :foo ()
-  #+nil
-  (prn t "~a" (load-model *renderer* #p"assets/models/teapot-low-poly.vx")))
-
 (defun main ()
-  (enable-loop-stages :events :drain-events :renderer :fps :foo)
+  (enable-loop-stages :events :drain-events :renderer :fps)
   (main-loop))
+
+(princ (load-prefab #p"assets/prefabs/teapot.json"))

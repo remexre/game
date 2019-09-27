@@ -3,9 +3,9 @@
 (defclass model ()
   ((buffer :accessor buffer :initarg :buffer :initform (error "Must provide BUFFER")
            :type immutable-buffer)
-   (path :accessor path :initarg :path :initform nil :type (or null pathname))))
+   (path :accessor asset-path :initarg :path :initform nil :type (or null pathname))))
 
-(defun load-model (renderer path &key format)
+(defun load-model (path &key format (renderer *renderer*))
   (unless (pathnamep path)
     (setf path (pathname path)))
   (unless format

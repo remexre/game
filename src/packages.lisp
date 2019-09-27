@@ -1,18 +1,20 @@
 (defpackage :game-util
   (:use :alexandria :cl)
-  (:export
-    #:*log-tags* #:dbg #:prn
-    #:reload))
+  (:export #:assv
+           #:*log-tags* #:dbg #:prn))
 
 (defpackage :renderer
   (:use :cffi :cl :game-util :iterate :trivial-garbage)
-  (:export #:clear-color #:flip #:make-renderer #:renderer #:title
+  (:export #:*renderer*
+           #:assets #:clear-color #:flip #:make-renderer #:renderer #:title
            #:immutable-buffer #:make-immutable-buffer
            #:get-events))
 
 (defpackage :assets
-  (:use :cl :game-util :renderer :trivial-shell)
-  (:export #:load-model #:model))
+  (:use :cl :game-util :renderer :trivia :trivial-shell)
+  (:export #:asset-path #:asset-renderer
+           #:load-model #:model
+           #:load-prefab #:prefab))
 
 (defpackage :game
   (:use :alexandria :assets :cl :game-util :iterate :renderer :trivia)

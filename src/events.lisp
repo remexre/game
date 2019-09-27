@@ -16,6 +16,7 @@
 
 (defun translate-scancode (scancode)
   (case scancode
+    (1   :escape)
     (2   #\1)
     (3   #\2)
     (4   #\3)
