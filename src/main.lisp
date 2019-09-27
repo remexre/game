@@ -7,6 +7,7 @@
   (setf *events* nil))
 
 (def-loop-body :foo ()
+  #+nil
   (prn t "~a" (load-model *renderer* #p"assets/models/teapot-low-poly.vx")))
 
 (defun main ()
