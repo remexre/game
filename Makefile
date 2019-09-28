@@ -7,14 +7,15 @@ debug: target/debug/librenderer.so
 		--eval "(ql:quickload :game)" \
 		--eval "(game::enable-loop-stage :debug)" \
 		--eval "(game:main)"
+release: target/game target/release/librenderer.so
 run: target/release/librenderer.so
 	sbcl --non-interactive \
 		--eval "(ql:quickload :game)" \
 		--eval "(game:main)"
-run-release: target/game target/release/librenderer.so
+run-release: release
 	target/game
 tools: $(patsubst %,target/tools/%,$(TOOLS))
-.PHONY: all debug run run-release
+.PHONY: all debug release run run-release tools
 
 watch: target/debug/librenderer.so
 	tmux \

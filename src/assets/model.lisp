@@ -5,15 +5,13 @@
            :type immutable-buffer)
    (path :accessor asset-path :initarg :path :initform nil :type (or null pathname))))
 
-(defun load-model (path &key format (renderer *renderer*))
+(wadler-pprint:def-pretty-object model (:print-object t)
+  (path buffer))
+
+(defun load-model (path &key (renderer *renderer*))
   (unless (pathnamep path)
     (setf path (pathname path)))
-  (unless format
-    (setf format (intern (string-upcase (pathname-type path)) :keyword)))
-
-  (ecase format
-    ((:vx)
-     (with-open-file (stream path :element-type '(unsigned-byte 8))
-       (let ((data (make-array (file-length stream) :element-type '(unsigned-byte 8))))
-         (read-sequence data stream)
-         (make-immutable-buffer renderer data :bytes t))))))
+  (with-open-file (stream path :element-type '(unsigned-byte 8))
+    (let ((data (make-array (file-length stream) :element-type '(unsigned-byte 8))))
+      (read-sequence data stream)
+      (make-immutable-buffer renderer data :bytes t))))

@@ -10,4 +10,5 @@
   (enable-loop-stages :events :drain-events :renderer :fps)
   (main-loop))
 
-(princ (load-prefab #p"assets/prefabs/teapot.json"))
+#+nil
+(format t "~a~%" (load-asset #p"assets/prefabs/teapot.json" :kind :prefab))

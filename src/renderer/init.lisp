@@ -3,7 +3,7 @@
 (defclass renderer ()
   ((pointer :initarg :pointer :reader pointer)
    (clear-color :initform #(0.0 0.0 0.0 0.0) :accessor clear-color)
-   (assets :initform nil :accessor assets)))
+   (asset-cache :initform nil :accessor asset-cache :type list)))
 
 (define-foreign-library renderer
   (t (:or "./librenderer.so"
