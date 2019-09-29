@@ -7,8 +7,7 @@
     (match event
       (:close-requested (setf *continue-loop* nil))
       ((list :keyboard scancode state mods)
-       (when-let (name (translate-scancode scancode))
-         (push (list :keyboard name state mods) *events*)))
+       (push event *events*))
       (_ (prn t "unknown event ~s" event))))
 
   (when (> (length *events*) 10)

@@ -1,60 +1,41 @@
 (in-package :renderer)
 
 (defclass renderer ()
-  ((pointer :initarg :pointer :reader pointer)
-   (clear-color :initform #(0.0 0.0 0.0 0.0) :accessor clear-color)
+  ((window :initarg :window :reader window :type (satisfies cffi:pointerp))
+   (scene  :initform nil :accessor scene)
    (asset-cache :initform nil :accessor asset-cache :type list)))
 
 (wadler-pprint:def-pretty-object renderer (:print-object t)
-  (pointer clear-color asset-cache))
-
-(define-foreign-library renderer
-  (t (:or "./librenderer.so"
-          "./target/release/librenderer.so"
-          "./target/debug/librenderer.so"
-          "librenderer")))
-
-(use-foreign-library renderer)
-
-(defctype renderer-state :pointer)
-
-(defcfun "renderer_init" renderer-state)
-(defcfun "renderer_exit" :void
-  (state renderer-state))
+  (window scene asset-cache))
 
 (defvar *renderer* 'not-initialized)
 
 (defun make-renderer ()
-  (let* ((pointer (renderer-init))
-         (free (lambda () (renderer-exit pointer)))
-         (renderer (make-instance 'renderer :pointer pointer)))
-    (finalize renderer free)
-    renderer))
-
-(defcfun "renderer_draw" :void
-  (state renderer-state)
-  (r :float)
-  (g :float)
-  (b :float)
-  (a :float))
+  (with-body-in-main-thread ()
+    ; glfw is resistant to non-global state, not wholly unreasonably. So we
+    ; have to word this a bit awkwardly...
+    (glfw:set-error-callback 'glfw::default-error-fun)
+    (glfw:initialize)
+    (glfw:create-window :width 800 :height 600 :title "game"
+                        :context-version-major 3
+                        :context-version-minor 3
+                        :opengl-profile :opengl-core-profile)
+    (let* ((window glfw:*window*)
+           (free (lambda ()
+                   (glfw:destroy-window window)))
+           (renderer (make-instance 'renderer :window window)))
+      (finalize renderer free)
+      (setup-events window)
+      (gl:bind-vertex-array (gl:gen-vertex-array))
+      renderer)))
 
 (defun flip (renderer)
   (check-type renderer renderer)
-  (let* ((cc (clear-color renderer))
-         (r (coerce (aref cc 0) 'single-float))
-         (g (coerce (aref cc 1) 'single-float))
-         (b (coerce (aref cc 2) 'single-float))
-         (a (coerce (aref cc 3) 'single-float)))
-    (renderer-draw (pointer renderer) r g b a)))
-
-(defcfun "renderer_set_title" :void
-  (state renderer-state)
-  (ptr   :string))
+  (glfw:swap-buffers (window renderer)))
 
 (defsetf title set-title)
 
 (defun set-title (renderer title)
   (check-type renderer renderer)
   (check-type title string)
-  (with-foreign-string (ptr title)
-    (renderer-set-title (pointer renderer) ptr)))
+  (glfw:set-window-title title (window renderer)))

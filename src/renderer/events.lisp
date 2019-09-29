@@ -1,19 +1,25 @@
 (in-package :renderer)
 
-(defcfun "renderer_poll_events" :uint64
-  (state renderer-state))
+(defvar *events* nil)
 
-(defcfun "renderer_get_events" :void
-  (state renderer-state)
-  (data  (:pointer :float))
-  (len   :uint64))
+(glfw:def-key-callback key-callback (window key scancode action mod-keys)
+  (declare (ignore scancode))
+  (with-body-in-main-thread ()
+    (push (list window :keyboard key action mod-keys) *events*)))
+
+(defun setup-events (window)
+  (glfw:set-key-callback 'key-callback window))
 
 (defun get-events (renderer)
   (check-type renderer renderer)
 
-  (let* ((len (renderer-poll-events (pointer renderer)))
-         (str (with-foreign-pointer (buf len)
-                (renderer-get-events (pointer renderer) buf len)
-                (foreign-string-to-lisp buf))))
-    (with-input-from-string (stream str)
-      (read stream))))
+  (glfw:poll-events)
+  (let* ((out nil)
+         (func (lambda (event)
+                 (and (eql (cffi:pointer-address (car event))
+                           (cffi:pointer-address (window renderer)))
+                      (push (cdr event) out)))))
+    (setf *events* (delete-if func *events*))
+    (when (glfw:window-should-close-p (window renderer))
+      (push :close-requested out))
+    out))

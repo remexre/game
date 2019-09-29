@@ -1,0 +1,16 @@
+{
+	"type": "prefab",
+	"children": [
+		{
+			"type": "include",
+			"path": "assets/prefabs/triangle.json"
+		},
+		{
+			"type": "clear-color",
+			"r": 1.0,
+			"g": 0.0,
+			"b": 1.0,
+			"a": 1.0
+		}
+	]
+}

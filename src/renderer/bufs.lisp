@@ -3,36 +3,38 @@
 (defvar *live-buffers* 0)
 
 (defclass immutable-buffer ()
-  ((pointer :initarg :pointer :reader pointer)))
-
-(defcfun "renderer_alloc_immutable" :pointer
-  (state renderer-state)
-  (data  (:pointer :float))
-  (len   :uint64))
-
-(defcfun "renderer_free_immutable" :void
-  (pointer :pointer))
+  ((vbo :initarg :vbo :reader vbo :type fixnum)))
 
 (defun make-immutable-buffer (renderer data &key bytes)
   (check-type renderer renderer)
-  (cond
-    (bytes (check-type data (vector (unsigned-byte 8)))
-           (unless (zerop (mod (length data) 4))
-             (error "DATA of illegal length ~a" (length data))))
-    (t     (check-type data (vector single-float))))
 
-  (let* ((len (* (if bytes 1 4) (length data)))
-         (pointer (with-foreign-pointer (buf len)
-                    (iter
-                      (for i below (length data))
-                      (if bytes
-                        (setf (mem-ref buf :uint8 i) (aref data i))
-                        (setf (mem-ref buf :float i) (aref data i))))
-                    (renderer-alloc-immutable (pointer renderer) buf (/ len 4))))
-         (free (lambda ()
-                 (decf *live-buffers*)
-                 (renderer-free-immutable pointer)))
-         (buffer (make-instance 'immutable-buffer :pointer pointer)))
+  (prog (buffer free float-data vbo)
+    (cond
+      (bytes (check-type data (vector (unsigned-byte 8)))
+             (unless (zerop (mod (length data) 4))
+               (error "DATA of illegal length ~a" (length data)))
+             (setf float-data (make-array (list (/ (length data) 4)) :element-type 'single-float))
+             ; TODO: This is unironically horrible.
+             (cffi:with-foreign-pointer (tmp (length data))
+               (iter
+                 (for i below (length data))
+                 (setf (cffi:mem-ref tmp :uint8 i) (aref data i)))
+               (iter
+                 (for i below (/ (length data) 4))
+                 (setf (aref float-data i) (cffi:mem-ref tmp :float i)))))
+      (t     (check-type data (vector single-float))
+             (setf float-data data)))
+
+    (format t "float-data = ~a~%" float-data)
+
+    (setf vbo (gl:gen-buffer))
     (incf *live-buffers*)
-    (finalize buffer free)
-    buffer))
+
+    (gl:bind-buffer :array-buffer vbo)
+    (gl:buffer-data :array-buffer :static-draw vbo float-data)
+
+    (setf buffer (make-instance 'immutable-buffer :vbo vbo))
+    (finalize buffer (lambda ()
+                       (decf *live-buffers*)
+                       (gl:delete-buffers (list vbo))))
+    (return buffer)))

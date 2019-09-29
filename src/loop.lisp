@@ -34,15 +34,16 @@
               (setf *loop-stages-enabled* (delete name *loop-stages-enabled*)))))))))
 
 (defun main-loop ()
-  (setf *loop-last-time* (get-internal-real-time))
+  (trivial-main-thread:with-body-in-main-thread ()
+    (setf *loop-last-time* (get-internal-real-time))
 
-  (prn t "Available stages: ~a" *loop-stages*)
-  (prn t "  Enabled stages: ~a" *loop-stages-enabled*)
+    (prn t "Available stages: ~a" *loop-stages*)
+    (prn t "  Enabled stages: ~a" *loop-stages-enabled*)
 
-  (setf *continue-loop* t)
-  (iter
-    (while *continue-loop*)
-    (main-loop-1)))
+    (setf *continue-loop* t)
+    (iter
+      (while *continue-loop*)
+      (main-loop-1))))
 
 (defmacro def-loop-init (name () &body body)
   (check-type name keyword)

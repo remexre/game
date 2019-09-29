@@ -3,10 +3,11 @@
   :license "Apache-2.0/MIT"
   :serial t
   :build-operation "program-op"
-  :build-pathname "target/game"
+  :build-pathname "game"
   :entry-point "game:main"
-  :depends-on (:alexandria :cffi :cl-json :cl-wadler-pprint :iterate :swank
-               :trivia :trivial-garbage :trivial-shell)
+  :depends-on (:alexandria :cl-glfw3 :cl-json :cl-opengl :cl-wadler-pprint
+               :iterate :swank :trivia :trivial-garbage :trivial-main-thread
+               :trivial-shell)
   :components ((:file "src/packages")
 
                (:file "src/util/misc")
@@ -14,7 +15,6 @@
 
                (:file "src/renderer/init")
                (:file "src/renderer/bufs")
-               (:file "src/renderer/draw")
                (:file "src/renderer/events")
 
                (:file "src/assets/cache")
@@ -24,6 +24,7 @@
 
                (:file "src/loop")
                (:file "src/debug")
+               (:file "src/xform")
                (:file "src/renderer")
                (:file "src/events")
                (:file "src/fps")

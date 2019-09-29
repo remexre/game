@@ -8,4 +8,5 @@
 
 (defun main ()
   (enable-loop-stages :events :drain-events :renderer :fps)
+  (setf (scene *renderer*) (load-asset #p"assets/scenes/spinning-teapot.json"))
   (main-loop))
