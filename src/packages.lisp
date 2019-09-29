@@ -20,7 +20,8 @@
            #:render-clear-color #:render-clear-color-r #:render-clear-color-g
            #:render-clear-color-b #:render-clear-color-a
            #:render-group #:render-group-children
-           #:render-model #:render-prefab #:render-entry))
+           #:render-model #:render-prefab #:render-entry)
+  (:import-from :wadler-pprint #:def-pretty-object))
 
 (defpackage :game
   (:use :alexandria :assets :cl :game-util :iterate :renderer :trivia)

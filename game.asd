@@ -13,14 +13,19 @@
                (:file "src/util/misc")
                (:file "src/util/log")
 
+               (:static-file "src/renderer/frag.glsl")
+               (:static-file "src/renderer/vert.glsl")
                (:file "src/renderer/init")
                (:file "src/renderer/bufs")
                (:file "src/renderer/events")
+               (:file "src/renderer/draw")
 
                (:file "src/assets/cache")
                (:file "src/assets/model")
-               (:file "src/assets/tree")
                (:file "src/assets/prefab")
+               (:file "src/assets/scene")
+               (:file "src/assets/tree")
+               (:file "src/assets/xform")
 
                (:file "src/loop")
                (:file "src/debug")

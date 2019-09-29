@@ -29,6 +29,9 @@
       (gl:bind-vertex-array (gl:gen-vertex-array))
       renderer)))
 
+(defun load-shader (shader-type path)
+  :todo)
+
 (defun flip (renderer)
   (check-type renderer renderer)
   (glfw:swap-buffers (window renderer)))

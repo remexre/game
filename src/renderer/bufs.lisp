@@ -5,7 +5,7 @@
 (defclass immutable-buffer ()
   ((vbo :initarg :vbo :reader vbo :type fixnum)))
 
-(defun make-immutable-buffer (renderer data &key bytes)
+(defun make-immutable-buffer (data &key bytes (renderer *renderer*))
   (check-type renderer renderer)
 
   (prog (buffer free float-data vbo)
