@@ -9,6 +9,3 @@
 (defun main ()
   (enable-loop-stages :events :drain-events :renderer :fps)
   (main-loop))
-
-#+nil
-(format t "~a~%" (load-asset #p"assets/prefabs/teapot.json" :kind :prefab))

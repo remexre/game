@@ -1,9 +1,8 @@
 (in-package :assets)
 
-(defclass model ()
+(defclass model (asset)
   ((buffer :accessor buffer :initarg :buffer :initform (error "Must provide BUFFER")
-           :type immutable-buffer)
-   (path :accessor asset-path :initarg :path :initform nil :type (or null pathname))))
+           :type immutable-buffer)))
 
 (wadler-pprint:def-pretty-object model (:print-object t)
   (path buffer))

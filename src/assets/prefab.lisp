@@ -1,12 +1,10 @@
 (in-package :assets)
 
-(defclass prefab ()
-  ((path     :accessor asset-path     :initarg :path     :initform nil :type (or null pathname))
-   (renderer :accessor asset-renderer :initarg :renderer               :type renderer)
-   (tree     :accessor tree           :initarg :tree                   :type render-tree)))
+(defclass prefab (asset)
+  ((tree :accessor tree :initarg :tree :type render-tree)))
 
 (wadler-pprint:def-pretty-object prefab (:print-object t)
-  (path renderer tree))
+  (path tree))
 
 (defun load-prefab (path &key (renderer *renderer*))
   (unless (pathnamep path)
@@ -14,4 +12,4 @@
   (let* ((data (with-open-file (stream path)
                  (cl-json:decode-json stream)))
          (tree (load-tree (assv :render data) :renderer renderer)))
-    (make-instance 'prefab :path path :renderer renderer :tree tree)))
+    (make-instance 'prefab :path path :tree tree)))

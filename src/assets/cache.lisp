@@ -1,5 +1,8 @@
 (in-package :assets)
 
+(defclass asset ()
+  ((path :accessor asset-path :initarg :path :initform nil :type (or null pathname))))
+
 (defun load-asset (path &key kind (renderer *renderer*))
   (cdr (load-asset-entry path :kind kind :renderer renderer)))
 

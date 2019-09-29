@@ -5,6 +5,9 @@
    (clear-color :initform #(0.0 0.0 0.0 0.0) :accessor clear-color)
    (asset-cache :initform nil :accessor asset-cache :type list)))
 
+(wadler-pprint:def-pretty-object renderer (:print-object t)
+  (pointer clear-color asset-cache))
+
 (define-foreign-library renderer
   (t (:or "./librenderer.so"
           "./target/release/librenderer.so"
