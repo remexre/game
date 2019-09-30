@@ -2,13 +2,17 @@
 
 (defclass renderer ()
   ((window :initarg :window :reader window :type (satisfies cffi:pointerp))
-   (scene  :initform nil :accessor scene)
+   (program :accessor program :type fixnum)
+   (scene :initform nil :accessor scene)
    (asset-cache :initform nil :accessor asset-cache :type list)))
 
 (wadler-pprint:def-pretty-object renderer (:print-object t)
   (window scene asset-cache))
 
 (defvar *renderer* 'not-initialized)
+
+(defparameter +vert-shader-src+ (read-file #p"src/renderer/vert.glsl"))
+(defparameter +frag-shader-src+ (read-file #p"src/renderer/frag.glsl"))
 
 (defun make-renderer ()
   (with-body-in-main-thread ()
@@ -25,12 +29,26 @@
                    (glfw:destroy-window window)))
            (renderer (make-instance 'renderer :window window)))
       (finalize renderer free)
+
+      (let ((vert (load-shader :vertex-shader   +vert-shader-src+))
+            (frag (load-shader :fragment-shader +frag-shader-src+))
+            (program (gl:create-program)))
+        (gl:attach-shader program vert)
+        (gl:attach-shader program frag)
+        (gl:link-program program)
+        (assert (gl:get-program program :link-status))
+        (setf (program renderer) program))
+
       (setup-events window)
       (gl:bind-vertex-array (gl:gen-vertex-array))
       renderer)))
 
-(defun load-shader (shader-type path)
-  :todo)
+(defun load-shader (shader-type src)
+  (let* ((shader (gl:create-shader shader-type)))
+    (gl:shader-source shader src)
+    (gl:compile-shader shader)
+    (assert (gl:get-shader shader :compile-status))
+    shader))
 
 (defun flip (renderer)
   (check-type renderer renderer)

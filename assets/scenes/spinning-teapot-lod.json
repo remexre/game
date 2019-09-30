@@ -11,14 +11,22 @@
 	"clear-color": [0.5, 0.5, 1.0, 1.0],
 	"children": [
 		{
-			"type": "shader-params",
-			"diffuse": [1.0, 0.0, 1.0, 1.0],
+			"type": "xform",
+			"xlat": [0.0, 1.0, -10.0],
 			"child": {
-				"type": "xform",
-				"xlat": [0.0, 1.0, -10.0],
-				"child": {
+				"type": "lod-branch",
+				"distance": 10.0,
+				"closer": {
 					"type": "model",
 					"path": "assets/models/teapot-low-poly.vx"
+				},
+				"further": {
+					"type": "shader-params",
+					"diffuse": [1.0, 0.0, 1.0, 1.0],
+					"child": {
+						"type": "model",
+						"path": "assets/models/teapot-low-poly.vx"
+					}
 				}
 			}
 		}

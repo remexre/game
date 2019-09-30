@@ -12,6 +12,7 @@
 
                (:file "src/util/misc")
                (:file "src/util/log")
+               (:file "src/util/xform")
 
                (:static-file "src/renderer/frag.glsl")
                (:static-file "src/renderer/vert.glsl")
@@ -22,14 +23,12 @@
 
                (:file "src/assets/cache")
                (:file "src/assets/model")
+               (:file "src/assets/node")
                (:file "src/assets/prefab")
                (:file "src/assets/scene")
-               (:file "src/assets/tree")
-               (:file "src/assets/xform")
 
                (:file "src/loop")
                (:file "src/debug")
-               (:file "src/xform")
                (:file "src/renderer")
                (:file "src/events")
                (:file "src/fps")

@@ -8,33 +8,41 @@
 (defun make-immutable-buffer (data &key bytes (renderer *renderer*))
   (check-type renderer renderer)
 
-  (prog (buffer free float-data vbo)
-    (cond
-      (bytes (check-type data (vector (unsigned-byte 8)))
-             (unless (zerop (mod (length data) 4))
-               (error "DATA of illegal length ~a" (length data)))
-             (setf float-data (make-array (list (/ (length data) 4)) :element-type 'single-float))
-             ; TODO: This is unironically horrible.
-             (cffi:with-foreign-pointer (tmp (length data))
-               (iter
-                 (for i below (length data))
-                 (setf (cffi:mem-ref tmp :uint8 i) (aref data i)))
-               (iter
-                 (for i below (/ (length data) 4))
-                 (setf (aref float-data i) (cffi:mem-ref tmp :float i)))))
-      (t     (check-type data (vector single-float))
-             (setf float-data data)))
+  ; Convert a byte array to a float array, if needed.
+  (when bytes
+    (check-type data (vector (unsigned-byte 8)))
 
-    (format t "float-data = ~a~%" float-data)
+    (unless (zerop (mod (length data) 4))
+      (error "DATA of illegal length ~a" (length data)))
 
-    (setf vbo (gl:gen-buffer))
+    ; TODO: This is unironically horrible. Does this even work???
+    ; Even if it does, it might be nice to fuse it with the loop storing into
+    ; arr below. This shouldn't be in a hot path though...
+    (cffi:with-foreign-pointer (tmp (length data))
+      (iter
+        (for i below (length data))
+        (setf (cffi:mem-ref tmp :uint8 i) (aref data i)))
+      (setf data (make-array (list (/ (length data) 4)) :element-type 'single-float))
+      (iter
+        (for i below (length data))
+        (setf (aref data i) (cffi:mem-ref tmp :float i)))))
+
+  (check-type data (vector single-float))
+
+  (let* ((vbo (gl:gen-buffer))
+         (free (lambda ()
+                 (decf *live-buffers*)
+                 (gl:delete-buffers (list vbo)))))
     (incf *live-buffers*)
 
     (gl:bind-buffer :array-buffer vbo)
-    (gl:buffer-data :array-buffer :static-draw vbo float-data)
-
-    (setf buffer (make-instance 'immutable-buffer :vbo vbo))
-    (finalize buffer (lambda ()
-                       (decf *live-buffers*)
-                       (gl:delete-buffers (list vbo))))
-    (return buffer)))
+    (bracket (arr (gl:alloc-gl-array :float (length data))
+                  (gl:free-gl-array arr))
+      (iter
+        (for i below (length data))
+        (setf (gl:glaref arr i) (aref data i)))
+      (gl:buffer-data :array-buffer :static-draw arr))
+    
+    (let ((buffer (make-instance 'immutable-buffer :vbo vbo)))
+      (finalize buffer free)
+      buffer)))

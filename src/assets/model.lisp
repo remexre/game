@@ -1,17 +1,17 @@
 (in-package :assets)
 
-(defclass model ()
-  ((buffer :accessor buffer :initarg :buffer :initform (error "Must provide BUFFER")
-           :type immutable-buffer)))
+(defstruct model
+  (buf (error "Must provide BUF") :type immutable-buffer))
 
-(def-pretty-object model (:print-object t)
-  (buffer))
+(defmethod asset-kind ((model model))
+  (declare (ignore model))
+  :model)
 
-(defun load-model (path)
-  (unless (pathnamep path)
-    (setf path (pathname path)))
-  (let ((data (with-open-file (stream path :element-type '(unsigned-byte 8))
-                (let ((data (make-array (file-length stream) :element-type '(unsigned-byte 8))))
-                  (read-sequence data stream)
-                  data))))
-    (make-instance 'model :buffer (make-immutable-buffer data :bytes t))))
+(defmethod load-asset ((kind (eql :model)) path &key get-entry ignore-cache)
+  (make-model
+    :buf (make-immutable-buffer
+           (with-open-file (stream path :element-type '(unsigned-byte 8))
+             (let ((buf (make-array (list (file-length stream)) :element-type '(unsigned-byte 8))))
+               (read-sequence buf stream)
+               buf)) 
+           :bytes t)))

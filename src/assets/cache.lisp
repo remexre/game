@@ -10,15 +10,17 @@
 
      ; Check the cache for the entry.
      (unless ignore-cache
-       (setf entry (assoc path (asset-cache *renderer*))
-             cachedp t))
+       (setf entry (assoc path (asset-cache *renderer*)))
+       (when entry
+         (setf cached t)))
 
      ; If the entry wasn't present, load it.
      (unless entry
-       (setf entry (call-next-method)))
+       (prn :assets "Loading ~a from ~a" kind path)
+       (setf entry (cons path (call-next-method))))
 
-     ; If the entry was uncached and the cache wasn't explicitly ignored, store
-     ; it in the cache.
+     ; If the entry was uncached, but cache was requested, store it in the
+     ; cache.
      (unless (or cachedp ignore-cache)
        (push entry (asset-cache *renderer*)))
 
@@ -27,34 +29,12 @@
          entry
          (cdr entry)))))
 
-(defun load-asset (path &key kind)
-  (cdr (load-asset-entry path :kind kind)))
+(defgeneric asset-kind (asset)
+  (:documentation "Contract: (asset-kind (load-asset kind path)) = kind"))
 
-(defun load-asset-entry (path &key kind)
-  (setf path (truename path))
-
-
-  (let ((entry (load-asset-entry-uncached path :kind kind)))
-    (push entry (asset-cache *renderer*))
-    entry))
-
-(defun load-asset-entry-uncached (path &key kind)
-  (unless kind
-    (setf kind (eswitch ((pathname-type path) :test #'string=)
-                        ("json" :prefab)
-                        ("vx"   :model))))
-
-  (let* ((asset (ecase kind
-                  ((:model)
-                   (load-model path))
-                  ((:prefab)
-                   (load-prefab path))))
-         (entry (cons path asset)))
-    (push entry (asset-cache *renderer*))
-    entry))
-
-(defun reload-asset (path &key kind)
-  (let ((asset (cdr (load-asset-entry-uncached path :kind kind)))
-        (entry      (load-asset-entry          path :kind kind)))
-    (setf (cdr entry) asset)
-    entry))
+(defun reload-all-assets ()
+  (iter
+    (for entry in (asset-cache *renderer*))
+    (for path = (car entry))
+    (for kind = (asset-kind (cdr entry)))
+    (setf (cdr entry) (load-asset kind path :ignore-cache t))))
