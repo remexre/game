@@ -10,6 +10,7 @@
   (:export #:*renderer*
            #:asset-cache #:flip #:make-renderer #:renderer #:scene #:title
            #:immutable-buffer #:make-immutable-buffer
+           #:*shader-proj* #:*shader-view* #:*shader-model* #:*shader-diffuse*
            #:clear #:draw-object
            #:get-events))
 
@@ -18,7 +19,7 @@
   (:export #:load-asset #:reload-all-assets
            #:camera #:camera-pos #:camera-up #:camera-front #:camera-near
                     #:camera-far #:camera-fov #:camera-ortho
-                    #:camera-projection-xform #:camera-view-xform
+                    #:camera-proj-xform #:camera-view-xform
            #:model #:model-buf
            #:node
            #:node-include-prefab #:node-include-prefab-entry
@@ -27,7 +28,7 @@
            #:node-model #:node-model-entry
            #:node-shader-params #:node-shader-params-diffuse
                                 #:node-shader-params-child
-           #:node-xform #:node-xform-matrix
+           #:node-xform #:node-xform-matrix #:node-xform-child
            #:scene #:scene-camera #:scene-clear-color #:scene-children))
 
 (defpackage :game

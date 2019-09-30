@@ -41,7 +41,7 @@
 
     camera))
 
-(defun camera-projection-xform (camera)
+(defun camera-proj-xform (camera)
   "Returns the transformation associated with the projection matrix of \
    the camera."
   (check-type camera camera)

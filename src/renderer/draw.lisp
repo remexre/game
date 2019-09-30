@@ -3,15 +3,23 @@
 (defun clear (clear-color)
   (check-type clear-color (simple-array single-float (4)))
 
-  ; Does SBCL optimize this?
-  (apply #'gl:clear-color (coerce clear-color 'list))
-
+  (apply #'gl:clear-color (coerce clear-color 'list)) ; Does SBCL optimize this?
   (gl:clear :color-buffer :depth-buffer))
 
-(defun draw-object (&key pos proj view model)
+; Per-frame parameters.
+(defvar *shader-proj*)
+(defvar *shader-view*)
+
+; Per-DRAW-OBJECT-call parameters.
+(defvar *shader-model* +identity-xform+)
+(defvar *shader-diffuse* (to-float-array '(4) '(1.0 1.0 1.0 1.0)))
+
+(defun draw-object (pos)
   (check-type pos immutable-buffer)
-  (check-type proj xform)
-  (check-type view xform)
-  (check-type model xform)
+
+  (check-type *shader-proj* xform)
+  (check-type *shader-view* xform)
+  (check-type *shader-model* xform)
+  (check-type *shader-diffuse* (simple-array single-float (4)))
 
   (dbg :todo))
