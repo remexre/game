@@ -12,6 +12,7 @@
 
                (:file "src/util/misc")
                (:file "src/util/log")
+               (:file "src/util/vec3")
                (:file "src/util/xform")
 
                (:static-file "src/renderer/frag.glsl")

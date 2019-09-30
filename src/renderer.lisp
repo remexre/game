@@ -13,8 +13,8 @@
           (camera      (scene-camera      scene))
           (children    (scene-children    scene)))
       (clear clear-color)
-      (let ((*render-proj* (camera-proj-xform camera))
-            (*render-view* (camera-view-xform camera)))
+      (let ((*shader-proj* (camera-proj-xform camera))
+            (*shader-view* (camera-view-xform camera)))
         (mapc #'draw children))))
   (flip *renderer*))
 
