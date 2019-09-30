@@ -1,13 +1,13 @@
-(defsystem #:game
+(defsystem "game"
   :author "Nathan Ringo <nathan@remexre.xyz>"
   :license "Apache-2.0/MIT"
   :serial t
   :build-operation "program-op"
   :build-pathname "game"
   :entry-point "game:main"
-  :depends-on (:alexandria :cl-glfw3 :cl-json :cl-opengl :cl-wadler-pprint
-               :iterate :swank :trivia :trivial-garbage :trivial-main-thread
-               :trivial-shell)
+  :depends-on ("alexandria" "cl-glfw3" "cl-json" "cl-opengl" "cl-wadler-pprint"
+               "iterate" "parse-float" "swank" "trivia" "trivial-garbage"
+               "trivial-main-thread" "trivial-shell")
   :components ((:file "src/packages")
 
                (:file "src/util/misc")

@@ -16,7 +16,8 @@
            #:get-events))
 
 (defpackage :assets
-  (:use :alexandria :cl :game-util :iterate :renderer :trivia :trivial-shell)
+  (:use :alexandria :cl :game-util :iterate :parse-float :renderer :trivia
+        :trivial-shell)
   (:export #:load-asset #:reload-all-assets
            #:camera #:camera-pos #:camera-up #:camera-front #:camera-near
                     #:camera-far #:camera-fov #:camera-ortho

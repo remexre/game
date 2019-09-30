@@ -22,5 +22,5 @@
 (defmacro dbg (val)
   (with-gensyms (name)
     `(let ((,name ,val))
-       (prn :dbg ,(format nil "~s = ~~s" val) ,name)
+       (prn :dbg ,(format nil "~s = (the ~~s ~~s)" val) (type-of ,name) ,name)
        ,name)))
