@@ -21,7 +21,7 @@
         (setf line (string-trim '(#\space #\tab #\newline) line))
         (when (string= line "")
           (next-iteration))
-        (vector-push-extend (dbg (parse-float line)) buf)))
+        (vector-push-extend (parse-float line) buf)))
     (make-model :buf (make-immutable-buffer buf))))
 
 (defun load-vx-model (path)

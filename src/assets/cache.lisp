@@ -12,7 +12,7 @@
      (unless ignore-cache
        (setf entry (assoc path (asset-cache *renderer*)))
        (when entry
-         (setf cached t)))
+         (setf cachedp t)))
 
      ; If the entry wasn't present, load it.
      (unless entry
@@ -22,6 +22,7 @@
      ; If the entry was uncached, but cache was requested, store it in the
      ; cache.
      (unless (or cachedp ignore-cache)
+       (prn :assets "Caching ~a" path)
        (push entry (asset-cache *renderer*)))
 
      ; Return the asset or entry.

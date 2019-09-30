@@ -1,9 +1,0 @@
-{
-	"type": "prefab",
-	"children": [
-		{
-			"type": "model",
-			"path": "assets/models/triangle.vx"
-		}
-	]
-}

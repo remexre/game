@@ -7,8 +7,13 @@
   (with-body-in-main-thread ()
     (push (list window :keyboard key action mod-keys) *events*)))
 
+(glfw:def-window-size-callback window-size-callback (window w h)
+  (declare (ignore window))
+  (gl:viewport 0 0 w h))
+
 (defun setup-events (window)
-  (glfw:set-key-callback 'key-callback window))
+  (glfw:set-key-callback 'key-callback window)
+  (glfw:set-window-size-callback 'window-size-callback window))
 
 (defun get-events (renderer)
   (check-type renderer renderer)

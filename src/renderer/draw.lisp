@@ -31,6 +31,9 @@
   (gl:vertex-attrib-pointer 0 3 :float nil 0 (cffi:null-pointer))
 
   ; Set up uniforms.
+  ; ; (gl:uniform-matrix 0 4 (vector (flatten-xform +identity-xform+)))
+  ; ; (gl:uniform-matrix 1 4 (vector (flatten-xform +identity-xform+)))
+  ; ; (gl:uniform-matrix 2 4 (vector (flatten-xform +identity-xform+)))
   (gl:uniform-matrix 0 4 (vector (flatten-xform *shader-proj*)))
   (gl:uniform-matrix 1 4 (vector (flatten-xform *shader-view*)))
   (gl:uniform-matrix 2 4 (vector (flatten-xform *shader-model*)))
