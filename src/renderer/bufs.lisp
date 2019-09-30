@@ -5,9 +5,7 @@
 (defclass immutable-buffer ()
   ((vbo :initarg :vbo :reader vbo :type fixnum)))
 
-(defun make-immutable-buffer (data &key bytes (renderer *renderer*))
-  (check-type renderer renderer)
-
+(defun make-immutable-buffer (data &key bytes)
   ; Convert a byte array to a float array, if needed.
   (when bytes
     (check-type data (vector (unsigned-byte 8)))

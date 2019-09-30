@@ -36,7 +36,8 @@
         (gl:attach-shader program vert)
         (gl:attach-shader program frag)
         (gl:link-program program)
-        (assert (gl:get-program program :link-status))
+        (unless (gl:get-program program :link-status)
+          (error "Failed to link program: ~a" (gl:get-program-info-log program)))
         (setf (program renderer) program))
 
       (setup-events window)
@@ -47,7 +48,8 @@
   (let* ((shader (gl:create-shader shader-type)))
     (gl:shader-source shader src)
     (gl:compile-shader shader)
-    (assert (gl:get-shader shader :compile-status))
+    (unless (gl:get-shader shader :compile-status)
+      (error "Failed to compile shader: ~a" (gl:get-shader-info-log shader)))
     shader))
 
 (defun flip (renderer)

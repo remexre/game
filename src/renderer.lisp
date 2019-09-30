@@ -1,13 +1,7 @@
 (in-package :game)
 
 (def-loop-init :renderer ()
-  (setf *renderer* (make-renderer))
-  #+nil
-  (setf (clear-color *renderer*) #(0.06125 0.06125 1.0 1.0)))
-
-(defgeneric before-clear (object)
-  (:method (object)
-   (declare (ignore object))))
+  (setf *renderer* (make-renderer)))
 
 (defgeneric draw (object xform)
   (:method (object xform)
@@ -16,7 +10,6 @@
 
 (def-loop-body :renderer ()
   (when-let (scene (scene *renderer*))
-    (before-clear scene)
-    (gl:clear :color-buffer :depth-buffer)
+    (clear (scene-clear-color scene))
     (draw scene +identity-xform+))
   (flip *renderer*))

@@ -41,7 +41,7 @@
 
     camera))
 
-(defun camera-xform (camera)
+(defun camera-projection-xform (camera)
   "Returns the transformation associated with the projection matrix of \
    the camera."
   (check-type camera camera)
@@ -51,3 +51,9 @@
                  '()
                  )))
     (to-float-array '(4 4) mat)))
+
+(defun camera-view-xform (camera)
+  "Returns the transformation associated with the view matrix of the camera."
+  (check-type camera camera)
+
+  (todo 'camera-view-xform))
