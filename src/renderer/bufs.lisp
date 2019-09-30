@@ -3,7 +3,8 @@
 (defvar *live-buffers* 0)
 
 (defclass immutable-buffer ()
-  ((vbo :initarg :vbo :reader vbo :type fixnum)))
+  ((len :initarg :length :reader buffer-length :type fixnum)
+   (vbo :initarg :vbo :reader vbo :type fixnum)))
 
 (defun make-immutable-buffer (data &key bytes)
   ; Convert a byte array to a float array, if needed.
@@ -41,6 +42,6 @@
         (setf (gl:glaref arr i) (aref data i)))
       (gl:buffer-data :array-buffer :static-draw arr))
     
-    (let ((buffer (make-instance 'immutable-buffer :vbo vbo)))
+    (let ((buffer (make-instance 'immutable-buffer :length (length data) :vbo vbo)))
       (finalize buffer free)
       buffer)))

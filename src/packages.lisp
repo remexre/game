@@ -2,7 +2,8 @@
   (:use :alexandria :cl :iterate)
   (:export #:assv #:bracket #:read-file #:read-json-file #:to-float-array
            #:*log-tags* #:dbg #:prn
-           #:xform #:+identity-xform+ #:apply-xform #:compose-xforms #:xform-composef
+           #:xform #:+identity-xform+ #:apply-xform #:compose-xforms
+           #:xform-composef #:flatten-xform
            #:xform-rot #:xform-scale #:xform-xlat))
 
 (defpackage :renderer

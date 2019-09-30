@@ -8,5 +8,5 @@ layout(location = 1) uniform mat4 view;
 layout(location = 2) uniform mat4 model;
 
 void main(void) {
-	gl_Position = vec4(pos, 1);
+	gl_Position = proj * view * model * vec4(pos, 1);
 }

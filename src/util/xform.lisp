@@ -51,6 +51,11 @@
 (defmacro xform-composef (place m2)
   `(setf ,place (compose-xforms-1 ,place ,m2)))
 
+(defun flatten-xform (m)
+  (declare (optimize (speed 3))
+           (type (simple-array single-float (4 4)) m))
+  (make-array '(16) :element-type 'single-float :displaced-to m))
+
 (defun xform-rot (v)
   (unless (typep v '(simple-array single-float (3)))
     (setf v (to-float-array '(3) v)))
