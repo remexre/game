@@ -14,6 +14,9 @@
 (defvar *shader-model* +identity-xform+)
 (defvar *shader-diffuse* (to-float-array '(4) '(1.0 1.0 1.0 1.0)))
 
+; For logging purposes.
+(defvar *drawn-triangles* 0)
+
 (defun draw-object (pos)
   (check-type pos immutable-buffer)
 
@@ -25,12 +28,14 @@
   ; Set things we ought to be able to lift out...
   (gl:use-program (program *renderer*))
   (gl:enable-vertex-attrib-array 0)
+  (gl:enable-vertex-attrib-array 1)
+  (gl:enable-vertex-attrib-array 2)
 
   ; Set up vertices.
   (gl:bind-buffer :array-buffer (vbo pos))
-  (gl:vertex-attrib-pointer 0 3 :float nil 0 0)
-  (gl:vertex-attrib-pointer 3 2 :float nil 0 3)
-  (gl:vertex-attrib-pointer 5 3 :float nil 0 5)
+  (gl:vertex-attrib-pointer 0 3 :float nil 32 0)
+  (gl:vertex-attrib-pointer 1 2 :float nil 32 12)
+  (gl:vertex-attrib-pointer 2 3 :float nil 32 20)
 
   ; Set up uniforms.
   ; ; (gl:uniform-matrix 0 4 (vector (flatten-xform +identity-xform+)))
@@ -42,4 +47,6 @@
   (gl:uniformfv 3 *shader-diffuse*)
 
   ; Do the actual drawing.
-  (gl:draw-arrays :triangles 0 (/ (buffer-length pos) 8)))
+  (let ((len (/ (buffer-length pos) 8)))
+    (incf *drawn-triangles* len)
+    (gl:draw-arrays :triangles 0 len)))

@@ -6,8 +6,7 @@
 		"front": [0.0, 0.0, -1.0],
 		"near": 0.1,
 		"far": 100.0,
-		"fov": 90.0,
-		"ortho": true
+		"fov": 60.0
 	},
 	"clear-color": [0.06125, 0.06125, 1.0, 1.0],
 	"children": [
@@ -16,10 +15,10 @@
 			"diffuse": [1.0, 0.0, 0.0, 1.0],
 			"child": {
 				"type": "xform",
-				"xlat": [0.0, 1.0, -10.0],
+				"xlat": [0.0, 1.0, 10.0],
 				"child": {
 					"type": "model",
-					"path": "assets/models/teapotLowPoly.txt"
+					"path": "assets/models/cube.txt"
 				}
 			}
 		}

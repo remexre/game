@@ -12,7 +12,7 @@
            #:asset-cache #:flip #:make-renderer #:renderer #:scene #:title
            #:immutable-buffer #:make-immutable-buffer
            #:*shader-proj* #:*shader-view* #:*shader-model* #:*shader-diffuse*
-           #:clear #:draw-object
+           #:*drawn-triangles* #:clear #:draw-object
            #:get-events))
 
 (defpackage :assets

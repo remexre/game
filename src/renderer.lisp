@@ -13,9 +13,12 @@
           (camera      (scene-camera      scene))
           (children    (scene-children    scene)))
       (clear clear-color)
+      (setf *drawn-triangles* 0)
       (let ((*shader-proj* (camera-proj-xform camera))
             (*shader-view* (camera-view-xform camera)))
-        (mapc #'draw children))))
+        (mapc #'draw children))
+      ; (prn :perf "Drew ~a triangles")
+      ))
   (flip *renderer*))
 
 
