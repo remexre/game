@@ -22,6 +22,7 @@
                (:file "src/renderer/draw")
 
                (:file "src/assets/cache")
+               (:file "src/assets/camera")
                (:file "src/assets/model")
                (:file "src/assets/node")
                (:file "src/assets/prefab")
