@@ -12,17 +12,24 @@
     ("txt" (load-txt-model path))
     ("vx"  (load-vx-model  path))))
 
+(defun next-line (stream)
+  (iter
+    (for line = (read-line stream nil))
+    (unless line
+      (finish))
+    (setf line (string-trim '(#\space #\tab #\newline) line))
+    (when (string= line "")
+      (next-iteration))
+    (leave line)))
+
 (defun load-txt-model (path)
-  (let ((buf (make-array '(1024) :element-type 'single-float :adjustable t :fill-pointer 0)))
     (with-open-file (stream path)
-      (iter
-        (for line = (read-line stream nil))
-        (while line)
-        (setf line (string-trim '(#\space #\tab #\newline) line))
-        (when (string= line "")
-          (next-iteration))
-        (vector-push-extend (parse-float line) buf)))
-    (make-model :buf (make-immutable-buffer buf))))
+      (let* ((len (parse-integer (next-line stream)))
+             (buf (make-array (list len) :element-type 'single-float)))
+          (iter
+            (for i below len)
+            (setf (aref buf i) (parse-float (next-line stream))))
+          (make-model :buf (make-immutable-buffer buf)))))
 
 (defun load-vx-model (path)
   (make-model

@@ -19,7 +19,7 @@
 				"xlat": [0.0, 1.0, -10.0],
 				"child": {
 					"type": "model",
-					"path": "assets/models/teapot-low-poly.vx"
+					"path": "assets/models/teapotLowPoly.txt"
 				}
 			}
 		}

@@ -28,7 +28,9 @@
 
   ; Set up vertices.
   (gl:bind-buffer :array-buffer (vbo pos))
-  (gl:vertex-attrib-pointer 0 3 :float nil 0 (cffi:null-pointer))
+  (gl:vertex-attrib-pointer 0 3 :float nil 0 0)
+  (gl:vertex-attrib-pointer 3 2 :float nil 0 3)
+  (gl:vertex-attrib-pointer 5 3 :float nil 0 5)
 
   ; Set up uniforms.
   ; ; (gl:uniform-matrix 0 4 (vector (flatten-xform +identity-xform+)))
@@ -40,4 +42,4 @@
   (gl:uniformfv 3 *shader-diffuse*)
 
   ; Do the actual drawing.
-  (gl:draw-arrays :triangles 0 (/ (buffer-length pos) 3)))
+  (gl:draw-arrays :triangles 0 (/ (buffer-length pos) 8)))
