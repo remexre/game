@@ -30,8 +30,8 @@
     (draw-object buf)))
 
 (defmethod draw ((node node-shader-params))
-  (let ((child   (node-shader-params-child   node))
-        (diffuse (node-shader-params-diffuse node)))
+  (let ((child            (node-shader-params-child   node))
+        (*shader-diffuse* (node-shader-params-diffuse node)))
     (draw child)))
 
 (defmethod draw ((node node-xform))

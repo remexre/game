@@ -27,8 +27,11 @@
 (defun load-vx-model (path)
   (make-model
     :buf (make-immutable-buffer
-           (with-open-file (stream path :element-type '(unsigned-byte 8))
-             (let ((buf (make-array (list (file-length stream)) :element-type '(unsigned-byte 8))))
-               (read-sequence buf stream)
-               buf)) 
-           :bytes t)))
+           (with-open-file (stream path :element-type '(unsigned-byte 32))
+             (let ((floats (make-array (list (file-length stream)) :element-type 'single-float)))
+               (iter
+                 (for i from 0 below (file-length stream))
+                 (for b = (read-byte stream))
+                 (while b)
+                 (setf (aref floats i) (ieee-floats:decode-float32 b)))
+               floats)))))

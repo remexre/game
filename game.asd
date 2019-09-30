@@ -6,8 +6,8 @@
   :build-pathname "game"
   :entry-point "game:main"
   :depends-on ("alexandria" "cl-glfw3" "cl-json" "cl-opengl" "cl-wadler-pprint"
-               "iterate" "parse-float" "swank" "trivia" "trivial-garbage"
-               "trivial-main-thread" "trivial-shell")
+               "ieee-floats" "iterate" "parse-float" "swank" "trivia"
+               "trivial-garbage" "trivial-main-thread" "trivial-shell")
   :components ((:file "src/packages")
 
                (:file "src/util/misc")

@@ -6,13 +6,14 @@
 		"front": [0.0, 0.0, -1.0],
 		"near": 0.1,
 		"far": 100.0,
-		"fov": 90.0
+		"fov": 90.0,
+		"ortho": true
 	},
 	"clear-color": [0.06125, 0.06125, 1.0, 1.0],
 	"children": [
 		{
 			"type": "shader-params",
-			"diffuse": [1.0, 0.0, 1.0, 1.0],
+			"diffuse": [1.0, 0.0, 0.0, 1.0],
 			"child": {
 				"type": "xform",
 				"xlat": [0.0, 1.0, -10.0],

@@ -52,13 +52,14 @@
      (push (cons ,name (lambda () ,@body)) *loop-inits*)
      nil))
 
-(defmacro def-loop-body (name (&optional (dt (gensym))) &body body)
+(defmacro def-loop-body (name (&optional dt) &body body)
   (check-type name keyword)
+  (unless dt
+    (setf dt (gensym))
+    (push `(declare (ignore ,dt)) body))
   `(progn
      (pushnew ,name *loop-stages*)
-     (push (cons ,name (lambda (,dt)
-                         (declare (ignore ,dt))
-                         ,@body)) *loop-bodies*)
+     (push (cons ,name (lambda (,dt) ,@body)) *loop-bodies*)
      nil))
 
 (defun enable-loop-stage (name)
