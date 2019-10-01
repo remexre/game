@@ -18,14 +18,14 @@
 				"distance": 10.0,
 				"closer": {
 					"type": "model",
-					"path": "assets/models/teapot-low-poly.vx"
+					"path": "assets/models/teapot.txt"
 				},
 				"further": {
 					"type": "shader-params",
 					"diffuse": [1.0, 0.0, 1.0, 1.0],
 					"child": {
 						"type": "model",
-						"path": "assets/models/teapot-low-poly.vx"
+						"path": "assets/models/teapotLowPoly.txt"
 					}
 				}
 			}

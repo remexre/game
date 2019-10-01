@@ -1,20 +1,17 @@
 (in-package :renderer)
 
-(defclass renderer ()
-  ((window :initarg :window :reader window :type (satisfies cffi:pointerp))
-   (program :accessor program :type fixnum)
-   (scene :initform nil :accessor scene)
-   (asset-cache :initform nil :accessor asset-cache :type list)))
-
-(wadler-pprint:def-pretty-object renderer (:print-object t)
-  (window scene asset-cache))
+(defstruct renderer
+  (window (error "Must provide WINDOW") :type (satisfies cffi:pointerp))
+  (program 0 :type fixnum)
+  (scene-entry nil :type (or (cons pathname assets:scene) null))
+  (asset-cache nil :type list))
 
 (defvar *renderer* 'not-initialized)
 
 (defparameter +vert-shader-src+ (read-file #p"src/renderer/vert.glsl"))
 (defparameter +frag-shader-src+ (read-file #p"src/renderer/frag.glsl"))
 
-(defun make-renderer ()
+(defun init-renderer ()
   (with-body-in-main-thread ()
     ; glfw is resistant to non-global state, not wholly unreasonably. So we
     ; have to word this a bit awkwardly...
@@ -27,18 +24,12 @@
     (let* ((window glfw:*window*)
            (free (lambda ()
                    (glfw:destroy-window window)))
-           (renderer (make-instance 'renderer :window window)))
+           (renderer (make-renderer :window window)))
       (finalize renderer free)
 
-      (let ((vert (load-shader :vertex-shader   +vert-shader-src+))
-            (frag (load-shader :fragment-shader +frag-shader-src+))
-            (program (gl:create-program)))
-        (gl:attach-shader program vert)
-        (gl:attach-shader program frag)
-        (gl:link-program program)
-        (unless (gl:get-program program :link-status)
-          (error "Failed to link program: ~a" (gl:get-program-info-log program)))
-        (setf (program renderer) program))
+      ; We do this after the finalize call so if it fails, GLFW may still be
+      ; terminated.
+      (setf (renderer-program renderer) (load-program))
 
       (setup-events window)
       (gl:bind-vertex-array (gl:gen-vertex-array))
@@ -52,13 +43,29 @@
       (error "Failed to compile shader: ~a" (gl:get-shader-info-log shader)))
     shader))
 
+(defun load-program ()
+  (let ((vert (load-shader :vertex-shader   +vert-shader-src+))
+        (frag (load-shader :fragment-shader +frag-shader-src+))
+        (program (gl:create-program)))
+    (gl:attach-shader program vert)
+    (gl:attach-shader program frag)
+    (gl:link-program program)
+    (unless (gl:get-program program :link-status)
+      (error "Failed to link program: ~a" (gl:get-program-info-log program)))
+    program))
+
+(defun reload-program ()
+  (setf +vert-shader-src+ (read-file #p"src/renderer/vert.glsl")
+        +frag-shader-src+ (read-file #p"src/renderer/frag.glsl"))
+  (setf (renderer-program *renderer*) (load-program)))
+
 (defun flip (renderer)
   (check-type renderer renderer)
-  (glfw:swap-buffers (window renderer)))
+  (glfw:swap-buffers (renderer-window renderer)))
 
 (defsetf title set-title)
 
 (defun set-title (renderer title)
   (check-type renderer renderer)
   (check-type title string)
-  (glfw:set-window-title title (window renderer)))
+  (glfw:set-window-title title (renderer-window renderer)))

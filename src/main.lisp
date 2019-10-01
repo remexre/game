@@ -6,7 +6,19 @@
     (prn :events "~s" event))
   (setf *events* nil))
 
+(opts:define-opts
+  (:name :debug
+   :description "Enable debugging stage"
+   :short #\d
+   :long "debug"))
+
 (defun main ()
-  (enable-loop-stages :events :drain-events :renderer :fps)
-  (setf (scene *renderer*) (load-asset :scene #p"assets/scenes/spinning-teapot.json"))
-  (main-loop))
+  (multiple-value-bind (opts args) (opts:get-opts)
+    (declare (ignore args))
+    (when (getf opts :debug)
+      (enable-loop-stage :debug))
+
+    (enable-loop-stages :events :drain-events :renderer :fps)
+    (setf (renderer-scene-entry *renderer*)
+          (load-asset :scene #p"assets/scenes/triangle.json" :get-entry t))
+    (main-loop)))

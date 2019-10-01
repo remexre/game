@@ -10,6 +10,8 @@
   :scene)
 
 (defmethod load-asset ((kind (eql :scene)) path &key get-entry ignore-cache)
+  (declare (ignore get-entry ignore-cache))
+
   (let ((data (read-json-file path)))
     (assert (string= (assv :type data) "scene"))
     (make-scene

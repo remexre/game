@@ -8,6 +8,8 @@
   :model)
 
 (defmethod load-asset ((kind (eql :model)) path &key get-entry ignore-cache)
+  (declare (ignore get-entry ignore-cache))
+
   (eswitch ((pathname-type path) :test #'string=)
     ("txt" (load-txt-model path))
     ("vx"  (load-vx-model  path))))

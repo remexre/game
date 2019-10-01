@@ -29,9 +29,9 @@
    the camera."
   (check-type camera camera)
 
-  (let ((near  (camera-near  camera))
-        (far   (camera-far   camera))
-        (fov   (camera-fov   camera)))
+  (let ((near  (camera-near camera))
+        (far   (camera-far  camera))
+        (fov   (camera-fov  camera)))
     (to-float-array '(4 4)
       (if (camera-ortho camera)
           (let ((f+n (+ far near))

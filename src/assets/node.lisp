@@ -37,10 +37,10 @@
        (setf node (make-node-xform :child (parse-node (assv :child data))))
 
        (when-let (scale (assv :scale data))
-         (xform-composef (node-xform-matrix node) (xform-scale xlat))) 
+         (xform-composef (node-xform-matrix node) (xform-scale scale))) 
 
        (when-let (rot (assv :rot data))
-         (xform-composef (node-xform-matrix node) (xform-rot xlat))) 
+         (xform-composef (node-xform-matrix node) (xform-rot rot))) 
 
        (when-let (xlat (assv :xlat data))
          (xform-composef (node-xform-matrix node) (xform-xlat xlat)))))

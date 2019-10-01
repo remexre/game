@@ -10,7 +10,7 @@
 
      ; Check the cache for the entry.
      (unless ignore-cache
-       (setf entry (assoc path (asset-cache *renderer*)))
+       (setf entry (assoc path (renderer-asset-cache *renderer*)))
        (when entry
          (setf cachedp t)))
 
@@ -23,7 +23,7 @@
      ; cache.
      (unless (or cachedp ignore-cache)
        (prn :assets "Caching ~a" path)
-       (push entry (asset-cache *renderer*)))
+       (push entry (renderer-asset-cache *renderer*)))
 
      ; Return the asset or entry.
      (if get-entry
@@ -35,7 +35,7 @@
 
 (defun reload-all-assets ()
   (iter
-    (for entry in (asset-cache *renderer*))
+    (for entry in (renderer-asset-cache *renderer*))
     (for path = (car entry))
     (for kind = (asset-kind (cdr entry)))
     (setf (cdr entry) (load-asset kind path :ignore-cache t))))

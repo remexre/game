@@ -9,7 +9,8 @@
 (defpackage :renderer
   (:use :cl :game-util :iterate :trivial-garbage :trivial-main-thread)
   (:export #:*renderer*
-           #:asset-cache #:flip #:make-renderer #:renderer #:scene #:title
+           #:flip #:init-renderer #:renderer #:renderer-asset-cache
+           #:renderer-scene-entry #:title
            #:immutable-buffer #:make-immutable-buffer
            #:*shader-proj* #:*shader-view* #:*shader-model* #:*shader-diffuse*
            #:*drawn-triangles* #:clear #:draw-object

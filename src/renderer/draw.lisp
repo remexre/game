@@ -26,7 +26,7 @@
   (check-type *shader-diffuse* (simple-array single-float (4)))
 
   ; Set things we ought to be able to lift out...
-  (gl:use-program (program *renderer*))
+  (gl:use-program (renderer-program *renderer*))
   (gl:enable-vertex-attrib-array 0)
   (gl:enable-vertex-attrib-array 1)
   (gl:enable-vertex-attrib-array 2)

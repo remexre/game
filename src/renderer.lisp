@@ -1,14 +1,14 @@
 (in-package :game)
 
 (def-loop-init :renderer ()
-  (setf *renderer* (make-renderer)))
+  (setf *renderer* (init-renderer)))
 
 (defgeneric draw (object)
   (:method (object)
    (prn :todo "TODO: draw ~a" object)))
 
 (def-loop-body :renderer ()
-  (when-let (scene (scene *renderer*))
+  (when-let (scene (cdr (renderer-scene-entry *renderer*)))
     (let ((clear-color (scene-clear-color scene))
           (camera      (scene-camera      scene))
           (children    (scene-children    scene)))

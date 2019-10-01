@@ -8,7 +8,7 @@
   :depends-on ("alexandria" "cl-glfw3" "cl-json" "cl-opengl" "cl-wadler-pprint"
                "ieee-floats" "iterate" "parse-float" "swank" "swap-bytes"
                "trivia" "trivial-garbage" "trivial-main-thread"
-               "trivial-shell")
+               "trivial-shell" "unix-opts")
   :components ((:file "src/packages")
 
                (:file "src/util/misc")

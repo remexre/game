@@ -12,10 +12,14 @@ layout(location = 2) uniform mat4 model;
 out vec2 vsTexcoords;
 out vec3 vsNormal;
 
-out vec3 wsCoords;
+out vec4 dbgWsCoords;
+out vec4 dbgEsCoords;
 
 void main(void) {
-	gl_Position = /* proj * view * */ model * vec4(pos, 1);
+	gl_Position = proj * view * model * vec4(pos, 1);
+	dbgEsCoords = view * model * vec4(pos, 1);
+	dbgWsCoords = model * vec4(pos, 1);
+
 	vsTexcoords = texcoords;
 	vsNormal = normal;
 }
