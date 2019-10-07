@@ -10,15 +10,29 @@
   (:name :debug
    :description "Enable debugging stage"
    :short #\d
-   :long "debug"))
+   :long "debug") 
+  (:name :help
+   :description "Display this help message"
+   :short #\h
+   :long "help"))
+
+(defun usage ()
+  (opts:describe
+    :usage-of "./game"
+    :args "scene.json")
+  (opts:exit 1))
 
 (defun main ()
   (multiple-value-bind (opts args) (opts:get-opts)
-    (declare (ignore args))
     (when (getf opts :debug)
       (enable-loop-stage :debug))
+    (when (getf opts :help)
+      (usage))
 
-    (enable-loop-stages :events :drain-events :renderer :fps)
-    (setf (renderer-scene-entry *renderer*)
-          (load-asset :scene #p"assets/scenes/spinning-teapot-lod.json" :get-entry t))
-    (main-loop)))
+    (unless (eql (length args) 1)
+      (usage))
+
+    (let ((scene-path (pathname (nth 0 args))))
+      (enable-loop-stages :events :drain-events :renderer :fps)
+      (setf (renderer-scene-entry *renderer*) (load-asset :scene scene-path :get-entry t))
+      (main-loop))))

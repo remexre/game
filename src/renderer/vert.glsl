@@ -15,9 +15,10 @@ out vec2 vsTexcoords;
 out vec3 vsNormal;
 
 void main(void) {
-	gl_Position = proj * view * model * vec4(pos, 1);
+	vec4 wsPos = model * vec4(pos, 1);
+	gl_Position = proj * view * wsPos;
 
-	lightDirection = (view * vec4(normalize(pos - lightPos), 0.0)).xyz;
+	lightDirection = (view * vec4(normalize(lightPos - wsPos.xyz), 0.0)).xyz;
 
 	vsTexcoords = texcoords;
 	vsNormal = normal;

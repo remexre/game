@@ -3,61 +3,64 @@
 	"camera": {
 		"pos": [0.0, 0.0, 0.0],
 		"up": [0.0, 1.0, 0.0],
-		"front": [0.0, 0.0, -1.0],
+		"rot": [0.0, 0.0, 0.0],
 		"near": 0.1,
 		"far": 100.0,
 		"fov": 60.0
 	},
 	"clear-color": [0.0, 0.0, 0.5, 1.0],
-	"children": [
-		{
-			"type": "shader-params",
-			"diffuse": [1.0, 0.0, 0.0],
-			"child": {
-				"type": "xform",
-				"xlat": [0.0, 0.0, -5.0],
+	"node": {
+		"type": "multi",
+		"children": [
+			{
+				"type": "shader-params",
+				"diffuse": [1.0, 0.0, 0.0],
 				"child": {
-					"type": "model",
-					"path": "assets/models/triangle.txt"
+					"type": "xform",
+					"xlat": [0.0, 0.0, -5.0],
+					"child": {
+						"type": "model",
+						"path": "assets/models/triangle.txt"
+					}
+				}
+			},
+			{
+				"type": "shader-params",
+				"diffuse": [0.0, 1.0, 0.0],
+				"child": {
+					"type": "xform",
+					"xlat": [-0.5, 0.0, -10.0],
+					"child": {
+						"type": "model",
+						"path": "assets/models/triangle.txt"
+					}
+				}
+			},
+			{
+				"type": "shader-params",
+				"diffuse": [1.0, 1.0, 0.5],
+				"child": {
+					"type": "xform",
+					"xlat": [2.0, 0.0, -7.5],
+					"scale": [3.0, 2.0, 1.0],
+					"child": {
+						"type": "model",
+						"path": "assets/models/teapotLowPoly.txt"
+					}
+				}
+			},
+			{
+				"type": "shader-params",
+				"diffuse": [1.0, 1.0, 0.9],
+				"child": {
+					"type": "xform",
+					"xlat": [0.0, 0.0, -10.0],
+					"child": {
+						"type": "model",
+						"path": "assets/models/teapot.txt"
+					}
 				}
 			}
-		},
-		{
-			"type": "shader-params",
-			"diffuse": [0.0, 1.0, 0.0],
-			"child": {
-				"type": "xform",
-				"xlat": [-0.5, 0.0, -10.0],
-				"child": {
-					"type": "model",
-					"path": "assets/models/triangle.txt"
-				}
-			}
-		},
-		{
-			"type": "shader-params",
-			"diffuse": [1.0, 1.0, 0.5],
-			"child": {
-				"type": "xform",
-				"xlat": [2.0, 0.0, -7.5],
-				"scale": [3.0, 2.0, 1.0],
-				"child": {
-					"type": "model",
-					"path": "assets/models/teapotLowPoly.txt"
-				}
-			}
-		},
-		{
-			"type": "shader-params",
-			"diffuse": [1.0, 1.0, 0.9],
-			"child": {
-				"type": "xform",
-				"xlat": [0.0, 0.0, -10.0],
-				"child": {
-					"type": "model",
-					"path": "assets/models/teapot.txt"
-				}
-			}
-		}
-	]
+		]
+	}
 }

@@ -9,6 +9,9 @@
      (unwind-protect (progn ,@body)
        ,end)))
 
+(defun deg-to-rad (theta)
+  (/ (* theta (coerce pi 'single-float)) 180.0))
+
 (defun read-file (path)
   "Reads the file at PATH to a string."
   (with-open-file (stream path)

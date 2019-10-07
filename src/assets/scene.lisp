@@ -3,7 +3,7 @@
 (defstruct scene
   (camera      (error "Must provide CAMERA")      :type camera)
   (clear-color (error "Must provide CLEAR-COLOR") :type (simple-array single-float (4)))
-  (children    (error "Must provide CHILDREN")    :type list))
+  (node        (error "Must provide NODE")        :type node))
 
 (defmethod asset-kind ((scene scene))
   (declare (ignore scene))
@@ -17,4 +17,4 @@
     (make-scene
       :camera (parse-camera (assv :camera data))
       :clear-color (to-float-array '(4) (assv :clear-color data))
-      :children (mapcar #'parse-node (assv :children data)))))
+      :node (parse-node (assv :node data)))))

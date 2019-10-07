@@ -2,9 +2,9 @@
 
 (defstruct camera
   ; view params
-  (pos   (error "Must provide POS")   :type (simple-array single-float (3)))
-  (up    (error "Must provide UP")    :type (simple-array single-float (3)))
-  (front (error "Must provide FRONT") :type (simple-array single-float (3)))
+  (pos (error "Must provide POS") :type (simple-array single-float (3)))
+  (up  (error "Must provide UP")  :type (simple-array single-float (3)))
+  (rot (error "Must provide ROT") :type (simple-array single-float (3)))
   ; projection params
   (near         (error "Must provide NEAR") :type single-float)
   (far          (error "Must provide FAR")  :type single-float)
@@ -15,17 +15,31 @@
 (defun parse-camera (data)
   "Parses a CAMERA object from DATA, as parsed from JSON."
   (let ((camera (make-camera
-                  :pos   (to-float-array '(3) (assv :pos data))
-                  :up    (to-float-array '(3) (assv :up data))
-                  :front (to-float-array '(3) (assv :front data))
-                  :near  (assv :near data)
-                  :far   (assv :far data)
-                  :fov   (assv :fov data))))
+                  :pos  (to-float-array '(3) (assv :pos data))
+                  :up   (to-float-array '(3) (assv :up  data))
+                  :rot  (to-float-array '(3) (assv :rot data))
+                  :near (assv :near data)
+                  :far  (assv :far data)
+                  :fov  (assv :fov data))))
 
     (when (assv :ortho data)
       (setf (camera-ortho camera) t))
 
     camera))
+
+(defun camera-front (camera)
+  "Returns the front vector associated with the camera."
+  (apply-xform
+    (compose-xforms
+      (xform-rot-z (aref (camera-rot camera) 2))
+      (xform-rot-y (aref (camera-rot camera) 1))
+      (xform-rot-x (aref (camera-rot camera) 0)))
+    (to-float-array '(4) '(0.0 0.0 1.0 0.0))))
+
+(defun camera-right (camera)
+  "Returns the right vector associated with the camera."
+  (vec3-cross (camera-front camera)
+              (camera-up    camera)))
 
 (defun camera-proj-xform (camera)
   "Returns the transformation associated with the projection matrix of \
@@ -36,7 +50,7 @@
          (far          (camera-far          camera))
          (fov          (camera-fov          camera))
          (aspect-ratio (camera-aspect-ratio camera))
-         (angle (/ (* (camera-fov camera) (coerce pi 'single-float)) 2 180))
+         (angle (/ (deg-to-rad (camera-fov camera)) 2))
          (xmax  (* (tan angle) near))
          (ymax  (/ xmax aspect-ratio)))
     (to-float-array '(4 4)
@@ -59,7 +73,7 @@
   "Returns the transformation associated with the view matrix of the camera."
   (check-type camera camera)
 
-  (let ((pos   (camera-pos   camera))
-        (up    (camera-up    camera))
-        (front (camera-front camera)))
-    +identity-xform+))
+  (let ((pos (camera-pos camera))
+        (up  (camera-up  camera))
+        (rot (camera-rot camera)))
+    (xform-xlat pos)))

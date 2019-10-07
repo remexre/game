@@ -1,0 +1,24 @@
+{
+	"type": "prefab",
+	"node": {
+		"type": "shader-params",
+		"diffuse": [1.0, 1.0, 0.8],
+		"ambient": [0.0, 0.0, 0.0],
+		"child": {
+			"type": "lod-branch",
+			"distance": 10.0,
+			"closer": {
+				"type": "xform",
+				"rot": [-90.0, 0.0, 0.0],
+				"child": {
+					"type": "model",
+					"path": "assets/models/teapot.txt"
+				}
+			},
+			"further": {
+				"type": "model",
+				"path": "assets/models/teapotLowPoly.txt"
+			}
+		}
+	}
+}
