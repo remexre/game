@@ -20,5 +20,5 @@
 
     (enable-loop-stages :events :drain-events :renderer :fps)
     (setf (renderer-scene-entry *renderer*)
-          (load-asset :scene #p"assets/scenes/triangle.json" :get-entry t))
+          (load-asset :scene #p"assets/scenes/spinning-teapot-lod.json" :get-entry t))
     (main-loop)))

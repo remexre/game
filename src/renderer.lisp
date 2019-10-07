@@ -3,6 +3,8 @@
 (def-loop-init :renderer ()
   (setf *renderer* (init-renderer)))
 
+(defvar *camera-pos*)
+
 (defgeneric draw (object)
   (:method (object)
    (prn :todo "TODO: draw ~a" object)))
@@ -14,18 +16,23 @@
           (children    (scene-children    scene)))
       (clear clear-color)
       (setf *drawn-triangles* 0)
-      (let ((*shader-proj* (camera-proj-xform camera))
+      (let ((*camera-pos*  (camera-pos        camera))
+            (*shader-proj* (camera-proj-xform camera))
             (*shader-view* (camera-view-xform camera)))
-        (mapc #'draw children))
-      ; (prn :perf "Drew ~a triangles")
-      ))
+        (mapc #'draw children))))
   (flip *renderer*))
 
 
 
 ; node-include-prefab
 
-; node-lod-branch
+(defmethod draw ((node node-lod-branch))
+  (let* ((branch-distance (node-lod-branch-distance node))  
+         (closer          (node-lod-branch-closer   node))  
+         (further         (node-lod-branch-further  node))
+         (draw-position   (apply-xform *shader-model* (to-float-array '(4) '(0.0 0.0 0.0 1.0))))
+         (distance        (vec3-magnitude (vec3-sub *camera-pos* (vec4-to-vec3 draw-position)))))
+    (draw (if (< distance branch-distance) closer further))))
 
 (defmethod draw ((node node-model))
   (let* ((entry (node-model-entry node))

@@ -31,3 +31,17 @@
     (map '(simple-array single-float (3))
          (lambda (x) (/ x mag))
          v)))
+
+(defun vec3-sub (a b)
+  (declare (optimize (speed 3))
+           (type (simple-array single-float (3)) a b))
+  ; TODO: Does this get unrolled and vectorized?
+  (map '(simple-array single-float (3)) #'- a b))
+
+(defun vec4-to-vec3 (v)
+  (declare (optimize (speed 3))
+           (type (simple-array single-float (4)) v))
+  (to-float-array '(3)
+    (list (aref v 0)
+          (aref v 1)
+          (aref v 2))))

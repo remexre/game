@@ -2,6 +2,7 @@
   (:use :alexandria :cl :iterate)
   (:export #:assv #:bracket #:read-file #:read-json-file #:to-float-array
            #:*log-tags* #:dbg #:prn
+           #:vec4-to-vec3 #:vec3-magnitude #:vec3-sub
            #:xform #:+identity-xform+ #:apply-xform #:compose-xforms
            #:xform-composef #:flatten-xform
            #:xform-rot #:xform-scale #:xform-xlat))

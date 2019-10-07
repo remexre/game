@@ -10,6 +10,8 @@
   (incf *fps-dt-sum* (/ dt))
 
   (when (eql *fps-counter* *fps-avg-factor*)
-    (setf (title *renderer*) (format nil "FPS: ~,2f" (/ *fps-dt-sum* *fps-avg-factor*))
-          *fps-counter* 0
-          *fps-dt-sum* 0)))
+    (let ((title (format nil "FPS: ~,2f, Tris: ~d" (/ *fps-dt-sum* *fps-avg-factor*)
+                         *drawn-triangles*)))
+      (setf (title *renderer*) title
+            *fps-counter*      0
+            *fps-dt-sum*       0))))

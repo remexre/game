@@ -27,6 +27,11 @@
   "Parses a NODE object from DATA, as parsed from JSON."
   (let (node)
     (eswitch ((assv :type data) :test string=)
+      ("lod-branch"
+       (setf node (make-node-lod-branch
+                    :distance (assv :distance data)  
+                    :closer   (parse-node (assv :closer  data))  
+                    :further  (parse-node (assv :further data)))))
       ("model"
        (setf node (make-node-model :entry (load-asset :model (assv :path data) :get-entry t))))
       ("shader-params"

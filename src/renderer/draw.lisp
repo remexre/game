@@ -4,7 +4,9 @@
   (check-type clear-color (simple-array single-float (4)))
 
   (apply #'gl:clear-color (coerce clear-color 'list)) ; Does SBCL optimize this?
-  (gl:clear :color-buffer :depth-buffer))
+  (gl:clear :color-buffer :depth-buffer)
+  
+  (setf *drawn-triangles* 0))
 
 ; Per-frame parameters.
 (defvar *shader-proj*)
@@ -13,8 +15,8 @@
 
 ; Per-DRAW-OBJECT-call parameters.
 (defvar *shader-model* +identity-xform+)
-(defvar *shader-diffuse*)
-(defvar *shader-ambient*)
+(defvar *shader-diffuse* (to-float-array '(3) '(1.0 0.0 1.0)))
+(defvar *shader-ambient* (to-float-array '(3) '(0.1 0.0 0.1)))
 
 ; For logging purposes.
 (defvar *drawn-triangles* 0)
