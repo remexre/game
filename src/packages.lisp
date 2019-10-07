@@ -3,10 +3,11 @@
   (:export #:assv #:bracket #:deg-to-rad #:read-file #:read-json-file #:to-float-array
            #:*log-tags* #:dbg #:prn
            #:vec4-to-vec3 #:vec3-add #:vec3-cross #:vec3-float-mul
-           #:vec3-magnitude #:vec3-normalize #:vec3-sub
-           #:xform #:+identity-xform+ #:apply-xform #:apply-xform-unit-w #:compose-xforms
-           #:xform-composef #:flatten-xform
-           #:xform-rot-x #:xform-rot-y #:xform-rot-z #:xform-scale #:xform-xlat))
+                          #:vec3-magnitude #:vec3-normalize #:vec3-sub
+           #:xform #:+identity-xform+ #:apply-xform #:apply-xform-unit-w
+                   #:compose-xforms #:xform-composef #:flatten-xform
+                   #:xform-rot-x #:xform-rot-y #:xform-rot-z #:xform-scale
+                   #:xform-xlat))
 
 (defpackage :renderer
   (:use :cl :game-util :iterate :trivial-garbage :trivial-main-thread)
@@ -22,14 +23,14 @@
 
 (defpackage :assets
   (:use :alexandria :cl :game-util :iterate :parse-float :renderer :trivia
-        :trivial-shell)
+        :trivial-garbage :trivial-shell)
   (:export #:load-asset #:reload-all-assets
            #:camera #:camera-pos #:camera-up #:camera-rot #:camera-near
                     #:camera-far #:camera-fov #:camera-aspect-ratio #:camera-ortho
                     #:camera-front #:camera-right #:camera-proj-xform
                     #:camera-view-xform
            #:model #:model-buf
-           #:node
+           #:node #:parse-node
            #:node-include-prefab #:node-include-prefab-entry
            #:node-lod-branch #:node-lod-branch-distance #:node-lod-branch-closer
                              #:node-lod-branch-further
@@ -40,7 +41,9 @@
                                 #:node-shader-params-diffuse
            #:node-xform #:node-xform-matrix #:node-xform-child
            #:prefab #:prefab-node
-           #:scene #:scene-camera #:scene-clear-color #:scene-node))
+           #:scene #:scene-camera #:scene-clear-color #:scene-node
+                   #:scene-script-entries
+           #:script #:script-on-event #:script-on-load))
 
 (defpackage :game
   (:use :alexandria :assets :cl :game-util :iterate :renderer :trivia)

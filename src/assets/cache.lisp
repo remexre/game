@@ -35,7 +35,8 @@
 
 (defun reload-all-assets ()
   (iter
-    (for entry in (renderer-asset-cache *renderer*))
+    (for entry in (reverse (renderer-asset-cache *renderer*)))
     (for path = (car entry))
     (for kind = (asset-kind (cdr entry)))
-    (setf (cdr entry) (load-asset kind path :ignore-cache t))))
+    (with-simple-restart (continue "Continue reloading assets")
+      (setf (cdr entry) (load-asset kind path :ignore-cache t)))))

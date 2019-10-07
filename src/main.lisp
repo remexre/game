@@ -1,11 +1,5 @@
 (in-package :game)
 
-(def-loop-body :drain-events ()
-  (iter
-    (for event in *events*)
-    (prn :events "~s" event))
-  (setf *events* nil))
-
 (opts:define-opts
   (:name :debug
    :description "Enable debugging stage"
@@ -33,6 +27,6 @@
       (usage))
 
     (let ((scene-path (pathname (nth 0 args))))
-      (enable-loop-stages :events :drain-events :renderer :fps)
+      (enable-loop-stages :events :renderer :fps)
       (setf (renderer-scene-entry *renderer*) (load-asset :scene scene-path :get-entry t))
       (main-loop))))

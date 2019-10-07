@@ -1,7 +1,5 @@
 (in-package :game)
 
-(defvar *events* nil)
-
 (def-loop-body :events ()
   (let ((camera (when-let (scene-entry (and *renderer* (renderer-scene-entry *renderer*)))
                   (scene-camera (cdr scene-entry)))))
@@ -14,19 +12,24 @@
          (gl:viewport 0 0 w h)
          (when camera
            (setf (camera-aspect-ratio camera) (coerce (/ w h) 'single-float)))
-         (push event *events*))
+         (handle-event event))
         ((list :keyboard :w (or :press :repeat) nil) (move  1.0  0.0  0.0 camera))
         ((list :keyboard :s (or :press :repeat) nil) (move -1.0  0.0  0.0 camera))
         ((list :keyboard :a (or :press :repeat) nil) (move  0.0 -1.0  0.0 camera))
         ((list :keyboard :d (or :press :repeat) nil) (move  0.0  1.0  0.0 camera))
         ((list :keyboard :q (or :press :repeat) nil) (move  0.0  0.0 -1.0 camera))
         ((list :keyboard :e (or :press :repeat) nil) (move  0.0  0.0  1.0 camera))
+        ((list :keyboard (or :w :s :a :d :q :e) :release nil) nil)
         ((list :keyboard _ _ _)
-         (push event *events*))
-        (_ (prn t "unknown event ~s" event)))))
+         (handle-event event))
+        (_ (prn t "unknown event ~s" event))))))
 
-  (when (> (length *events*) 10)
-    (prn :events "~a events queued!" (length *events*))))
+(defun handle-event (event)
+  (when-let (scene (and *renderer* (cdr (renderer-scene-entry *renderer*))))
+    (iter
+      (for script-entry in (scene-script-entries scene))
+      (for script = (cdr script-entry))
+      (script-on-event script event))))
 
 (defun move (forward right up camera &key (move-speed 0.25))
   (let* ((forward (vec3-float-mul (camera-front camera) (* forward move-speed)))

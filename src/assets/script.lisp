@@ -1,7 +1,9 @@
 (in-package :assets)
 
 (defstruct script
-  (pkg (error "Must provide PKG") :type package))
+  (pkg       (error "Must provide PKG")       :type package)
+  (root-var  (error "Must provide ROOT-VAR")  :type symbol)
+  (scene-var (error "Must provide SCENE-VAR") :type symbol))
 
 (defmethod asset-kind ((script script))
   (declare (ignore script))
@@ -11,18 +13,33 @@
   (declare (ignore get-entry ignore-cache))
 
   ; DANGER: VERY CURSED
-  (let ((pkg (make-package (gensym) :use '(:alexandria :cl :game-util :iterate :renderer :trivia))))
+  (let* ((use-list  '(:alexandria :assets :cl :game-util :iterate :renderer :trivia))
+         (pkg       (make-package (gensym) :use use-list))
+         (root-var  (intern "*ROOT*" pkg))
+         (scene-var (intern "*SCENE*" pkg)))
     (let ((*package* pkg))
+      (eval `(defvar ,root-var))
+      (eval `(defvar ,scene-var))
       (iter
         (for form in-file path)
         (eval form)))
-    (delete-package pkg)
-    (make-script :pkg pkg)))
+    (let ((free (lambda () (delete-package pkg)))
+          (script (make-script :pkg pkg :root-var root-var :scene-var scene-var)))
+      (finalize script free)
+      script)))
 
-(defun script-onevent (script scene event)
-  ;
-  )
+(defun script-on-event (script event &optional (scene (cdr (renderer-scene-entry *renderer*))))
+  (when-let* ((sym (find-symbol "ON-EVENT" (script-pkg script)))
+              (func (symbol-function sym)))
+    ; N.B. Not setf!
+    (set (script-root-var script) (scene-node scene))
+    (set (script-scene-var script) scene)
+    (funcall func event)))
 
-(defun script-onload (script scene)
-  ;
-  )
+(defun script-on-load (script &optional (scene (cdr (renderer-scene-entry *renderer*))))
+  (when-let* ((sym (find-symbol "ON-LOAD" (script-pkg script)))
+              (func (symbol-function sym)))
+    ; N.B. Not setf!
+    (set (script-root-var script) (scene-node scene))
+    (set (script-scene-var script) scene)
+    (funcall func)))

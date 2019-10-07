@@ -11,15 +11,9 @@
 	"clear-color": [0.06125, 0.06125, 1.0, 1.0],
 	"node": {
 		"type": "multi",
-		"children": [
-			{
-				"type": "xform",
-				"xlat": [0.0, 0.0, -10.0],
-				"child": {
-					"type": "include",
-					"path": "assets/prefabs/lod-teapot.json"
-				}
-			}
-		]
-	}
+		"children": []
+	},
+	"scripts": [
+		"assets/scripts/make-lod-teapots.lisp"
+	]
 }
