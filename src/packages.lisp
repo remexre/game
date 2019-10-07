@@ -21,7 +21,7 @@
         :trivial-shell)
   (:export #:load-asset #:reload-all-assets
            #:camera #:camera-pos #:camera-up #:camera-front #:camera-near
-                    #:camera-far #:camera-fov #:camera-ortho
+                    #:camera-far #:camera-fov #:camera-aspect-ratio #:camera-ortho
                     #:camera-proj-xform #:camera-view-xform
            #:model #:model-buf
            #:node

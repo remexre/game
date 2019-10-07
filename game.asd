@@ -29,6 +29,7 @@
                (:file "src/assets/node")
                (:file "src/assets/prefab")
                (:file "src/assets/scene")
+               (:file "src/assets/script")
 
                (:file "src/loop")
                (:file "src/debug")

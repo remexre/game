@@ -1,13 +1,16 @@
 (in-package :assets)
 
 (defstruct camera
+  ; view params
   (pos   (error "Must provide POS")   :type (simple-array single-float (3)))
   (up    (error "Must provide UP")    :type (simple-array single-float (3)))
   (front (error "Must provide FRONT") :type (simple-array single-float (3)))
-  (near  (error "Must provide NEAR")  :type single-float)
-  (far   (error "Must provide FAR")   :type single-float)
-  (fov   (error "Must provide FOV")   :type single-float)
-  (ortho nil                          :type boolean))
+  ; projection params
+  (near         (error "Must provide NEAR") :type single-float)
+  (far          (error "Must provide FAR")  :type single-float)
+  (fov          (error "Must provide FOV")  :type single-float)
+  (aspect-ratio (coerce 16/9 'single-float) :type single-float)
+  (ortho        nil                         :type boolean))
 
 (defun parse-camera (data)
   "Parses a CAMERA object from DATA, as parsed from JSON."
@@ -29,9 +32,13 @@
    the camera."
   (check-type camera camera)
 
-  (let ((near  (camera-near camera))
-        (far   (camera-far  camera))
-        (fov   (camera-fov  camera)))
+  (let* ((near         (camera-near         camera))
+         (far          (camera-far          camera))
+         (fov          (camera-fov          camera))
+         (aspect-ratio (camera-aspect-ratio camera))
+         (angle (/ (* (camera-fov camera) (coerce pi 'single-float)) 2 180))
+         (xmax  (* (tan angle) near))
+         (ymax  (/ xmax aspect-ratio)))
     (to-float-array '(4 4)
       (if (camera-ortho camera)
           (let ((f+n (+ far near))
@@ -43,10 +50,10 @@
           (let ((n+f (+ near far))
                 (n-f (- near far))
                 (2fn (* 2 far near)))
-            `((,near   0.0          0.0          0.0)
-              (  0.0 ,near          0.0          0.0)
-              (  0.0   0.0 ,(/ n+f n-f) ,(/ 2fn n-f))
-              (  0.0   0.0         -1.0          0.0)))))))
+            `((,(/ near xmax)            0.0          0.0          0.0)
+              (           0.0 ,(/ near ymax)          0.0          0.0)
+              (           0.0            0.0 ,(/ n+f n-f) ,(/ 2fn n-f))
+              (           0.0            0.0         -1.0          0.0)))))))
 
 (defun camera-view-xform (camera)
   "Returns the transformation associated with the view matrix of the camera."
