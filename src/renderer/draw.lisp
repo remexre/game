@@ -9,10 +9,12 @@
 ; Per-frame parameters.
 (defvar *shader-proj*)
 (defvar *shader-view*)
+(defvar *shader-light-position* (to-float-array '(3) '(1.0 1.0 -5.0)))
 
 ; Per-DRAW-OBJECT-call parameters.
 (defvar *shader-model* +identity-xform+)
-(defvar *shader-diffuse* (to-float-array '(4) '(1.0 1.0 1.0 1.0)))
+(defvar *shader-diffuse*)
+(defvar *shader-ambient*)
 
 ; For logging purposes.
 (defvar *drawn-triangles* 0)
@@ -23,9 +25,11 @@
   (check-type *shader-proj* xform)
   (check-type *shader-view* xform)
   (check-type *shader-model* xform)
-  (check-type *shader-diffuse* (simple-array single-float (4)))
+  (check-type *shader-ambient* (simple-array single-float (3)))
+  (check-type *shader-diffuse* (simple-array single-float (3)))
 
   ; Set things we ought to be able to lift out...
+  (gl:enable :depth-test)
   (gl:use-program (renderer-program *renderer*))
   (gl:enable-vertex-attrib-array 0)
   (gl:enable-vertex-attrib-array 1)
@@ -45,6 +49,8 @@
   (gl:uniform-matrix 1 4 (vector (flatten-xform *shader-view*)))
   (gl:uniform-matrix 2 4 (vector (flatten-xform *shader-model*)))
   (gl:uniformfv 3 *shader-diffuse*)
+  (gl:uniformfv 4 *shader-ambient*)
+  (gl:uniformfv 5 *shader-light-position*)
 
   ; Do the actual drawing.
   (let ((len (/ (buffer-length pos) 8)))

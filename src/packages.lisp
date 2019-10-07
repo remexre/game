@@ -12,7 +12,9 @@
            #:flip #:init-renderer #:renderer #:renderer-asset-cache
            #:renderer-scene-entry #:title
            #:immutable-buffer #:make-immutable-buffer
-           #:*shader-proj* #:*shader-view* #:*shader-model* #:*shader-diffuse*
+           #:*shader-light-position*
+           #:*shader-proj* #:*shader-view* #:*shader-model*
+           #:*shader-ambient* #:*shader-diffuse*
            #:*drawn-triangles* #:clear #:draw-object
            #:get-events))
 
@@ -29,8 +31,9 @@
            #:node-lod-branch #:node-lod-branch-distance #:node-lod-branch-closer
                              #:node-lod-branch-further
            #:node-model #:node-model-entry
-           #:node-shader-params #:node-shader-params-diffuse
+           #:node-shader-params #:node-shader-params-ambient
                                 #:node-shader-params-child
+                                #:node-shader-params-diffuse
            #:node-xform #:node-xform-matrix #:node-xform-child
            #:scene #:scene-camera #:scene-clear-color #:scene-children))
 

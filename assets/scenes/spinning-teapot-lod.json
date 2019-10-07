@@ -22,7 +22,7 @@
 				},
 				"further": {
 					"type": "shader-params",
-					"diffuse": [1.0, 0.0, 1.0, 1.0],
+					"diffuse": [1.0, 0.0, 1.0],
 					"child": {
 						"type": "model",
 						"path": "assets/models/teapotLowPoly.txt"

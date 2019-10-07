@@ -34,6 +34,7 @@
 
 (defmethod draw ((node node-shader-params))
   (let ((child            (node-shader-params-child   node))
+        (*shader-ambient* (node-shader-params-ambient node)) 
         (*shader-diffuse* (node-shader-params-diffuse node)))
     (draw child)))
 

@@ -15,8 +15,9 @@
   (entry (error "Must provide ENTRY") :type (cons pathname model)))
 
 (defstruct node-shader-params
-  (diffuse (to-float-array '(4) '(1.0 1.0 1.0 1.0)) :type (simple-array single-float (4)))
-  (child   (error "Must provide CHILD")             :type node))
+  (ambient (to-float-array '(3) '(0.1 0.1 0.1)) :type (simple-array single-float (3)))
+  (diffuse (to-float-array '(3) '(1.0 1.0 1.0)) :type (simple-array single-float (3)))
+  (child   (error "Must provide CHILD")         :type node))
 
 (defstruct node-xform
   (matrix +identity-xform+             :type xform)
@@ -31,17 +32,20 @@
       ("shader-params"
        (setf node (make-node-shader-params :child (parse-node (assv :child data))))
 
+       (when-let (ambient (assv :ambient data))
+         (setf (node-shader-params-ambient node) (to-float-array '(3) ambient))) 
+
        (when-let (diffuse (assv :diffuse data))
-         (setf (node-shader-params-diffuse node) (to-float-array '(4) diffuse))))
+         (setf (node-shader-params-diffuse node) (to-float-array '(3) diffuse))))
       ("xform"
        (setf node (make-node-xform :child (parse-node (assv :child data))))
 
-       (when-let (scale (assv :scale data))
-         (xform-composef (node-xform-matrix node) (xform-scale scale))) 
+       (when-let (xlat (assv :xlat data))
+         (xform-composef (node-xform-matrix node) (xform-xlat xlat)))
 
        (when-let (rot (assv :rot data))
          (xform-composef (node-xform-matrix node) (xform-rot rot))) 
 
-       (when-let (xlat (assv :xlat data))
-         (xform-composef (node-xform-matrix node) (xform-xlat xlat)))))
+       (when-let (scale (assv :scale data))
+         (xform-composef (node-xform-matrix node) (xform-scale scale)))))
     node))

@@ -20,7 +20,8 @@
     (glfw:create-window :width 800 :height 600 :title "game"
                         :context-version-major 3
                         :context-version-minor 3
-                        :opengl-profile :opengl-core-profile)
+                        :opengl-profile :opengl-core-profile
+                        :samples 8 #| MSAA |#)
     (let* ((window glfw:*window*)
            (free (lambda ()
                    (glfw:destroy-window window)))
