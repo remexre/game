@@ -20,8 +20,7 @@
     (glfw:create-window :width 800 :height 600 :title "game"
                         :context-version-major 3
                         :context-version-minor 3
-                        :opengl-profile :opengl-core-profile
-                        :samples 8 #| MSAA |#)
+                        :opengl-profile :opengl-core-profile)
     (let* ((window glfw:*window*)
            (free (lambda ()
                    (glfw:destroy-window window)))
@@ -34,6 +33,14 @@
 
       (setup-events window)
       (gl:bind-vertex-array (gl:gen-vertex-array))
+
+  ; Set things we ought to be able to lift out...
+  ; (gl:enable :cull-face)
+  (gl:enable :depth-test)
+  (gl:use-program (renderer-program renderer))
+  (gl:enable-vertex-attrib-array 0)
+  (gl:enable-vertex-attrib-array 1)
+  (gl:enable-vertex-attrib-array 2)
       renderer)))
 
 (defun load-shader (shader-type src)

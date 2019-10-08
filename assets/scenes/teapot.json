@@ -1,0 +1,19 @@
+{
+	"type": "scene",
+	"camera": {
+		"pos": [0.0, 0.0, 0.0],
+		"up": [0.0, 1.0, 0.0],
+		"rot": [0.0, 0.0, 0.0],
+		"near": 0.1,
+		"far": 100.0,
+		"fov": 60.0
+	},
+	"clear-color": [0.06125, 0.06125, 0.875, 1.0],
+	"node": {
+		"type": "multi",
+		"children": []
+	},
+	"scripts": [
+		"assets/scripts/make-teapots.lisp"
+	]
+}

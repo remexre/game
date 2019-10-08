@@ -17,8 +17,8 @@
       (clear clear-color)
       (setf *drawn-triangles* 0)
       (let ((*camera-pos*  (camera-pos        camera))
-            (*shader-proj* (camera-proj-xform camera))
-            (*shader-view* (camera-view-xform camera)))
+            (*shader-proj-xform* (camera-proj-xform camera))
+            (*shader-view-xform* (camera-view-xform camera)))
         (draw node))))
   (flip *renderer*))
 
@@ -36,7 +36,7 @@
   (let* ((branch-distance (node-lod-branch-distance node))  
          (closer          (node-lod-branch-closer   node))  
          (further         (node-lod-branch-further  node))
-         (draw-position   (apply-xform-unit-w *shader-model*))
+         (draw-position   (apply-xform-unit-w *shader-model-xform*))
          (distance        (vec3-magnitude (vec3-add *camera-pos* (vec4-to-vec3 draw-position)))))
     (draw (if (< distance branch-distance) closer further))))
 
@@ -59,6 +59,6 @@
 (defmethod draw ((node node-xform))
   (let ((child  (node-xform-child  node))
         (matrix (node-xform-matrix node))
-        (*shader-model* *shader-model*))
-    (xform-composef *shader-model* matrix)
+        (*shader-model-xform* *shader-model-xform*))
+    (xform-composef *shader-model-xform* matrix)
     (draw child)))

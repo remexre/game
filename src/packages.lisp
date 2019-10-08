@@ -16,7 +16,7 @@
            #:renderer-scene-entry #:title
            #:immutable-buffer #:make-immutable-buffer
            #:*shader-light-position*
-           #:*shader-proj* #:*shader-view* #:*shader-model*
+           #:*shader-proj-xform* #:*shader-view-xform* #:*shader-model-xform*
            #:*shader-ambient* #:*shader-diffuse*
            #:*drawn-triangles* #:clear #:draw-object
            #:get-events))

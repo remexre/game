@@ -1,12 +1,12 @@
 (in-package :renderer)
 
 ; Per-frame parameters.
-(defvar *shader-proj*)
-(defvar *shader-view*)
+(defvar *shader-proj-xform*)
+(defvar *shader-view-xform*)
 (defvar *shader-light-position* (to-float-array '(3) '(0.0 0.0 0.0)))
 
 ; Per-DRAW-OBJECT-call parameters.
-(defvar *shader-model* +identity-xform+)
+(defvar *shader-model-xform* +identity-xform+)
 (defvar *shader-diffuse* (to-float-array '(3) '(1.0 0.0 1.0)))
 (defvar *shader-ambient* (to-float-array '(3) '(0.1 0.0 0.1)))
 
@@ -24,18 +24,11 @@
 (defun draw-object (pos)
   (check-type pos immutable-buffer)
 
-  (check-type *shader-proj* xform)
-  (check-type *shader-view* xform)
-  (check-type *shader-model* xform)
+  (check-type *shader-proj-xform* xform)
+  (check-type *shader-view-xform* xform)
+  (check-type *shader-model-xform* xform)
   (check-type *shader-ambient* (simple-array single-float (3)))
   (check-type *shader-diffuse* (simple-array single-float (3)))
-
-  ; Set things we ought to be able to lift out...
-  (gl:enable :depth-test)
-  (gl:use-program (renderer-program *renderer*))
-  (gl:enable-vertex-attrib-array 0)
-  (gl:enable-vertex-attrib-array 1)
-  (gl:enable-vertex-attrib-array 2)
 
   ; Set up vertices.
   (gl:bind-buffer :array-buffer (vbo pos))
@@ -44,12 +37,9 @@
   (gl:vertex-attrib-pointer 2 3 :float nil 32 20)
 
   ; Set up uniforms.
-  ; ; (gl:uniform-matrix 0 4 (vector (flatten-xform +identity-xform+)))
-  ; ; (gl:uniform-matrix 1 4 (vector (flatten-xform +identity-xform+)))
-  ; ; (gl:uniform-matrix 2 4 (vector (flatten-xform +identity-xform+)))
-  (gl:uniform-matrix 0 4 (vector (flatten-xform *shader-proj*)))
-  (gl:uniform-matrix 1 4 (vector (flatten-xform *shader-view*)))
-  (gl:uniform-matrix 2 4 (vector (flatten-xform *shader-model*)))
+  (gl:uniform-matrix 0 4 (vector (flatten-xform *shader-proj-xform*)))
+  (gl:uniform-matrix 1 4 (vector (flatten-xform *shader-view-xform*)))
+  (gl:uniform-matrix 2 4 (vector (flatten-xform *shader-model-xform*)))
   (gl:uniformfv 3 *shader-diffuse*)
   (gl:uniformfv 4 *shader-ambient*)
   (gl:uniformfv 5 *shader-light-position*)
