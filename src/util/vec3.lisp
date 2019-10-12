@@ -29,7 +29,9 @@
            (type (simple-array single-float (3)) v))
   (let ((mag (vec3-magnitude v)))
     (map '(simple-array single-float (3))
-         (lambda (x) (/ x mag))
+         (lambda (x)
+           (declare (type single-float x))
+           (/ x mag))
          v)))
 
 (defun vec3-add (a b)
@@ -43,7 +45,11 @@
            (type (simple-array single-float (3)) v)
            (type single-float x))
   ; TODO: Does this get unrolled and vectorized?
-  (map '(simple-array single-float (3)) (lambda (y) (* y x)) v))
+  (map '(simple-array single-float (3))
+       (lambda (y)
+         (declare (type single-float y))
+         (* y x))
+       v))
 
 (defun vec3-sub (a b)
   (declare (optimize (speed 3))

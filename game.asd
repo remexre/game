@@ -6,8 +6,8 @@
   :build-pathname "game"
   :entry-point "game:main"
   :depends-on ("alexandria" "cl-glfw3" "cl-json" "cl-opengl" "cl-wadler-pprint"
-               "ieee-floats" "iterate" "parse-float" "swank" "swap-bytes"
-               "trivia" "trivial-garbage" "trivial-main-thread"
+               "ieee-floats" "iterate" "parse-float" "png-read" "swank"
+               "swap-bytes" "trivia" "trivial-garbage" "trivial-main-thread"
                "trivial-shell" "unix-opts")
   :components ((:file "src/packages")
 
@@ -20,12 +20,14 @@
                (:static-file "src/renderer/vert.glsl")
                (:file "src/renderer/init")
                (:file "src/renderer/bufs")
+               (:file "src/renderer/imgs")
                (:file "src/renderer/events")
                (:file "src/renderer/draw")
 
                (:file "src/assets/cache")
                (:file "src/assets/camera")
                (:file "src/assets/model")
+               (:file "src/assets/texture")
                (:file "src/assets/node")
                (:file "src/assets/prefab")
                (:file "src/assets/scene")

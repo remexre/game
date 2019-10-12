@@ -31,9 +31,9 @@
   "Returns the front vector associated with the camera."
   (apply-xform
     (compose-xforms
+      (xform-rot-x (aref (camera-rot camera) 0)) 
       (xform-rot-z (aref (camera-rot camera) 2))
-      (xform-rot-y (aref (camera-rot camera) 1))
-      (xform-rot-x (aref (camera-rot camera) 0)))
+      (xform-rot-y (aref (camera-rot camera) 1)))
     (to-float-array '(4) '(0.0 0.0 1.0 0.0))))
 
 (defun camera-right (camera)
@@ -50,7 +50,7 @@
          (far          (camera-far          camera))
          (fov          (camera-fov          camera))
          (aspect-ratio (camera-aspect-ratio camera))
-         (angle (/ (deg-to-rad (camera-fov camera)) 2))
+         (angle (/ (deg-to-rad fov) 2))
          (xmax  (* (tan angle) near))
          (ymax  (/ xmax aspect-ratio)))
     (to-float-array '(4 4)
@@ -74,7 +74,6 @@
   (check-type camera camera)
 
   (let ((pos (camera-pos camera))
-        (up  (camera-up  camera))
         (rot (camera-rot camera)))
     (compose-xforms
       (xform-rot-x (aref rot 0))

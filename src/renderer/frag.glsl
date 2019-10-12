@@ -13,7 +13,7 @@ layout(location = 5) uniform vec3 wsLightPos;
 layout(location = 0) out vec3 color;
 
 void main(void) {
-	vec3 wsLightDir = wsLightPos - wsPos;
+	vec3 wsLightDir = normalize(wsLightPos - wsPos);
 	vec3 adjDiffuse = clamp(dot(wsLightDir, wsNormal), 0, 1) * diffuse;
 	color = adjDiffuse + ambient;
 }

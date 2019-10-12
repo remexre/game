@@ -15,6 +15,7 @@
            #:flip #:init-renderer #:reload-program #:renderer
            #:renderer-asset-cache #:renderer-scene-entry #:title
            #:immutable-buffer #:make-immutable-buffer
+           #:immutable-image #:make-immutable-image #:make-immutable-image-from-png
            #:*shader-light-position*
            #:*shader-proj-xform* #:*shader-view-xform* #:*shader-model-xform*
            #:*shader-ambient* #:*shader-diffuse*
