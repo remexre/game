@@ -8,18 +8,16 @@ layout(location = 2) in vec3 normal;
 layout(location = 0) uniform mat4 proj;
 layout(location = 1) uniform mat4 view;
 layout(location = 2) uniform mat4 model;
-layout(location = 5) uniform vec3 lightPos;
 
-out vec3 lightDirection;
-out vec2 vsTexcoords;
-out vec3 vsNormal;
+out vec2 msTexcoords;
+out vec3 wsNormal;
+out vec3 wsPos;
 
 void main(void) {
-	vec4 wsPos = model * vec4(pos, 1);
-	gl_Position = proj * view * wsPos;
+	vec4 pos = model * vec4(pos, 1);
+	wsPos = pos.xyz;
+	gl_Position = proj * view * pos;
 
-	lightDirection = (view * vec4(normalize(lightPos - wsPos.xyz), 0.0)).xyz;
-
-	vsTexcoords = texcoords;
-	vsNormal = normal;
+	msTexcoords = texcoords;
+	wsNormal = (model * vec4(normal, 0)).xyz;
 }

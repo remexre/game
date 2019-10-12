@@ -43,7 +43,7 @@
 (defmethod draw ((node node-model))
   (let* ((entry (node-model-entry node))
          (buf (model-buf (cdr entry))))
-    (draw-object buf)))
+    (draw-object buf :cull-radius 1.0)))
 
 (defmethod draw ((node node-multi))
   (iter

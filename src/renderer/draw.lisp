@@ -8,7 +8,7 @@
 ; Per-DRAW-OBJECT-call parameters.
 (defvar *shader-model-xform* +identity-xform+)
 (defvar *shader-diffuse* (to-float-array '(3) '(1.0 0.0 1.0)))
-(defvar *shader-ambient* (to-float-array '(3) '(0.1 0.0 0.1)))
+(defvar *shader-ambient* (to-float-array '(3) '(0.1 0.1 0.1)))
 
 ; For logging purposes.
 (defvar *drawn-triangles* 0)
@@ -21,7 +21,7 @@
   
   (setf *drawn-triangles* 0))
 
-(defun draw-object (pos)
+(defun draw-object (pos &key cull-radius)
   (check-type pos immutable-buffer)
 
   (check-type *shader-proj-xform* xform)
@@ -29,6 +29,15 @@
   (check-type *shader-model-xform* xform)
   (check-type *shader-ambient* (simple-array single-float (3)))
   (check-type *shader-diffuse* (simple-array single-float (3)))
+
+  ; Try to cull.
+  (when cull-radius
+    (check-type cull-radius single-float)
+    (let* ((model-to-camera (compose-xforms *shader-view-xform* *shader-model-xform*))
+           (center (apply-xform-unit-w model-to-camera))
+           (z (aref center 2)))
+      (when (> z cull-radius)
+        (return-from draw-object))))
 
   ; Set up vertices.
   (gl:bind-buffer :array-buffer (vbo pos))

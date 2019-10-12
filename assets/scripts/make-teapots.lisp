@@ -9,9 +9,12 @@
   (check-type *root* node-multi)
   (with-accessors ((nodes node-multi-children)) *root*
     (iter
-      (for x from -10.0 to 10.0)
+      ; (for x from -10.0 to 10.0)
+      (for x in '(0.0))
       (iter
-        (for y in '(-2.0 2.0))
+        ; (for y in '(-2.0 2.0))
+        (for y in '(0.0))
         (iter
-          (for z from -10.0 to 10.0)
+          ; (for z from -10.0 to 10.0)
+          (for z in '(1.0 -1.0))
           (push (load-teapot-at x y z) nodes))))))

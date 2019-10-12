@@ -34,13 +34,13 @@
       (setup-events window)
       (gl:bind-vertex-array (gl:gen-vertex-array))
 
-  ; Set things we ought to be able to lift out...
-  ; (gl:enable :cull-face)
-  (gl:enable :depth-test)
-  (gl:use-program (renderer-program renderer))
-  (gl:enable-vertex-attrib-array 0)
-  (gl:enable-vertex-attrib-array 1)
-  (gl:enable-vertex-attrib-array 2)
+      ; (gl:enable :cull-face)
+      (gl:enable :depth-test)
+      (gl:use-program (renderer-program renderer))
+      (gl:enable-vertex-attrib-array 0)
+      (gl:enable-vertex-attrib-array 1)
+      (gl:enable-vertex-attrib-array 2)
+
       renderer)))
 
 (defun load-shader (shader-type src)
@@ -63,9 +63,11 @@
     program))
 
 (defun reload-program ()
+  (prn :debug "Reloading program...")
   (setf +vert-shader-src+ (read-file #p"src/renderer/vert.glsl")
         +frag-shader-src+ (read-file #p"src/renderer/frag.glsl"))
-  (setf (renderer-program *renderer*) (load-program)))
+  (setf (renderer-program *renderer*) (load-program))
+  (gl:use-program (renderer-program *renderer*)))
 
 (defun flip (renderer)
   (check-type renderer renderer)

@@ -4,16 +4,16 @@
            #:*log-tags* #:dbg #:prn
            #:vec4-to-vec3 #:vec3-add #:vec3-cross #:vec3-float-mul
                           #:vec3-magnitude #:vec3-normalize #:vec3-sub
-           #:xform #:+identity-xform+ #:apply-xform #:apply-xform-unit-w
-                   #:compose-xforms #:xform-composef #:flatten-xform
-                   #:xform-rot-x #:xform-rot-y #:xform-rot-z #:xform-scale
-                   #:xform-xlat))
+           #:xform #:+identity-xform+ #:apply-xform #:apply-xform-neg-unit-w
+                   #:apply-xform-unit-w #:compose-xforms #:xform-composef
+                   #:flatten-xform #:xform-rot-x #:xform-rot-y #:xform-rot-z
+                   #:xform-scale #:xform-xlat))
 
 (defpackage :renderer
   (:use :cl :game-util :iterate :trivial-garbage :trivial-main-thread)
   (:export #:*renderer*
-           #:flip #:init-renderer #:renderer #:renderer-asset-cache
-           #:renderer-scene-entry #:title
+           #:flip #:init-renderer #:reload-program #:renderer
+           #:renderer-asset-cache #:renderer-scene-entry #:title
            #:immutable-buffer #:make-immutable-buffer
            #:*shader-light-position*
            #:*shader-proj-xform* #:*shader-view-xform* #:*shader-model-xform*

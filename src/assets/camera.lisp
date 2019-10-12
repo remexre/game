@@ -76,4 +76,8 @@
   (let ((pos (camera-pos camera))
         (up  (camera-up  camera))
         (rot (camera-rot camera)))
-    (xform-xlat pos)))
+    (compose-xforms
+      (xform-rot-x (aref rot 0))
+      (xform-rot-z (aref rot 2))
+      (xform-rot-y (aref rot 1))
+      (xform-xlat pos))))

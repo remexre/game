@@ -27,6 +27,10 @@
              (vec () (list 'list (ele 0) (ele 1) (ele 2) (ele 3))))
       `(make-array '(4) :element-type 'single-float :initial-contents ,(vec))))
 
+(defun apply-xform-neg-unit-w (m)
+  "mat4 * [0, 0, 0, -1]"
+  (apply-xform m (to-float-array '(4) '(0.0 0.0 0.0 -1.0))))
+
 (defun apply-xform-unit-w (m)
   "mat4 * [0, 0, 0, 1]"
   (apply-xform m (to-float-array '(4) '(0.0 0.0 0.0 1.0))))

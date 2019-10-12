@@ -1,5 +1,7 @@
 SCENE := assets/scenes/lod-teapot.json
 all: release
+clean:
+	test ! -f game || rm game
 debug:
 	sbcl --quit \
 		--eval "(push (uiop:getcwd) asdf:*central-registry*)" \
