@@ -26,5 +26,5 @@
       (iter
         (for script-entry in (scene-script-entries scene))
         (for script = (cdr script-entry))
-        (script-on-load script scene))
+        (script/on-load script scene))
       scene)))

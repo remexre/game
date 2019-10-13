@@ -12,8 +12,8 @@
       (_ (handle-event event)))))
 
 (defun handle-event (event)
-  (when-let (scene (and *renderer* (cdr (renderer-scene-entry *renderer*))))
+  (let ((scene (renderer-scene *renderer*)))
     (iter
       (for script-entry in (scene-script-entries scene))
       (for script = (cdr script-entry))
-      (script-on-event script event))))
+      (script/on-event script event))))

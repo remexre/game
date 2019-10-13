@@ -30,6 +30,6 @@
       (usage))
 
     (let ((scene-path (pathname (nth 0 args))))
-      (enable-loop-stages :events :renderer :fps)
+      (enable-loop-stages :events :scripts :renderer)
       (setf (renderer-scene-entry *renderer*) (load-asset :scene scene-path :get-entry t))
       (main-loop))))

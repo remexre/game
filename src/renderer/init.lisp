@@ -4,7 +4,12 @@
   (window (error "Must provide WINDOW") :type (satisfies cffi:pointerp))
   (program 0 :type fixnum)
   (scene-entry nil :type (or (cons pathname assets:scene) null))
-  (asset-cache nil :type list))
+  (asset-cache nil :type list)
+  (title-fields nil :type list))
+
+(defun renderer-scene (renderer)
+  (check-type renderer renderer)
+  (cdr (renderer-scene-entry renderer)))
 
 (defvar *renderer* 'not-initialized)
 
@@ -71,11 +76,20 @@
 
 (defun flip (renderer)
   (check-type renderer renderer)
-  (glfw:swap-buffers (renderer-window renderer)))
+  (glfw:swap-buffers (renderer-window renderer))
+  (let* ((fields (renderer-title-fields renderer))
+         (parts  (mapcar (lambda (p) (format nil "~a: ~a" (car p) (cdr p))) fields))
+         (title  (format nil "~{~a~^, ~}" parts)))
+    (glfw:set-window-title title (renderer-window renderer))))
 
-(defsetf title set-title)
+(defsetf renderer-title-field set-renderer-title-field)
 
-(defun set-title (renderer title)
+(defun set-renderer-title-field (renderer field value)
   (check-type renderer renderer)
-  (check-type title string)
-  (glfw:set-window-title title (renderer-window renderer)))
+  (check-type field string)
+  (let* ((fields (renderer-title-fields renderer))
+         (entry  (assoc field fields :test #'string=)))
+    (cond
+      (entry  (setf (cdr entry) value))
+      (fields (push (cons field value) (cdr (last fields))))
+      (t      (setf (renderer-title-fields renderer) (list (cons field value)))))))

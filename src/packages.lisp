@@ -10,11 +10,13 @@
                    #:xform-scale #:xform-xlat))
 
 (defpackage :renderer
-  (:use :cl :game-util :iterate :trivial-garbage :trivial-main-thread)
+  (:use :alexandria :cl :game-util :iterate :trivial-garbage
+        :trivial-main-thread)
   (:export #:*renderer*
            #:flip #:init-renderer #:reload-program
            #:renderer #:renderer-asset-cache #:renderer-camera
-                      #:renderer-scene-entry #:title
+                      #:renderer-scene #:renderer-scene-entry
+                      #:renderer-title-field #:renderer-title-fields
            #:immutable-buffer #:make-immutable-buffer
            #:immutable-image #:make-immutable-image
                              #:make-immutable-image-from-png
@@ -50,7 +52,8 @@
            #:prefab #:prefab-node
            #:scene #:scene-camera #:scene-clear-color #:scene-node
                    #:scene-script-entries
-           #:script #:script-on-event #:script-on-load))
+           #:script #:script-call #:script/on-event #:script/on-load
+                    #:script/on-loop))
 
 (defpackage :game
   (:use :alexandria :assets :cl :game-util :iterate :renderer :trivia)

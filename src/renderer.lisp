@@ -10,7 +10,7 @@
    (prn :todo "TODO: draw ~a" object)))
 
 (def-loop-body :renderer ()
-  (when-let (scene (cdr (renderer-scene-entry *renderer*)))
+  (let ((scene (renderer-scene *renderer*)))
     (let ((clear-color (scene-clear-color scene))
           (camera      (scene-camera      scene))
           (node        (scene-node        scene)))

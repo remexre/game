@@ -15,6 +15,7 @@
 	},
 	"scripts": [
 		"assets/scripts/reload.lisp",
+		"assets/scripts/fps.lisp",
 		"assets/scripts/camera-wasdijkl.lisp",
 		"assets/scripts/make-teapots.lisp"
 	]

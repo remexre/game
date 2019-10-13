@@ -42,7 +42,7 @@
                (:file "src/debug")
                (:file "src/renderer")
                (:file "src/events")
-               (:file "src/fps")
+               (:file "src/scripts")
                (:file "src/main")))
 
 ; vi: ft=lisp :
