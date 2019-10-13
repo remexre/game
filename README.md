@@ -13,7 +13,7 @@ Licensed under either of
 
 at your option.
 
-The Inter font is licensed under the SIL Open Font License 1.1.
+The Terminus font is licensed under the SIL Open Font License 1.1.
 
 ### Contribution
 

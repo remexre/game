@@ -2,4 +2,7 @@
 !.gitignore
 
 core.*
+target/
+
 /game
+/game.tgz

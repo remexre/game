@@ -1,0 +1,10 @@
+[package]
+authors = ["Nathan Ringo <remexre@gmail.com>"]
+edition = "2018"
+license = "Apache2+MIT"
+name = "preassets"
+version = "0.1.0"
+
+[dependencies]
+bdf = "0.5.5"
+image = "0.22.3"

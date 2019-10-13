@@ -1,5 +1,10 @@
 SCENE := assets/scenes/lod-teapot.json
-all: release
+
+FILES := assets game
+
+all:
+	docker build -t remexre/game-builder docker
+	docker run -v "$(shell pwd):/code" --rm remexre/game-builder bash /build.sh
 clean:
 	test ! -f game || rm game
 debug:
@@ -9,13 +14,15 @@ debug:
 		--eval "(game::enable-loop-stage :debug)" \
 		--eval "(game:main)" \
 		"$(SCENE)"
-release:
-	docker build -t remexre/game-builder docker
+preprocess-assets:
+	cargo run --manifest-path preassets/Cargo.toml
+release: preprocess-assets
 	sbcl --non-interactive \
 		--eval "(push (uiop:getcwd) asdf:*central-registry*)" \
 		--eval "(ql:quickload :game :verbose t)" \
 		--eval "(trace sb-ext:save-lisp-and-die)" \
 		--eval "(asdf:make :game)"
+	tar czvf game.tgz $(FILES)
 repl:
 	sbcl \
 		--eval "(push (uiop:getcwd) asdf:*central-registry*)" \
@@ -27,6 +34,4 @@ run:
 		--eval "(ql:quickload :game :verbose t)" \
 		--eval "(game:main)" \
 		"$(SCENE)"
-run-release: release
-	./game "$(SCENE)"
-.PHONY: all debug release repl run run-release
+.PHONY: all debug preprocess-assets release repl
