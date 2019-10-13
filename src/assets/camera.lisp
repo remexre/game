@@ -80,3 +80,13 @@
       (xform-rot-z (aref rot 2))
       (xform-rot-y (aref rot 1))
       (xform-xlat pos))))
+
+(defun camera-move (forward right up &key (camera (renderer-camera *renderer*)) (move-speed 0.25))
+  (let* ((forward (vec3-float-mul (camera-front camera) (* forward move-speed)))
+         (up      (vec3-float-mul (camera-up    camera) (* up      move-speed)))
+         (right   (vec3-float-mul (camera-right camera) (* right   move-speed)))
+         (vecs (list forward up right)))
+    (setf (camera-pos camera) (reduce #'vec3-add vecs :initial-value (camera-pos camera)))))
+
+(defun camera-rotate (direction amount &key (camera (renderer-camera *renderer*)) (move-speed 10))
+  (incf (aref (camera-rot camera) direction) (* amount move-speed)))

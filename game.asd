@@ -41,7 +41,6 @@
                (:file "src/loop")
                (:file "src/debug")
                (:file "src/renderer")
-               (:file "src/movement")
                (:file "src/events")
                (:file "src/fps")
                (:file "src/main")))

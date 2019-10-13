@@ -32,6 +32,7 @@
                     #:camera-far #:camera-fov #:camera-aspect-ratio
                     #:camera-ortho #:camera-front #:camera-right
                     #:camera-proj-xform #:camera-view-xform
+           #:camera-move #:camera-rotate
            #:model #:model-buf
            #:texture #:texture-img
            #:font #:font-texture
