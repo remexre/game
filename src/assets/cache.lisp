@@ -10,7 +10,7 @@
 
      ; Check the cache for the entry.
      (unless ignore-cache
-       (setf entry (assoc path (renderer-asset-cache *renderer*)))
+       (setf entry (assoc path (renderer-asset-cache *renderer*) :test #'equal))
        (when entry
          (setf cachedp t)))
 
