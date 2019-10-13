@@ -12,10 +12,12 @@
 (defpackage :renderer
   (:use :cl :game-util :iterate :trivial-garbage :trivial-main-thread)
   (:export #:*renderer*
-           #:flip #:init-renderer #:reload-program #:renderer
-           #:renderer-asset-cache #:renderer-scene-entry #:title
+           #:flip #:init-renderer #:reload-program
+           #:renderer #:renderer-asset-cache #:renderer-camera
+                      #:renderer-scene-entry #:title
            #:immutable-buffer #:make-immutable-buffer
-           #:immutable-image #:make-immutable-image #:make-immutable-image-from-png
+           #:immutable-image #:make-immutable-image
+                             #:make-immutable-image-from-png
            #:*shader-light-position*
            #:*shader-proj-xform* #:*shader-view-xform* #:*shader-model-xform*
            #:*shader-ambient* #:*shader-diffuse*
@@ -27,13 +29,16 @@
         :trivial-garbage :trivial-shell)
   (:export #:load-asset #:reload-all-assets
            #:camera #:camera-pos #:camera-up #:camera-rot #:camera-near
-                    #:camera-far #:camera-fov #:camera-aspect-ratio #:camera-ortho
-                    #:camera-front #:camera-right #:camera-proj-xform
-                    #:camera-view-xform
+                    #:camera-far #:camera-fov #:camera-aspect-ratio
+                    #:camera-ortho #:camera-front #:camera-right
+                    #:camera-proj-xform #:camera-view-xform
            #:model #:model-buf
+           #:texture #:texture-img
+           #:font #:font-texture
            #:node #:parse-node
            #:node-include-prefab #:node-include-prefab-entry
-           #:node-lod-branch #:node-lod-branch-distance #:node-lod-branch-closer
+           #:node-lod-branch #:node-lod-branch-distance
+                             #:node-lod-branch-closer
                              #:node-lod-branch-further
            #:node-model #:node-model-entry
            #:node-multi #:node-multi-children

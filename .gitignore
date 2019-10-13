@@ -3,6 +3,7 @@
 
 core.*
 target/
+tmp/
 
 /game
 /game.tgz

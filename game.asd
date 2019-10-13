@@ -2,7 +2,7 @@
   :author "Nathan Ringo <nathan@remexre.xyz>"
   :license "Apache-2.0/MIT"
   :serial t
-  :build-operation "program-op"
+  :build-operation program-op
   :build-pathname "game"
   :entry-point "game:main"
   :depends-on ("alexandria" "cl-glfw3" "cl-json" "cl-opengl" "cl-wadler-pprint"
@@ -28,14 +28,20 @@
                (:file "src/assets/camera")
                (:file "src/assets/model")
                (:file "src/assets/texture")
+               (:file "src/assets/font")
                (:file "src/assets/node")
                (:file "src/assets/prefab")
                (:file "src/assets/scene")
                (:file "src/assets/script")
 
+               ; We avoid a warning by not compiling this until after
+               ; SCENE-CAMERA is defined.
+               (:file "src/renderer/camera")
+
                (:file "src/loop")
                (:file "src/debug")
                (:file "src/renderer")
+               (:file "src/movement")
                (:file "src/events")
                (:file "src/fps")
                (:file "src/main")))

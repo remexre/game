@@ -1,7 +1,7 @@
 (in-package :assets)
 
 (defstruct texture
-  (img (error "Must provide BUF") :type immutable-image))
+  (img (error "Must provide IMG") :type immutable-image))
 
 (defmethod asset-kind ((texture texture))
   (declare (ignore texture))

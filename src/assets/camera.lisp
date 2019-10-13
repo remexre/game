@@ -31,9 +31,9 @@
   "Returns the front vector associated with the camera."
   (apply-xform
     (compose-xforms
-      (xform-rot-x (aref (camera-rot camera) 0)) 
-      (xform-rot-z (aref (camera-rot camera) 2))
-      (xform-rot-y (aref (camera-rot camera) 1)))
+      (xform-rot-y (- (aref (camera-rot camera) 1)))
+      (xform-rot-z (- (aref (camera-rot camera) 2)))
+      (xform-rot-x (- (aref (camera-rot camera) 0))))
     (to-float-array '(4) '(0.0 0.0 1.0 0.0))))
 
 (defun camera-right (camera)

@@ -20,26 +20,46 @@
       image)))
 
 (defun make-immutable-image-from-png (data)
-  (let ((png (png-read:read-png-file data)))
-    (dbg png)
-    'todo))
+  (let* ((data (png-read:image-data (png-read:read-png-file data)))
+         (dims (array-dimensions data))
+         (width (array-dimension data 0))
+         (height (array-dimension data 1)))
+
+    ; Convert grayscale image to color. Yeah, it'd be nice to instead have
+    ; support for grayscale textures...
+    (when (eql (length dims) 2)
+      (setf dims (list width height 3))
+      (let ((arr (make-array dims :element-type '(unsigned-byte 8))))
+        (iter (for x below width)
+          (iter (for y below height)
+            (iter (for z below 3)
+              (setf (aref arr x y z) (aref data x y)))))
+        (setf data arr)))
+
+    ; Convert the byte-based texture to a float-based one.
+    (let ((arr (make-array dims :element-type 'single-float)))
+      (iter (for x below width)
+        (iter (for y below height)
+          (iter (for z below 3)
+            (setf (aref arr x y z) (coerce (aref data x y z) 'single-float)))))
+      (make-immutable-image arr))))
 
 (defun load-immutable-image-data (tex data)
   (check-type tex fixnum)
   (check-type data (array single-float (* * 3)))
 
-  (let ((width (array-dimension data 0))
-        (height (array-dimension data 1)))
+  (let* ((width (array-dimension data 0))
+         (height (array-dimension data 1))
+         (len (* width height 3))
+         (arr (make-array len :element-type 'single-float))
+         (i 0))
+    ; Flatten the array.
+    (iter (for x below width)
+      (iter (for y below height)
+        (iter (for z below 3)
+          (setf (aref arr i) (aref data x y z))
+          (incf i))))
+
+    ; Send the texture to the GPU.
     (gl:bind-texture :texture-2d tex)
-    (bracket (arr (gl:alloc-gl-array :float (array-total-size data))
-                  (gl:free-gl-array arr))
-      (let ((i 0))
-        (iter
-          (for x below width)
-          (iter
-            (for y below height)
-            (iter
-              (for z below 3)
-              (setf (gl:glaref arr i) (aref data x y z))
-              (incf i)))))
-      (gl:tex-image-2d :texture-2d 0 :rgb32f width height 0 :rgb :float arr))))
+    (gl:tex-image-2d :texture-2d 0 :rgb32f width height 0 :rgb :float arr)))
