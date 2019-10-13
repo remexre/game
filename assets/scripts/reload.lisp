@@ -1,0 +1,6 @@
+(defun-match on-event (event)
+  ((list :keyboard :r :release (list :control))
+   (reload-program))
+  ((list :keyboard :r :release (list :shift :control))
+   (assets:reload-all-assets)
+   (reload-program)))

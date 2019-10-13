@@ -14,6 +14,8 @@
 		"children": []
 	},
 	"scripts": [
+		"assets/scripts/reload.lisp",
+		"assets/scripts/camera-wasdijkl.lisp",
 		"assets/scripts/make-lod-teapots.lisp"
 	]
 }
