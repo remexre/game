@@ -17,6 +17,9 @@
   (opts:exit 1))
 
 (defun main ()
+  ; Annoying dumb cffi hack...
+  (cffi:use-foreign-library %glfw::glfw)
+
   (multiple-value-bind (opts args) (opts:get-opts)
     (when (getf opts :debug)
       (enable-loop-stage :debug))

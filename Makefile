@@ -27,6 +27,7 @@ release: preprocess-assets
 	sbcl --non-interactive \
 		--eval "(push (uiop:getcwd) asdf:*central-registry*)" \
 		--eval "(ql:quickload :game :verbose t)" \
+		--eval "(cffi:close-foreign-library '%glfw::glfw)" \
 		--eval "(trace sb-ext:save-lisp-and-die)" \
 		--eval "(asdf:make :game)"
 	tar czvf game.tgz game assets
