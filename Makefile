@@ -13,7 +13,6 @@ clean:
 	test ! -f game || rm game
 	test ! -f game.tgz || rm game.tgz
 	test ! -d preassets/target || rm -r preassets/target
-	test ! -d renderer/target || rm -r renderer/target
 	test ! -d tmp || rm -r tmp
 debug:
 	sbcl --quit \
@@ -26,7 +25,7 @@ preprocess-assets: preassets/target/debug/preassets
 	cd preassets && cargo run
 preassets/target/debug/preassets:
 	cd preassets && cargo build
-release: preprocess-assets renderer/target/release/librenderer.so
+release: preprocess-assets
 	sbcl --non-interactive \
 		--eval "(push (uiop:getcwd) asdf:*central-registry*)" \
 		--eval "(ql:quickload :game :verbose t)" \
@@ -34,8 +33,6 @@ release: preprocess-assets renderer/target/release/librenderer.so
 		--eval "(trace sb-ext:save-lisp-and-die)" \
 		--eval "(asdf:make :game)"
 	tar czvf game.tgz game assets
-renderer/target/release/librenderer.so:
-	cd renderer && cargo build --release
 repl:
 	sbcl \
 		--eval "(push (uiop:getcwd) asdf:*central-registry*)" \
