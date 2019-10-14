@@ -8,9 +8,12 @@ all:
 		-v "$(shell pwd):/code" \
 		remexre/game-builder bash /build.sh
 clean:
+	test ! -d assets/shaders || rm -r assets/shaders
+	test ! -f assets/textures/ter-u32n.png || rm -r assets/textures/ter-u32n.png
 	test ! -f game || rm game
 	test ! -f game.tgz || rm game.tgz
 	test ! -d preassets/target || rm -r preassets/target
+	test ! -d renderer/target || rm -r renderer/target
 	test ! -d tmp || rm -r tmp
 debug:
 	sbcl --quit \
@@ -31,6 +34,8 @@ release: preprocess-assets
 		--eval "(trace sb-ext:save-lisp-and-die)" \
 		--eval "(asdf:make :game)"
 	tar czvf game.tgz game assets
+renderer/target/release/librenderer.so:
+	cd renderer && cargo build --release
 repl:
 	sbcl \
 		--eval "(push (uiop:getcwd) asdf:*central-registry*)" \

@@ -3,8 +3,8 @@ FROM ubuntu:16.04
 # Install APT dependencies.
 ENV DEBIAN_FRONTEND "noninteractive"
 RUN apt-get update \
- && apt-get install -y --no-install-recommends build-essential ca-certificates curl libglfw3-dev \
-	make sbcl \
+ && apt-get install -y --no-install-recommends build-essential ca-certificates cmake curl \
+	git libglfw3-dev make python3-minimal sbcl \
  && rm -rf /var/lib/apt/lists/*
 
 # Install QuickLisp.
