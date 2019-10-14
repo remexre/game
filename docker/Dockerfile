@@ -4,8 +4,9 @@ FROM ubuntu:16.04
 ENV DEBIAN_FRONTEND "noninteractive"
 RUN apt-get update \
  && apt-get install -y --no-install-recommends build-essential ca-certificates cmake curl \
-	git libglfw3-dev make python3-minimal sbcl \
+	git libglfw3-dev make python3 sbcl \
  && rm -rf /var/lib/apt/lists/*
+RUN ln -s /usr/bin/python3 /usr/local/bin/python
 
 # Install QuickLisp.
 RUN curl -L https://beta.quicklisp.org/quicklisp.lisp -o /tmp/quicklisp.lisp \

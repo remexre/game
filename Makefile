@@ -26,7 +26,7 @@ preprocess-assets: preassets/target/debug/preassets
 	cd preassets && cargo run
 preassets/target/debug/preassets:
 	cd preassets && cargo build
-release: preprocess-assets
+release: preprocess-assets renderer/target/release/librenderer.so
 	sbcl --non-interactive \
 		--eval "(push (uiop:getcwd) asdf:*central-registry*)" \
 		--eval "(ql:quickload :game :verbose t)" \
