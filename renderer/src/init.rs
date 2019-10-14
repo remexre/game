@@ -25,10 +25,11 @@ pub fn create_instance() -> Result<(Arc<Instance>, InitFlags)> {
         } else {
             false
         };
+
         println!(
-            "- {}{}",
-            ext.to_string_lossy(),
-            if enabled { " (enabled)" } else { "" }
+            "{} {}",
+            if enabled { '+' } else { '-' },
+            ext.to_string_lossy()
         );
     }
 
@@ -44,7 +45,8 @@ pub fn create_instance() -> Result<(Arc<Instance>, InitFlags)> {
         } else {
             false
         };
-        println!("- {}{}", name, if enabled { " (enabled)" } else { "" });
+
+        println!("{} {}", if enabled { '+' } else { '-' }, name);
     }
 
     let instance = Instance::new(None, exts, layers.iter().map(|s| s as &str))?;
@@ -52,17 +54,13 @@ pub fn create_instance() -> Result<(Arc<Instance>, InitFlags)> {
 }
 
 pub fn choose_physical_device(instance: &Arc<Instance>) -> Result<PhysicalDevice> {
-    let dev = PhysicalDevice::enumerate(instance)
-        .filter(|dev| {
-            true;
-            true
-        })
-        .max_by_key(|dev| match dev.ty() {
-            PhysicalDeviceType::IntegratedGpu => 1,
-            PhysicalDeviceType::DiscreteGpu => 2,
-            _ => 0,
-        });
+    let dev = PhysicalDevice::enumerate(instance).max_by_key(|dev| match dev.ty() {
+        PhysicalDeviceType::IntegratedGpu => 1,
+        PhysicalDeviceType::DiscreteGpu => 2,
+        _ => 0,
+    });
     let dev = dev.ok_or_else(|| "No Vulkan devices found")?;
+    println!("Choosing physical device {:?}", dev.name());
     Ok(dev)
 }
 
