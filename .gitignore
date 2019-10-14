@@ -7,3 +7,6 @@ tmp/
 
 /game
 /game.tgz
+
+/assets/textures/ter-u32n.png
+*.spv

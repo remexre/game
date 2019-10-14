@@ -2,10 +2,11 @@
 authors = ["Nathan Ringo <remexre@gmail.com>"]
 edition = "2018"
 license = "Apache-2.0/MIT"
-name = "preassets"
+name = "renderer"
 version = "0.1.0"
 
+[lib]
+crate-type = ["cdylib"]
+
 [dependencies]
-bdf = "0.5.5"
-image = "0.22.3"
-shaderc = "0.6.1"
+ash = "0.29.0"
