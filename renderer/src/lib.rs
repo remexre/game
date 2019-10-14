@@ -1,4 +1,4 @@
 #[macro_use]
-extern crate ash;
+extern crate vulkano;
 
-mod init;
+pub mod init;
