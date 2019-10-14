@@ -20,9 +20,9 @@ debug:
 		--eval "(game:main)" \
 		"$(SCENE)"
 preprocess-assets: preassets/target/debug/preassets
-	$<
+	cd preassets && cargo run
 preassets/target/debug/preassets:
-	cargo build --manifest-path preassets/Cargo.toml
+	cd preassets && cargo build
 release: preprocess-assets
 	sbcl --non-interactive \
 		--eval "(push (uiop:getcwd) asdf:*central-registry*)" \
