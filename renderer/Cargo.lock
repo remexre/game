@@ -510,6 +510,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 name = "renderer"
 version = "0.1.0"
 dependencies = [
+ "lazy_static 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "libremexre 0.1.12 (registry+https://github.com/rust-lang/crates.io-index)",
  "vulkano 0.14.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "vulkano-win 0.14.0 (registry+https://github.com/rust-lang/crates.io-index)",
