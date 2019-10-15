@@ -5,8 +5,10 @@ fn main() {
 }
 
 fn run() -> Result<()> {
-    let (instance, init_flags) = renderer::init::create_instance()?;
+    let instance = renderer::init::create_instance(true)?;
     let pd = renderer::init::choose_physical_device(&instance)?;
-    dbg!(pd);
+    let qf = renderer::init::choose_queue_family(pd)?;
+    let (dev, queue) = renderer::init::create_device(pd, qf)?;
+    dbg!(dev);
     Ok(())
 }
