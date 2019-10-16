@@ -12,11 +12,14 @@ use ash::{
     },
     Device, Entry, Instance,
 };
-use glfw::{ffi::glfwCreateWindowSurface, Context, Glfw, Window};
+use glfw::{
+    ffi::glfwCreateWindowSurface, ClientApiHint, Context, Glfw, Window, WindowEvent, WindowHint,
+    WindowMode,
+};
 use lazy_static::lazy_static;
 use libremexre::errors::Result;
 use log::debug;
-use std::{ffi::CString, mem::MaybeUninit};
+use std::{ffi::CString, mem::MaybeUninit, sync::mpsc::Receiver};
 
 lazy_static! {
     static ref REQUIRED_INSTANCE_EXTS: Vec<CString> = {
@@ -39,6 +42,17 @@ lazy_static! {
             "VK_NV_ray_tracing",
         ]
     };
+}
+
+pub fn create_window(name: &str) -> Result<(Glfw, Window, Receiver<(f64, WindowEvent)>)> {
+    let mut glfw = glfw::init(glfw::FAIL_ON_ERRORS)?;
+    glfw.window_hint(WindowHint::ClientApi(ClientApiHint::NoApi));
+    glfw.window_hint(WindowHint::Resizable(false));
+    let (mut window, events) = glfw
+        .create_window(800, 600, name, WindowMode::Windowed)
+        .ok_or_else(|| "Failed to create window")?;
+    window.set_key_polling(true);
+    Ok((glfw, window, events))
 }
 
 pub fn create_instance(glfw: &Glfw, entry: &Entry, debug: bool) -> Result<Instance> {
