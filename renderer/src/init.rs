@@ -6,9 +6,9 @@ use ash::{
     version::{DeviceV1_0, EntryV1_0, InstanceV1_0},
     vk::{
         ColorSpaceKHR, CompositeAlphaFlagsKHR, DeviceCreateInfo, DeviceQueueCreateInfo, Format,
-        Handle, Image, ImageUsageFlags, InstanceCreateInfo, PhysicalDevice, PhysicalDeviceFeatures,
-        PhysicalDeviceType, PresentModeKHR, Queue, QueueFlags, SharingMode, SurfaceKHR,
-        SwapchainCreateInfoKHR, SwapchainKHR,
+        Handle, Image, ImageUsageFlags, InstanceCreateInfo, PhysicalDevice, PhysicalDeviceType,
+        PresentModeKHR, Queue, QueueFlags, SharingMode, SurfaceKHR, SwapchainCreateInfoKHR,
+        SwapchainKHR,
     },
     Device, Entry, Instance,
 };
@@ -90,6 +90,8 @@ pub fn create_instance(glfw: &Glfw, entry: &Entry, debug: bool) -> Result<Instan
 
 pub fn choose_physical_device_and_queue_family(
     instance: &Instance,
+    surface_ext: &Surface,
+    surface: SurfaceKHR,
 ) -> Result<(PhysicalDevice, u32)> {
     let pds = unsafe { instance.enumerate_physical_devices()? }
         .into_iter()
@@ -103,10 +105,14 @@ pub fn choose_physical_device_and_queue_family(
             unsafe { instance.get_physical_device_queue_family_properties(pd) }
                 .into_iter()
                 .enumerate()
+                .map(|(i, props)| (i as u32, props))
                 .filter(|(_, props)| props.queue_flags.contains(QueueFlags::GRAPHICS))
+                .filter(|(qf, _)| unsafe {
+                    surface_ext.get_physical_device_surface_support(pd, *qf, surface)
+                })
                 // TODO: Filter for presentation support
                 .next()
-                .map(|(qf, _)| Ok((pd, qf as u32, name, props.device_type, exts)))
+                .map(|(qf, _)| Ok((pd, qf, name, props.device_type, exts)))
                 .transpose()
         })
         .collect::<Result<Vec<_>>>()?;
@@ -166,38 +172,34 @@ pub fn create_device(instance: &Instance, pd: PhysicalDevice, qf: u32) -> Result
     Ok((dev, queue))
 }
 
-pub fn create_swapchain(
-    entry: &Entry,
-    instance: &Instance,
-    pd: PhysicalDevice,
-    qf: u32,
-    dev: &Device,
-    window: &Window,
-) -> Result<(SwapchainKHR, Vec<Image>)> {
-    // Bind to the extensions.
-    let surface = Surface::new(entry, instance);
-    let swapchain = Swapchain::new(instance, dev);
-
+pub fn create_surface(instance: &Instance, window: &Window) -> Result<SurfaceKHR> {
     // Create the actual surface.
-    let mut surface_khr = MaybeUninit::uninit();
+    let mut surface = MaybeUninit::uninit();
     let result = ash::vk::Result::from_raw(unsafe {
         glfwCreateWindowSurface(
             instance.handle().as_raw() as usize,
             window.window_ptr(),
             std::ptr::null(),
-            surface_khr.as_mut_ptr(),
+            surface.as_mut_ptr(),
         ) as i32
     });
     if result != ash::vk::Result::SUCCESS {
         Err(result)?
     }
-    let surface_khr = unsafe { SurfaceKHR::from_raw(surface_khr.assume_init()) };
+    Ok(unsafe { SurfaceKHR::from_raw(surface.assume_init()) })
+}
 
-    let caps = unsafe { surface.get_physical_device_surface_capabilities(pd, surface_khr)? };
-    let formats = unsafe { surface.get_physical_device_surface_formats(pd, surface_khr)? };
+pub fn create_swapchain(
+    surface_ext: &Surface,
+    swapchain_ext: &Swapchain,
+    surface: SurfaceKHR,
+    pd: PhysicalDevice,
+) -> Result<(SwapchainKHR, Vec<Image>)> {
+    let caps = unsafe { surface_ext.get_physical_device_surface_capabilities(pd, surface)? };
+    let formats = unsafe { surface_ext.get_physical_device_surface_formats(pd, surface)? };
 
     let present_modes =
-        unsafe { surface.get_physical_device_surface_present_modes(pd, surface_khr)? };
+        unsafe { surface_ext.get_physical_device_surface_present_modes(pd, surface)? };
 
     let format = formats
         .iter()
@@ -234,6 +236,7 @@ pub fn create_swapchain(
 
     let qf_indices = [];
     let create_info = SwapchainCreateInfoKHR::builder()
+        .surface(surface)
         .min_image_count(num_images)
         .image_format(format.format)
         .image_color_space(format.color_space)
@@ -247,7 +250,7 @@ pub fn create_swapchain(
         .present_mode(present_mode)
         .clipped(true);
 
-    let swapchain_khr = unsafe { swapchain.create_swapchain(&create_info, None)? };
-    let images = unsafe { swapchain.get_swapchain_images(swapchain_khr)? };
+    let swapchain_khr = unsafe { swapchain_ext.create_swapchain(&create_info, None)? };
+    let images = unsafe { swapchain_ext.get_swapchain_images(swapchain_khr)? };
     Ok((swapchain_khr, images))
 }
