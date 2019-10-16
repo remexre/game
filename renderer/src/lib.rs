@@ -1,5 +1,5 @@
 #[macro_use]
-extern crate vulkano;
+mod utils;
 
 pub mod init;
 pub mod pipeline;

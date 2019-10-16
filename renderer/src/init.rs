@@ -1,141 +1,175 @@
 //! Basic initialization of a Vulkan-supporting window.
 
-use libremexre::errors::Result;
-use std::{ffi::CString, sync::Arc};
-use vulkano::{
-    device::{Device, Features, Queue, RawDeviceExtensions},
-    image::SwapchainImage,
-    instance::{
-        layers_list, Instance, PhysicalDevice, PhysicalDeviceType, QueueFamily,
-        RawInstanceExtensions,
+use crate::utils::char_array_to_cstring;
+use ash::{
+    version::{DeviceV1_0, EntryV1_0, InstanceV1_0},
+    vk::{
+        DeviceCreateInfo, DeviceQueueCreateInfo, InstanceCreateInfo, PhysicalDevice,
+        PhysicalDeviceFeatures, PhysicalDeviceType, Queue, QueueFlags,
     },
-    swapchain::{PresentMode, Surface, SurfaceTransform, Swapchain},
+    Device, Entry, Instance,
 };
-use vulkano_win::VkSurfaceBuild;
-use winit::{EventsLoop, Window, WindowBuilder};
+use glfw::Glfw;
+use lazy_static::lazy_static;
+use libremexre::errors::Result;
+use std::ffi::CString;
 
-const WANTED_INSTANCE_EXTS: &[&[u8]] = &[
-    b"VK_KHR_get_physical_device_properties2", // for VK_NV_ray_tracing
-];
-
-const WANTED_DEVICE_EXTS: &[&[u8]] = &[
-    b"VK_KHR_get_memory_requirements2", // for VK_NV_ray_tracing
-    b"VK_NV_ray_tracing",
-];
-
-lazy_static::lazy_static! {
-    static ref REQUIRED_DEVICE_EXTS: RawDeviceExtensions = {
-        ["VK_KHR_swapchain"]
-            .iter()
-            .map(|s| CString::new(*s).unwrap())
-            .collect::<RawDeviceExtensions>()
+lazy_static! {
+    static ref REQUIRED_INSTANCE_EXTS: Vec<CString> = {
+        Vec::new() // TODO
     };
 
-    static ref REQUIRED_INSTANCE_EXTS: RawInstanceExtensions = {
-        RawInstanceExtensions::from(&vulkano_win::required_extensions())
+    static ref WANTED_INSTANCE_EXTS: Vec<CString> = {
+        cstrings![
+            "VK_KHR_get_physical_device_properties2", // for VK_NV_ray_tracing
+        ]
+    };
+
+    static ref REQUIRED_DEVICE_EXTS: Vec<CString> = {
+        cstrings!["VK_KHR_swapchain"]
+    };
+
+    static ref WANTED_DEVICE_EXTS: Vec<CString> = {
+        cstrings![
+            "VK_KHR_get_memory_requirements2", // for VK_NV_ray_tracing
+            "VK_NV_ray_tracing",
+        ]
     };
 }
 
-pub fn create_instance(debug: bool) -> Result<Arc<Instance>> {
+pub fn create_instance(glfw: &Glfw, entry: &Entry, debug: bool) -> Result<Instance> {
     let mut exts = REQUIRED_INSTANCE_EXTS.clone();
-    println!("Device Extensions:");
-    for ext in RawInstanceExtensions::supported_by_core()?.iter() {
-        let flag = if WANTED_INSTANCE_EXTS.contains(&ext.as_bytes()) {
-            exts.insert(ext.clone());
+    exts.extend(
+        glfw.get_required_instance_extensions()
+            .ok_or("GLFW doesn't support Vulkan")?
+            .into_iter()
+            .map(|cstr| CString::new(cstr.into_bytes()).unwrap()),
+    );
+    println!("Instance Extensions:");
+    for ext in entry.enumerate_instance_extension_properties()? {
+        let name = char_array_to_cstring(&ext.extension_name);
+        let flag = if WANTED_INSTANCE_EXTS.contains(&name) {
+            exts.push(name.to_owned());
+            '+'
+        } else if exts.contains(&name) {
             '+'
         } else {
             '-'
         };
 
-        println!("{} {}", flag, ext.to_string_lossy());
+        println!("{} {}", flag, name.to_string_lossy());
     }
 
     let mut layers = Vec::new();
     println!("Layers:");
-    for layer in layers_list()? {
-        let name = layer.name();
-
-        let flag = if debug && name == "VK_LAYER_KHRONOS_validation" {
-            layers.push(name.to_string());
+    for layer in entry.enumerate_instance_layer_properties()? {
+        let name = char_array_to_cstring(&layer.layer_name);
+        let flag = if debug && name.to_bytes() == b"VK_LAYER_KHRONOS_validation" {
+            layers.push(name.to_owned());
             '+'
         } else {
             '-'
         };
 
-        println!("{} {}", flag, name);
+        println!("{} {}", flag, name.to_string_lossy());
     }
 
-    let instance = Instance::new(None, exts, layers.iter().map(|s| s as &str))?;
+    let ext_ptrs = exts.iter().map(|name| name.as_ptr()).collect::<Vec<_>>();
+    let layer_ptrs = layers.iter().map(|name| name.as_ptr()).collect::<Vec<_>>();
+    let create_info = InstanceCreateInfo::builder()
+        .enabled_layer_names(&layer_ptrs)
+        .enabled_extension_names(&ext_ptrs);
+
+    let instance = unsafe { entry.create_instance(&create_info, None)? };
     Ok(instance)
 }
 
-pub fn choose_physical_device(instance: &Arc<Instance>) -> Result<PhysicalDevice> {
-    let dev = PhysicalDevice::enumerate(instance)
-        .filter(|dev| dev.queue_families().any(|qf| qf.supports_graphics()))
-        .filter(|&dev| {
-            let unsupported_exts =
-                REQUIRED_DEVICE_EXTS.difference(&RawDeviceExtensions::supported_by_device(dev));
-            let unsupported_ext_count = unsupported_exts.iter().count();
-            unsupported_ext_count == 0
+pub fn choose_physical_device_and_queue_family(
+    instance: &Instance,
+) -> Result<(PhysicalDevice, u32)> {
+    let pds = unsafe { instance.enumerate_physical_devices()? }
+        .into_iter()
+        .map(|pd| {
+            let props = unsafe { instance.get_physical_device_properties(pd) };
+            let name = char_array_to_cstring(&props.device_name);
+            let exts = unsafe { instance.enumerate_device_extension_properties(pd)? }
+                .into_iter()
+                .map(|ext| char_array_to_cstring(&ext.extension_name))
+                .collect::<Vec<_>>();
+            unsafe { instance.get_physical_device_queue_family_properties(pd) }
+                .into_iter()
+                .enumerate()
+                .filter(|(_, props)| props.queue_flags.contains(QueueFlags::GRAPHICS))
+                .next()
+                .map(|(qf, _)| Ok((pd, qf as u32, name, props.device_type, exts)))
+                .transpose()
         })
-        .max_by_key(|dev| match dev.ty() {
-            PhysicalDeviceType::IntegratedGpu => 1,
-            PhysicalDeviceType::DiscreteGpu => 2,
-            _ => 0,
-        });
-    let dev = dev.ok_or("No suitable Vulkan devices found")?;
-    println!("Choosing physical device {:?}", dev.name());
-    Ok(dev)
+        .collect::<Result<Vec<_>>>()?;
+    let pd_info = pds
+        .into_iter()
+        .filter_map(|o| o)
+        .filter(|(_, _, _, _, exts)| REQUIRED_DEVICE_EXTS.iter().all(|ext| exts.contains(ext)))
+        .max_by_key(|(_, _, _, device_type, exts)| {
+            let exts_points = if WANTED_DEVICE_EXTS.iter().all(|ext| exts.contains(ext)) {
+                10
+            } else {
+                0
+            };
+
+            let type_points = match *device_type {
+                PhysicalDeviceType::DISCRETE_GPU => 2,
+                PhysicalDeviceType::INTEGRATED_GPU => 1,
+                _ => 0,
+            };
+
+            exts_points + type_points
+        })
+        .ok_or("No suitable Vulkan device found")?;
+
+    let (pd, qf, device_name, _, _) = pd_info;
+    println!("Choosing physical device {:?}", device_name);
+    Ok((pd, qf))
 }
 
-pub fn choose_queue_family<'a>(
-    dev: PhysicalDevice<'a>,
-    surface: &Surface<Window>,
-) -> Result<QueueFamily<'a>> {
-    let qf = dev
-        .queue_families()
-        .filter(|qf| qf.supports_graphics())
-        .filter(|&qf| surface.is_supported(qf).unwrap_or(false))
-        .max_by_key(|qf| qf.queues_count())
-        .ok_or("No graphics-supporting queue families found")?;
-    Ok(qf)
-}
-
-pub fn create_device<'a>(qf: QueueFamily<'a>) -> Result<(Arc<Device>, Arc<Queue>)> {
+pub fn create_device(instance: &Instance, pd: PhysicalDevice, qf: u32) -> Result<(Device, Queue)> {
     let mut exts = REQUIRED_DEVICE_EXTS.clone();
     println!("Device Extensions:");
-    for ext in RawDeviceExtensions::supported_by_device(qf.physical_device()).iter() {
-        let flag = if WANTED_DEVICE_EXTS.contains(&ext.as_bytes()) {
-            exts.insert(ext.clone());
+    for ext in unsafe { instance.enumerate_device_extension_properties(pd)? } {
+        let name = char_array_to_cstring(&ext.extension_name);
+        let flag = if WANTED_DEVICE_EXTS.contains(&name) {
+            exts.push(name.to_owned());
+            '+'
+        } else if exts.contains(&name) {
             '+'
         } else {
             '-'
         };
 
-        println!("{} {}", flag, ext.to_string_lossy());
+        println!("{} {}", flag, name.to_string_lossy());
     }
 
-    let (dev, mut queues) = Device::new(
-        qf.physical_device(),
-        &Features::none(),
-        exts,
-        [(qf, 1.0)].iter().cloned(),
-    )?;
-    let queue = queues.next().ok_or("Device had no queues")?;
+    let queue_create_info = DeviceQueueCreateInfo::builder()
+        .queue_family_index(qf)
+        .queue_priorities(&[1.0]);
+    let queue_create_infos: Vec<DeviceQueueCreateInfo> = vec![*queue_create_info];
+    let exts = exts.into_iter().map(|ext| ext.as_ptr()).collect::<Vec<_>>();
+    let features = PhysicalDeviceFeatures::default();
+    let create_info = DeviceCreateInfo::builder()
+        .queue_create_infos(&queue_create_infos)
+        .enabled_extension_names(&exts)
+        .enabled_features(&features);
+    let dev = unsafe { instance.create_device(pd, &create_info, None)? };
+    let queue = unsafe { dev.get_device_queue(qf, 0) };
     Ok((dev, queue))
 }
 
-pub fn create_window(instance: Arc<Instance>) -> Result<(EventsLoop, Arc<Surface<Window>>)> {
-    let events_loop = EventsLoop::new();
-    let surface = WindowBuilder::new().build_vk_surface(&events_loop, instance)?;
-    Ok((events_loop, surface))
-}
-
+/*
 pub fn create_swapchain(
     dev: Arc<Device>,
     queue: &Arc<Queue>,
     surface: Arc<Surface<Window>>,
 ) -> Result<(Arc<Swapchain<Window>>, Vec<Arc<SwapchainImage<Window>>>)> {
+    /*
     let caps = surface.capabilities(dev.physical_device())?;
 
     let format = if caps.supported_formats.is_empty() {
@@ -169,4 +203,7 @@ pub fn create_swapchain(
     )?;
 
     Ok((swapchain, images))
+    */
 }
+
+*/
