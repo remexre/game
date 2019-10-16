@@ -13,3 +13,5 @@ ash = "0.29.0"
 glfw = { version = "0.33.0", features = ["vulkan"] }
 lazy_static = "1.4.0"
 libremexre = "0.1.12"
+log = "0.4.8"
+stderrlog = "0.4.1"

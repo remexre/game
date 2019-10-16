@@ -2,17 +2,21 @@
 
 use crate::utils::char_array_to_cstring;
 use ash::{
+    extensions::khr::{Surface, Swapchain},
     version::{DeviceV1_0, EntryV1_0, InstanceV1_0},
     vk::{
-        DeviceCreateInfo, DeviceQueueCreateInfo, InstanceCreateInfo, PhysicalDevice,
-        PhysicalDeviceFeatures, PhysicalDeviceType, Queue, QueueFlags,
+        ColorSpaceKHR, CompositeAlphaFlagsKHR, DeviceCreateInfo, DeviceQueueCreateInfo, Format,
+        Handle, Image, ImageUsageFlags, InstanceCreateInfo, PhysicalDevice, PhysicalDeviceFeatures,
+        PhysicalDeviceType, PresentModeKHR, Queue, QueueFlags, SharingMode, SurfaceKHR,
+        SwapchainCreateInfoKHR, SwapchainKHR,
     },
     Device, Entry, Instance,
 };
-use glfw::Glfw;
+use glfw::{ffi::glfwCreateWindowSurface, Context, Glfw, Window};
 use lazy_static::lazy_static;
 use libremexre::errors::Result;
-use std::ffi::CString;
+use log::debug;
+use std::{ffi::CString, mem::MaybeUninit};
 
 lazy_static! {
     static ref REQUIRED_INSTANCE_EXTS: Vec<CString> = {
@@ -45,23 +49,23 @@ pub fn create_instance(glfw: &Glfw, entry: &Entry, debug: bool) -> Result<Instan
             .into_iter()
             .map(|cstr| CString::new(cstr.into_bytes()).unwrap()),
     );
-    println!("Instance Extensions:");
+    debug!("Instance Extensions:");
     for ext in entry.enumerate_instance_extension_properties()? {
         let name = char_array_to_cstring(&ext.extension_name);
-        let flag = if WANTED_INSTANCE_EXTS.contains(&name) {
-            exts.push(name.to_owned());
+        let flag = if exts.contains(&name) {
             '+'
-        } else if exts.contains(&name) {
+        } else if WANTED_INSTANCE_EXTS.contains(&name) {
+            exts.push(name.to_owned());
             '+'
         } else {
             '-'
         };
 
-        println!("{} {}", flag, name.to_string_lossy());
+        debug!("{} {}", flag, name.to_string_lossy());
     }
 
     let mut layers = Vec::new();
-    println!("Layers:");
+    debug!("Layers:");
     for layer in entry.enumerate_instance_layer_properties()? {
         let name = char_array_to_cstring(&layer.layer_name);
         let flag = if debug && name.to_bytes() == b"VK_LAYER_KHRONOS_validation" {
@@ -71,7 +75,7 @@ pub fn create_instance(glfw: &Glfw, entry: &Entry, debug: bool) -> Result<Instan
             '-'
         };
 
-        println!("{} {}", flag, name.to_string_lossy());
+        debug!("{} {}", flag, name.to_string_lossy());
     }
 
     let ext_ptrs = exts.iter().map(|name| name.as_ptr()).collect::<Vec<_>>();
@@ -100,6 +104,7 @@ pub fn choose_physical_device_and_queue_family(
                 .into_iter()
                 .enumerate()
                 .filter(|(_, props)| props.queue_flags.contains(QueueFlags::GRAPHICS))
+                // TODO: Filter for presentation support
                 .next()
                 .map(|(qf, _)| Ok((pd, qf as u32, name, props.device_type, exts)))
                 .transpose()
@@ -127,83 +132,122 @@ pub fn choose_physical_device_and_queue_family(
         .ok_or("No suitable Vulkan device found")?;
 
     let (pd, qf, device_name, _, _) = pd_info;
-    println!("Choosing physical device {:?}", device_name);
+    debug!("Choosing physical device {:?}", device_name);
     Ok((pd, qf))
 }
 
 pub fn create_device(instance: &Instance, pd: PhysicalDevice, qf: u32) -> Result<(Device, Queue)> {
     let mut exts = REQUIRED_DEVICE_EXTS.clone();
-    println!("Device Extensions:");
+    debug!("Device Extensions:");
     for ext in unsafe { instance.enumerate_device_extension_properties(pd)? } {
         let name = char_array_to_cstring(&ext.extension_name);
-        let flag = if WANTED_DEVICE_EXTS.contains(&name) {
-            exts.push(name.to_owned());
+        let flag = if exts.contains(&name) {
             '+'
-        } else if exts.contains(&name) {
+        } else if WANTED_DEVICE_EXTS.contains(&name) {
+            exts.push(name.to_owned());
             '+'
         } else {
             '-'
         };
 
-        println!("{} {}", flag, name.to_string_lossy());
+        debug!("{} {}", flag, name.to_string_lossy());
     }
 
     let queue_create_info = DeviceQueueCreateInfo::builder()
         .queue_family_index(qf)
         .queue_priorities(&[1.0]);
     let queue_create_infos: Vec<DeviceQueueCreateInfo> = vec![*queue_create_info];
-    let exts = exts.into_iter().map(|ext| ext.as_ptr()).collect::<Vec<_>>();
-    let features = PhysicalDeviceFeatures::default();
+    let exts = exts.iter().map(|ext| ext.as_ptr()).collect::<Vec<_>>();
     let create_info = DeviceCreateInfo::builder()
         .queue_create_infos(&queue_create_infos)
-        .enabled_extension_names(&exts)
-        .enabled_features(&features);
+        .enabled_extension_names(&exts);
     let dev = unsafe { instance.create_device(pd, &create_info, None)? };
     let queue = unsafe { dev.get_device_queue(qf, 0) };
     Ok((dev, queue))
 }
 
-/*
 pub fn create_swapchain(
-    dev: Arc<Device>,
-    queue: &Arc<Queue>,
-    surface: Arc<Surface<Window>>,
-) -> Result<(Arc<Swapchain<Window>>, Vec<Arc<SwapchainImage<Window>>>)> {
-    /*
-    let caps = surface.capabilities(dev.physical_device())?;
+    entry: &Entry,
+    instance: &Instance,
+    pd: PhysicalDevice,
+    qf: u32,
+    dev: &Device,
+    window: &Window,
+) -> Result<(SwapchainKHR, Vec<Image>)> {
+    // Bind to the extensions.
+    let surface = Surface::new(entry, instance);
+    let swapchain = Swapchain::new(instance, dev);
 
-    let format = if caps.supported_formats.is_empty() {
-        return Err("No supported formats")?;
-    } else {
-        caps.supported_formats[0].0
-    };
+    // Create the actual surface.
+    let mut surface_khr = MaybeUninit::uninit();
+    let result = ash::vk::Result::from_raw(unsafe {
+        glfwCreateWindowSurface(
+            instance.handle().as_raw() as usize,
+            window.window_ptr(),
+            std::ptr::null(),
+            surface_khr.as_mut_ptr(),
+        ) as i32
+    });
+    if result != ash::vk::Result::SUCCESS {
+        Err(result)?
+    }
+    let surface_khr = unsafe { SurfaceKHR::from_raw(surface_khr.assume_init()) };
 
-    let dimensions = caps.current_extent.unwrap_or([1920, 1080]);
+    let caps = unsafe { surface.get_physical_device_surface_capabilities(pd, surface_khr)? };
+    let formats = unsafe { surface.get_physical_device_surface_formats(pd, surface_khr)? };
 
-    let alpha = caps
-        .supported_composite_alpha
+    let present_modes =
+        unsafe { surface.get_physical_device_surface_present_modes(pd, surface_khr)? };
+
+    let format = formats
         .iter()
-        .next()
-        .ok_or("No supported composite alpha modes")?;
+        .max_by_key(|f| {
+            let format = match f.format {
+                Format::B8G8R8A8_UNORM => 1,
+                _ => 0,
+            };
+            let space = match f.color_space {
+                ColorSpaceKHR::SRGB_NONLINEAR => 1,
+                _ => 0,
+            };
+            format + space
+        })
+        .ok_or("Surface doesn't support any formats")?;
 
-    let (swapchain, images) = Swapchain::new(
-        dev,                        // device
-        surface,                    // surface
-        caps.min_image_count,       // num_images
-        format,                     // format
-        dimensions,                 // dimensions
-        1,                          // layers
-        caps.supported_usage_flags, // usage
-        queue,                      // sharing
-        SurfaceTransform::Identity, // transform
-        alpha,                      // alpha
-        PresentMode::Fifo,          // mode
-        true,                       // clipped
-        None,                       // old_swapchain
-    )?;
+    let present_mode = present_modes
+        .into_iter()
+        .max_by_key(|&m| match m {
+            PresentModeKHR::MAILBOX => 2,
+            PresentModeKHR::FIFO => 1,
+            _ => 0,
+        })
+        .ok_or("Surface doesn't support any present modes")?;
 
-    Ok((swapchain, images))
-    */
+    debug!("Current extent: {:?}", caps.current_extent);
+
+    let num_images = caps.min_image_count
+        + if caps.min_image_count == caps.max_image_count {
+            0
+        } else {
+            1
+        };
+
+    let qf_indices = [];
+    let create_info = SwapchainCreateInfoKHR::builder()
+        .min_image_count(num_images)
+        .image_format(format.format)
+        .image_color_space(format.color_space)
+        .image_extent(caps.current_extent)
+        .image_array_layers(1)
+        .image_usage(ImageUsageFlags::COLOR_ATTACHMENT)
+        .image_sharing_mode(SharingMode::EXCLUSIVE)
+        .queue_family_indices(&qf_indices)
+        .pre_transform(caps.current_transform)
+        .composite_alpha(CompositeAlphaFlagsKHR::OPAQUE)
+        .present_mode(present_mode)
+        .clipped(true);
+
+    let swapchain_khr = unsafe { swapchain.create_swapchain(&create_info, None)? };
+    let images = unsafe { swapchain.get_swapchain_images(swapchain_khr)? };
+    Ok((swapchain_khr, images))
 }
-
-*/
