@@ -9,7 +9,7 @@ use log::info;
 use std::sync::mpsc::Receiver;
 
 #[macro_use]
-mod utils;
+pub mod utils;
 
 pub mod imgs;
 pub mod init;
