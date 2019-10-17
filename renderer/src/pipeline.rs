@@ -1,5 +1,6 @@
 //! The graphics and raytracing pipelines.
 
+use anyhow::Result;
 use ash::{
     version::DeviceV1_0,
     vk::{
@@ -15,7 +16,6 @@ use ash::{
     },
     Device,
 };
-use libremexre::errors::Result;
 use std::slice;
 
 pub fn create_graphics_pipeline(
@@ -63,12 +63,7 @@ pub fn create_graphics_pipeline(
     // TODO: Depth buffer
 
     let color_blend_attachment = PipelineColorBlendAttachmentState::builder()
-        .color_write_mask(
-            ColorComponentFlags::R
-                | ColorComponentFlags::G
-                | ColorComponentFlags::B
-                | ColorComponentFlags::A,
-        )
+        .color_write_mask(ColorComponentFlags::all())
         .blend_enable(true)
         .src_color_blend_factor(BlendFactor::SRC_ALPHA)
         .dst_color_blend_factor(BlendFactor::ONE_MINUS_SRC_ALPHA)

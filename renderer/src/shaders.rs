@@ -1,13 +1,13 @@
 //! Loading of compiled shaders.
 
 use crate::utils::read_u32s;
+use anyhow::Result;
 use ash::{
     version::DeviceV1_0,
     vk::{PipelineShaderStageCreateInfo, ShaderModule, ShaderModuleCreateInfo, ShaderStageFlags},
     Device,
 };
-use libremexre::errors::Result;
-use std::path::Path;
+use std::{ffi::CStr, path::Path};
 
 pub fn load_shader<P: AsRef<Path>>(
     dev: &Device,
@@ -21,6 +21,7 @@ pub fn load_shader<P: AsRef<Path>>(
     let stage_create_info = PipelineShaderStageCreateInfo::builder()
         .stage(kind)
         .module(shader)
+        .name(CStr::from_bytes_with_nul(b"main\0").unwrap())
         .build();
     Ok((shader, stage_create_info))
 }

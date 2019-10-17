@@ -1,6 +1,7 @@
 //! Basic initialization of a Vulkan-supporting window.
 
 use crate::utils::char_array_to_cstring;
+use anyhow::{anyhow, Context as AnyhowContext, Result};
 use ash::{
     extensions::khr::{Surface, Swapchain},
     version::{DeviceV1_0, EntryV1_0, InstanceV1_0},
@@ -18,7 +19,6 @@ use glfw::{
     WindowMode,
 };
 use lazy_static::lazy_static;
-use libremexre::errors::Result;
 use log::debug;
 use std::{ffi::CString, mem::MaybeUninit, sync::mpsc::Receiver};
 
@@ -51,7 +51,7 @@ pub fn create_window(name: &str) -> Result<(Glfw, Window, Receiver<(f64, WindowE
     glfw.window_hint(WindowHint::Resizable(false));
     let (mut window, events) = glfw
         .create_window(800, 600, name, WindowMode::Windowed)
-        .ok_or_else(|| "Failed to create window")?;
+        .ok_or_else(|| anyhow!("Failed to create window"))?;
     window.set_key_polling(true);
     Ok((glfw, window, events))
 }
@@ -60,7 +60,7 @@ pub fn create_instance(glfw: &Glfw, entry: &Entry, debug: bool) -> Result<Instan
     let mut exts = REQUIRED_INSTANCE_EXTS.clone();
     exts.extend(
         glfw.get_required_instance_extensions()
-            .ok_or("GLFW doesn't support Vulkan")?
+            .ok_or_else(|| anyhow!("GLFW doesn't support Vulkan"))?
             .into_iter()
             .map(|cstr| CString::new(cstr.into_bytes()).unwrap()),
     );
@@ -150,7 +150,7 @@ pub fn choose_physical_device_and_queue_family(
 
             exts_points + type_points
         })
-        .ok_or("No suitable Vulkan device found")?;
+        .ok_or_else(|| anyhow!("No suitable Vulkan device found"))?;
 
     let (pd, qf, device_name, _, _) = pd_info;
     debug!("Choosing physical device {:?}", device_name);
@@ -235,7 +235,7 @@ pub fn create_swapchain(
             };
             format + space
         })
-        .ok_or("Surface doesn't support any formats")?;
+        .ok_or_else(|| anyhow!("Surface doesn't support any formats"))?;
 
     let present_mode = present_modes
         .into_iter()
@@ -244,7 +244,7 @@ pub fn create_swapchain(
             PresentModeKHR::FIFO => 1,
             _ => 0,
         })
-        .ok_or("Surface doesn't support any present modes")?;
+        .ok_or_else(|| anyhow!("Surface doesn't support any present modes"))?;
 
     debug!("Current extent: {:?}", caps.current_extent);
 

@@ -1,3 +1,4 @@
+use anyhow::{Context, Result};
 use ash::{
     extensions::khr::{Surface, Swapchain},
     vk::ShaderStageFlags,
@@ -5,7 +6,6 @@ use ash::{
 };
 use derivative::Derivative;
 use glfw::{Glfw, Window, WindowEvent};
-use libremexre::errors::Result;
 use log::info;
 use std::{path::Path, sync::mpsc::Receiver};
 
@@ -36,27 +36,36 @@ impl Renderer {
         vert_path: impl AsRef<Path>,
         frag_path: impl AsRef<Path>,
     ) -> Result<Renderer> {
-        let (glfw, window, events) = init::create_window(name)?;
-        let entry = Entry::new()?;
-        let instance = init::create_instance(&glfw, &entry, true)?;
-        let surface = init::create_surface(&instance, &window)?;
+        let (glfw, window, events) =
+            init::create_window(name).context("Failed to create window")?;
+        let entry = Entry::new().context("Failed to get a Vulkan entrypoint")?;
+        let instance = init::create_instance(&glfw, &entry, true)
+            .context("Failed to create a Vulkan instance")?;
+        let surface = init::create_surface(&instance, &window)
+            .context("Failed to create a Vulkan surface")?;
 
         let surface_ext = Surface::new(&entry, &instance);
         let (pd, qf) =
-            init::choose_physical_device_and_queue_family(&instance, &surface_ext, surface)?;
-        let (dev, queue, has_rtx) = init::create_device(&instance, pd, qf)?;
+            init::choose_physical_device_and_queue_family(&instance, &surface_ext, surface)
+                .context("Failed to choose a physical device and queue family")?;
+        let (dev, queue, has_rtx) =
+            init::create_device(&instance, pd, qf).context("Failed to create a Vulkan device")?;
         if has_rtx {
             info!("RTX found!");
         }
         let swapchain_ext = Swapchain::new(&instance, &dev);
         let (swapchain, images, image_views, format, dims) =
-            init::create_swapchain(&surface_ext, &swapchain_ext, surface, pd, &dev)?;
+            init::create_swapchain(&surface_ext, &swapchain_ext, surface, pd, &dev)
+                .context("Failed to create swapchain")?;
 
-        let (_, vert_stage) = shaders::load_shader(&dev, vert_path, ShaderStageFlags::VERTEX)?;
-        let (_, frag_stage) = shaders::load_shader(&dev, frag_path, ShaderStageFlags::FRAGMENT)?;
+        let (_, vert_stage) = shaders::load_shader(&dev, vert_path, ShaderStageFlags::VERTEX)
+            .context("Failed to load vertex shader")?;
+        let (_, frag_stage) = shaders::load_shader(&dev, frag_path, ShaderStageFlags::FRAGMENT)
+            .context("Failed to load fragment shader")?;
 
         let pipeline =
-            pipeline::create_graphics_pipeline(&dev, format, dims, vert_stage, frag_stage)?;
+            pipeline::create_graphics_pipeline(&dev, format, dims, vert_stage, frag_stage)
+                .context("Failed to create graphics pipeline")?;
 
         Ok(Renderer {
             events,
