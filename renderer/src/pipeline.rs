@@ -24,7 +24,7 @@ pub fn create_graphics_pipeline(
     dims: Extent2D,
     vert_stage: PipelineShaderStageCreateInfo,
     frag_stage: PipelineShaderStageCreateInfo,
-) -> Result<Pipeline> {
+) -> Result<(RenderPass, Pipeline)> {
     let shader_stages = vec![vert_stage, frag_stage];
 
     let vertex_input_state = PipelineVertexInputStateCreateInfo::builder();
@@ -99,7 +99,7 @@ pub fn create_graphics_pipeline(
     match pipeline_result {
         Ok(mut pipelines) => {
             let pipeline = pipelines.remove(0);
-            Ok(pipeline)
+            Ok((render_pass, pipeline))
         }
         Err((_, err)) => Err(err.into()),
     }

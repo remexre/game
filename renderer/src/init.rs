@@ -1,7 +1,7 @@
 //! Basic initialization of a Vulkan-supporting window.
 
 use crate::utils::char_array_to_cstring;
-use anyhow::{anyhow, Context as AnyhowContext, Result};
+use anyhow::{anyhow, Result};
 use ash::{
     extensions::khr::{Surface, Swapchain},
     version::{DeviceV1_0, EntryV1_0, InstanceV1_0},

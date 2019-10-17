@@ -17,13 +17,19 @@ fn main() {
 fn run() -> Result<()> {
     let mut renderer = Renderer::new(
         "Vulkan Test",
-        "../assets/shaders/default.vert.spv",
-        "../assets/shaders/default.frag.spv",
+        "../assets/shaders/tutorial.vert.spv",
+        "../assets/shaders/tutorial.frag.spv",
     )?;
     while !renderer.should_close() {
         for event in renderer.poll_events() {
             println!("{:?}", event);
         }
+
+        renderer.draw(|| {
+            println!("osu");
+            Ok(())
+        })?;
     }
+    renderer.wait_idle()?;
     Ok(())
 }

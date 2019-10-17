@@ -1,8 +1,12 @@
-use anyhow::{Context, Result};
+use anyhow::{ensure, Context, Result};
 use ash::{
     extensions::khr::{Surface, Swapchain},
-    vk::ShaderStageFlags,
-    Entry,
+    version::DeviceV1_0,
+    vk::{
+        CommandBuffer, CommandPool, Extent2D, Format, Framebuffer, Image, ImageView, Pipeline,
+        Queue, RenderPass, Semaphore, ShaderStageFlags, SurfaceKHR, SwapchainKHR,
+    },
+    Device, Entry, Instance,
 };
 use derivative::Derivative;
 use glfw::{Glfw, Window, WindowEvent};
@@ -12,21 +16,46 @@ use std::{path::Path, sync::mpsc::Receiver};
 #[macro_use]
 pub mod utils;
 
+pub mod cmds;
 pub mod imgs;
 pub mod init;
 pub mod pipeline;
 pub mod shaders;
+pub mod sync;
 
 #[derive(Derivative)]
 #[derivative(Debug)]
 pub struct Renderer {
-    events: Receiver<(f64, WindowEvent)>,
-
     #[derivative(Debug = "ignore")]
     glfw: Glfw,
-
     #[derivative(Debug = "ignore")]
     window: Window,
+    events: Receiver<(f64, WindowEvent)>,
+    #[derivative(Debug = "ignore")]
+    entry: Entry,
+    #[derivative(Debug = "ignore")]
+    instance: Instance,
+    surface: SurfaceKHR,
+    #[derivative(Debug = "ignore")]
+    surface_ext: Surface,
+    #[derivative(Debug = "ignore")]
+    dev: Device,
+    queue: Queue,
+    has_rtx: bool,
+    #[derivative(Debug = "ignore")]
+    swapchain_ext: Swapchain,
+    swapchain: SwapchainKHR,
+    images: Vec<Image>,
+    image_views: Vec<ImageView>,
+    format: Format,
+    dims: Extent2D,
+    render_pass: RenderPass,
+    framebuffers: Vec<Framebuffer>,
+    pipeline: Pipeline,
+    command_pool: CommandPool,
+    command_buffers: Vec<CommandBuffer>,
+    image_available: Semaphore,
+    render_finished: Semaphore,
 }
 
 impl Renderer {
@@ -63,15 +92,72 @@ impl Renderer {
         let (_, frag_stage) = shaders::load_shader(&dev, frag_path, ShaderStageFlags::FRAGMENT)
             .context("Failed to load fragment shader")?;
 
-        let pipeline =
+        let (render_pass, pipeline) =
             pipeline::create_graphics_pipeline(&dev, format, dims, vert_stage, frag_stage)
                 .context("Failed to create graphics pipeline")?;
 
+        let framebuffers = unimplemented!();
+
+        let command_pool = cmds::create_command_pool(&dev, qf)?;
+        let command_buffers =
+            cmds::create_command_buffers(&dev, command_pool, images.len() as u32)?;
+
+        let image_available = sync::create_semaphore(&dev)?;
+        let render_finished = sync::create_semaphore(&dev)?;
+
         Ok(Renderer {
-            events,
             glfw,
             window,
+            events,
+            entry,
+            instance,
+            surface,
+            surface_ext,
+            dev,
+            queue,
+            has_rtx,
+            swapchain_ext,
+            swapchain,
+            images,
+            image_views,
+            format,
+            dims,
+            render_pass,
+            pipeline,
+            framebuffers,
+            command_pool,
+            command_buffers,
+            image_available,
+            render_finished,
         })
+    }
+
+    pub fn draw<F: FnOnce() -> Result<()>>(&self, f: F) -> Result<()> {
+        let (i, suboptimal) =
+            cmds::draw_start(&self.swapchain_ext, self.swapchain, self.image_available)?;
+        ensure!(!suboptimal, "Swapchain needs to be recreated");
+        let image = self.images[i as usize];
+        let image_view = self.image_views[i as usize];
+        let framebuffer = self.framebuffers[i as usize];
+        let command_buffer = self.command_buffers[i as usize];
+        cmds::begin_command_buffer(&self.dev, command_buffer)?;
+        cmds::begin_render_pass(
+            &self.dev,
+            command_buffer,
+            self.render_pass,
+            framebuffer,
+            self.dims,
+        );
+        // TODO Call f
+        cmds::end_render_pass(&self.dev, command_buffer);
+        cmds::submit_command_buffer(
+            &self.dev,
+            self.queue,
+            &command_buffer,
+            &self.image_available,
+            &self.render_finished,
+        )?;
+        Ok(())
     }
 
     pub fn poll_events<'a>(&'a mut self) -> impl 'a + Iterator<Item = (f64, WindowEvent)> {
@@ -81,5 +167,10 @@ impl Renderer {
 
     pub fn should_close(&self) -> bool {
         self.window.should_close()
+    }
+
+    pub fn wait_idle(&self) -> Result<()> {
+        let () = unsafe { self.dev.device_wait_idle() }?;
+        Ok(())
     }
 }
