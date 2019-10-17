@@ -6,10 +6,10 @@ use ash::{
     version::{DeviceV1_0, EntryV1_0, InstanceV1_0},
     vk::{
         ColorSpaceKHR, ComponentMapping, CompositeAlphaFlagsKHR, DeviceCreateInfo,
-        DeviceQueueCreateInfo, Format, Handle, Image, ImageAspectFlags, ImageSubresourceRange,
-        ImageUsageFlags, ImageView, ImageViewCreateInfo, ImageViewType, InstanceCreateInfo,
-        PhysicalDevice, PhysicalDeviceType, PresentModeKHR, Queue, QueueFlags, SharingMode,
-        SurfaceKHR, SwapchainCreateInfoKHR, SwapchainKHR,
+        DeviceQueueCreateInfo, Extent2D, Format, Handle, Image, ImageAspectFlags,
+        ImageSubresourceRange, ImageUsageFlags, ImageView, ImageViewCreateInfo, ImageViewType,
+        InstanceCreateInfo, PhysicalDevice, PhysicalDeviceType, PresentModeKHR, Queue, QueueFlags,
+        SharingMode, SurfaceKHR, SwapchainCreateInfoKHR, SwapchainKHR,
     },
     Device, Entry, Instance,
 };
@@ -215,7 +215,7 @@ pub fn create_swapchain(
     surface: SurfaceKHR,
     pd: PhysicalDevice,
     dev: &Device,
-) -> Result<(SwapchainKHR, Vec<Image>, Vec<ImageView>)> {
+) -> Result<(SwapchainKHR, Vec<Image>, Vec<ImageView>, Format, Extent2D)> {
     let caps = unsafe { surface_ext.get_physical_device_surface_capabilities(pd, surface)? };
     let formats = unsafe { surface_ext.get_physical_device_surface_formats(pd, surface)? };
 
@@ -297,5 +297,11 @@ pub fn create_swapchain(
         })
         .collect::<Result<_>>()?;
 
-    Ok((swapchain_khr, images, image_views))
+    Ok((
+        swapchain_khr,
+        images,
+        image_views,
+        format.format,
+        caps.current_extent,
+    ))
 }

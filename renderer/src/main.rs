@@ -8,7 +8,11 @@ fn main() {
 fn run() -> Result<()> {
     stderrlog::new().verbosity(3).init()?;
 
-    let mut renderer = Renderer::new("Vulkan Test")?;
+    let mut renderer = Renderer::new(
+        "Vulkan Test",
+        "../assets/shaders/default.vert.spv",
+        "../assets/shaders/default.frag.spv",
+    )?;
     while !renderer.should_close() {
         for event in renderer.poll_events() {
             println!("{:?}", event);

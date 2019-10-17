@@ -1,32 +1,30 @@
 //! The graphics and raytracing pipelines.
 
-use crate::shaders::load_shader;
 use ash::{
     version::DeviceV1_0,
     vk::{
-        BlendFactor, BlendOp, ColorComponentFlags, CullModeFlags, Extent2D, FrontFace,
-        GraphicsPipelineCreateInfo, Offset2D, PipelineColorBlendAttachmentState,
-        PipelineColorBlendStateCreateInfo, PipelineInputAssemblyStateCreateInfo,
-        PipelineLayoutCreateInfo, PipelineMultisampleStateCreateInfo,
-        PipelineRasterizationStateCreateInfo, PipelineVertexInputStateCreateInfo,
-        PipelineViewportStateCreateInfo, PolygonMode, PrimitiveTopology, Rect2D, SampleCountFlags,
-        ShaderStageFlags, Viewport,
+        AttachmentDescription, AttachmentLoadOp, AttachmentReference, AttachmentStoreOp,
+        BlendFactor, BlendOp, ColorComponentFlags, CullModeFlags, Extent2D, Format, FrontFace,
+        GraphicsPipelineCreateInfo, ImageLayout, Offset2D, Pipeline, PipelineBindPoint,
+        PipelineCache, PipelineColorBlendAttachmentState, PipelineColorBlendStateCreateInfo,
+        PipelineInputAssemblyStateCreateInfo, PipelineLayoutCreateInfo,
+        PipelineMultisampleStateCreateInfo, PipelineRasterizationStateCreateInfo,
+        PipelineShaderStageCreateInfo, PipelineVertexInputStateCreateInfo,
+        PipelineViewportStateCreateInfo, PolygonMode, PrimitiveTopology, Rect2D, RenderPass,
+        RenderPassCreateInfo, SampleCountFlags, SubpassDescription, Viewport,
     },
     Device,
 };
 use libremexre::errors::Result;
-use std::{path::Path, slice};
+use std::slice;
 
-pub fn create_graphics_pipeline_from_paths<P1: AsRef<Path>, P2: AsRef<Path>>(
+pub fn create_graphics_pipeline(
     dev: &Device,
-    vert: P1,
-    frag: P2,
-    width: u32,
-    height: u32,
-) -> Result<()> {
-    let (vert, vert_stage) = load_shader(dev, vert, ShaderStageFlags::VERTEX)?;
-    let (frag, frag_stage) = load_shader(dev, frag, ShaderStageFlags::FRAGMENT)?;
-
+    format: Format,
+    dims: Extent2D,
+    vert_stage: PipelineShaderStageCreateInfo,
+    frag_stage: PipelineShaderStageCreateInfo,
+) -> Result<Pipeline> {
     let shader_stages = vec![vert_stage, frag_stage];
 
     let vertex_input_state = PipelineVertexInputStateCreateInfo::builder();
@@ -37,11 +35,11 @@ pub fn create_graphics_pipeline_from_paths<P1: AsRef<Path>, P2: AsRef<Path>>(
 
     let viewport = Viewport::builder()
         .max_depth(1.0)
-        .width(width as f32)
-        .height(height as f32);
+        .width(dims.width as f32)
+        .height(dims.height as f32);
 
     let scissor = Rect2D {
-        extent: Extent2D { width, height },
+        extent: dims,
         offset: Offset2D { x: 0, y: 0 },
     };
 
@@ -86,6 +84,8 @@ pub fn create_graphics_pipeline_from_paths<P1: AsRef<Path>, P2: AsRef<Path>>(
 
     let layout = unsafe { dev.create_pipeline_layout(&layout_create_info, None)? };
 
+    let render_pass = create_graphics_render_pass(dev, format)?;
+
     let create_info = GraphicsPipelineCreateInfo::builder()
         .stages(&shader_stages)
         .vertex_input_state(&vertex_input_state)
@@ -94,7 +94,45 @@ pub fn create_graphics_pipeline_from_paths<P1: AsRef<Path>, P2: AsRef<Path>>(
         .rasterization_state(&rasterization_state)
         .multisample_state(&multisample_state)
         .color_blend_state(&color_blend_state)
-        .layout(layout);
+        .layout(layout)
+        .render_pass(render_pass)
+        .subpass(0);
 
-    unimplemented!()
+    let pipeline_result = unsafe {
+        dev.create_graphics_pipelines(PipelineCache::null(), slice::from_ref(&create_info), None)
+    };
+    match pipeline_result {
+        Ok(mut pipelines) => {
+            let pipeline = pipelines.remove(0);
+            Ok(pipeline)
+        }
+        Err((_, err)) => Err(err.into()),
+    }
+}
+
+pub fn create_graphics_render_pass(dev: &Device, format: Format) -> Result<RenderPass> {
+    let color_attachment = AttachmentDescription::builder()
+        .format(format)
+        .samples(SampleCountFlags::TYPE_1)
+        .load_op(AttachmentLoadOp::CLEAR)
+        .store_op(AttachmentStoreOp::STORE)
+        .stencil_load_op(AttachmentLoadOp::DONT_CARE)
+        .stencil_store_op(AttachmentStoreOp::DONT_CARE)
+        .initial_layout(ImageLayout::UNDEFINED)
+        .final_layout(ImageLayout::PRESENT_SRC_KHR);
+
+    let color_attachment_ref = AttachmentReference::builder()
+        .attachment(0)
+        .layout(ImageLayout::COLOR_ATTACHMENT_OPTIMAL);
+
+    let subpass = SubpassDescription::builder()
+        .pipeline_bind_point(PipelineBindPoint::GRAPHICS)
+        .color_attachments(slice::from_ref(&color_attachment_ref));
+
+    let create_info = RenderPassCreateInfo::builder()
+        .attachments(slice::from_ref(&color_attachment))
+        .subpasses(slice::from_ref(&subpass));
+
+    let render_pass = unsafe { dev.create_render_pass(&create_info, None)? };
+    Ok(render_pass)
 }

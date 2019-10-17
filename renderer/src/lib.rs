@@ -1,12 +1,13 @@
 use ash::{
     extensions::khr::{Surface, Swapchain},
+    vk::ShaderStageFlags,
     Entry,
 };
 use derivative::Derivative;
 use glfw::{Glfw, Window, WindowEvent};
 use libremexre::errors::Result;
 use log::info;
-use std::sync::mpsc::Receiver;
+use std::{path::Path, sync::mpsc::Receiver};
 
 #[macro_use]
 pub mod utils;
@@ -30,7 +31,11 @@ pub struct Renderer {
 
 impl Renderer {
     /// Creates a new Renderer with the given window name.
-    pub fn new(name: &str) -> Result<Renderer> {
+    pub fn new(
+        name: &str,
+        vert_path: impl AsRef<Path>,
+        frag_path: impl AsRef<Path>,
+    ) -> Result<Renderer> {
         let (glfw, window, events) = init::create_window(name)?;
         let entry = Entry::new()?;
         let instance = init::create_instance(&glfw, &entry, true)?;
@@ -44,8 +49,14 @@ impl Renderer {
             info!("RTX found!");
         }
         let swapchain_ext = Swapchain::new(&instance, &dev);
-        let (swapchain, images, image_views) =
+        let (swapchain, images, image_views, format, dims) =
             init::create_swapchain(&surface_ext, &swapchain_ext, surface, pd, &dev)?;
+
+        let (_, vert_stage) = shaders::load_shader(&dev, vert_path, ShaderStageFlags::VERTEX)?;
+        let (_, frag_stage) = shaders::load_shader(&dev, frag_path, ShaderStageFlags::FRAGMENT)?;
+
+        let pipeline =
+            pipeline::create_graphics_pipeline(&dev, format, dims, vert_stage, frag_stage)?;
 
         Ok(Renderer {
             events,
