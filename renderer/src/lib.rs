@@ -5,6 +5,7 @@ use ash::{
 use derivative::Derivative;
 use glfw::{Glfw, Window, WindowEvent};
 use libremexre::errors::Result;
+use log::info;
 use std::sync::mpsc::Receiver;
 
 #[macro_use]
@@ -30,7 +31,7 @@ pub struct Renderer {
 impl Renderer {
     /// Creates a new Renderer with the given window name.
     pub fn new(name: &str) -> Result<Renderer> {
-        let (mut glfw, window, events) = init::create_window(name)?;
+        let (glfw, window, events) = init::create_window(name)?;
         let entry = Entry::new()?;
         let instance = init::create_instance(&glfw, &entry, true)?;
         let surface = init::create_surface(&instance, &window)?;
@@ -38,10 +39,13 @@ impl Renderer {
         let surface_ext = Surface::new(&entry, &instance);
         let (pd, qf) =
             init::choose_physical_device_and_queue_family(&instance, &surface_ext, surface)?;
-        let (dev, queue) = init::create_device(&instance, pd, qf)?;
+        let (dev, queue, has_rtx) = init::create_device(&instance, pd, qf)?;
+        if has_rtx {
+            info!("RTX found!");
+        }
         let swapchain_ext = Swapchain::new(&instance, &dev);
-        let (swapchain, images) =
-            init::create_swapchain(&surface_ext, &swapchain_ext, surface, pd)?;
+        let (swapchain, images, image_views) =
+            init::create_swapchain(&surface_ext, &swapchain_ext, surface, pd, &dev)?;
 
         Ok(Renderer {
             events,

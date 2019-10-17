@@ -5,10 +5,11 @@ use ash::{
     extensions::khr::{Surface, Swapchain},
     version::{DeviceV1_0, EntryV1_0, InstanceV1_0},
     vk::{
-        ColorSpaceKHR, CompositeAlphaFlagsKHR, DeviceCreateInfo, DeviceQueueCreateInfo, Format,
-        Handle, Image, ImageUsageFlags, InstanceCreateInfo, PhysicalDevice, PhysicalDeviceType,
-        PresentModeKHR, Queue, QueueFlags, SharingMode, SurfaceKHR, SwapchainCreateInfoKHR,
-        SwapchainKHR,
+        ColorSpaceKHR, ComponentMapping, CompositeAlphaFlagsKHR, DeviceCreateInfo,
+        DeviceQueueCreateInfo, Format, Handle, Image, ImageAspectFlags, ImageSubresourceRange,
+        ImageUsageFlags, ImageView, ImageViewCreateInfo, ImageViewType, InstanceCreateInfo,
+        PhysicalDevice, PhysicalDeviceType, PresentModeKHR, Queue, QueueFlags, SharingMode,
+        SurfaceKHR, SwapchainCreateInfoKHR, SwapchainKHR,
     },
     Device, Entry, Instance,
 };
@@ -156,7 +157,11 @@ pub fn choose_physical_device_and_queue_family(
     Ok((pd, qf))
 }
 
-pub fn create_device(instance: &Instance, pd: PhysicalDevice, qf: u32) -> Result<(Device, Queue)> {
+pub fn create_device(
+    instance: &Instance,
+    pd: PhysicalDevice,
+    qf: u32,
+) -> Result<(Device, Queue, bool)> {
     let mut exts = REQUIRED_DEVICE_EXTS.clone();
     debug!("Device Extensions:");
     for ext in unsafe { instance.enumerate_device_extension_properties(pd)? } {
@@ -177,13 +182,14 @@ pub fn create_device(instance: &Instance, pd: PhysicalDevice, qf: u32) -> Result
         .queue_family_index(qf)
         .queue_priorities(&[1.0]);
     let queue_create_infos: Vec<DeviceQueueCreateInfo> = vec![*queue_create_info];
-    let exts = exts.iter().map(|ext| ext.as_ptr()).collect::<Vec<_>>();
+    let ext_ptrs = exts.iter().map(|ext| ext.as_ptr()).collect::<Vec<_>>();
     let create_info = DeviceCreateInfo::builder()
         .queue_create_infos(&queue_create_infos)
-        .enabled_extension_names(&exts);
+        .enabled_extension_names(&ext_ptrs);
     let dev = unsafe { instance.create_device(pd, &create_info, None)? };
     let queue = unsafe { dev.get_device_queue(qf, 0) };
-    Ok((dev, queue))
+    let has_rtx = exts.iter().any(|e| e.as_bytes() == b"VK_NV_ray_tracing");
+    Ok((dev, queue, has_rtx))
 }
 
 pub fn create_surface(instance: &Instance, window: &Window) -> Result<SurfaceKHR> {
@@ -208,7 +214,8 @@ pub fn create_swapchain(
     swapchain_ext: &Swapchain,
     surface: SurfaceKHR,
     pd: PhysicalDevice,
-) -> Result<(SwapchainKHR, Vec<Image>)> {
+    dev: &Device,
+) -> Result<(SwapchainKHR, Vec<Image>, Vec<ImageView>)> {
     let caps = unsafe { surface_ext.get_physical_device_surface_capabilities(pd, surface)? };
     let formats = unsafe { surface_ext.get_physical_device_surface_formats(pd, surface)? };
 
@@ -266,5 +273,29 @@ pub fn create_swapchain(
 
     let swapchain_khr = unsafe { swapchain_ext.create_swapchain(&create_info, None)? };
     let images = unsafe { swapchain_ext.get_swapchain_images(swapchain_khr)? };
-    Ok((swapchain_khr, images))
+
+    let image_views = images
+        .iter()
+        .cloned()
+        .map(|image| {
+            let create_info = ImageViewCreateInfo::builder()
+                .image(image)
+                .view_type(ImageViewType::TYPE_2D)
+                .format(format.format)
+                .components(ComponentMapping::default())
+                .subresource_range(
+                    ImageSubresourceRange::builder()
+                        .aspect_mask(ImageAspectFlags::COLOR)
+                        .base_mip_level(0)
+                        .level_count(1)
+                        .base_array_layer(0)
+                        .layer_count(1)
+                        .build(),
+                );
+            let image_view = unsafe { dev.create_image_view(&create_info, None)? };
+            Ok(image_view)
+        })
+        .collect::<Result<_>>()?;
+
+    Ok((swapchain_khr, images, image_views))
 }
