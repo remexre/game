@@ -11,11 +11,10 @@ mod init;
 mod pipeline;
 mod shaders;
 mod sync;
-mod vert;
 
 pub mod ffi;
 
-pub use crate::{bufs::VBO, draw::DrawTarget, vert::Vertex};
+pub use crate::{bufs::VBO, draw::DrawTarget};
 use anyhow::{Context, Result};
 use ash::{
     extensions::khr::{Surface, Swapchain},

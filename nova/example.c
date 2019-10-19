@@ -1,22 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define WARN_UNUSED_RESULT __attribute__((warn_unused_result))
-
-typedef struct Nova Nova;
-typedef struct NovaDraw NovaDraw;
-// TODO: VBO's members shouldn't be exposed.
-typedef struct VBO { unsigned int n; } VBO;
-typedef void (*NovaOnDrawFunc)(NovaDraw*, void*);
-char* nova_init(const char* app_name, const char* vert_path, const char* frag_path,
-                    Nova** out_nova) WARN_UNUSED_RESULT;
-char* nova_free(Nova* nova) WARN_UNUSED_RESULT;
-void nova_free_error(char* error);
-char* nova_set_title(Nova* nova, const char* title) WARN_UNUSED_RESULT;
-char* nova_on_draw(Nova* nova, NovaOnDrawFunc func, void*) WARN_UNUSED_RESULT;
-char* nova_loop(Nova* nova, int* out_should_close) WARN_UNUSED_RESULT;
-char* nova_draw_vbo(NovaDraw* draw, VBO* vbo, float model[16], float view[16], float proj[16],
-	float specularity) WARN_UNUSED_RESULT;
+#include "nova.h"
 
 static void check_error(const char* action, char* error) {
 	if(!error)
@@ -43,9 +28,17 @@ int main(void) {
 		nova_init("Vulkan Example", "assets/shaders/tutorial.vert.spv",
 			"assets/shaders/tutorial.frag.spv", &nova));
 
-	struct VBO triangle = { 3 };
+	const struct Vertex vertices[3] = {
+		{{  0.0, -0.5, 0.0 }, { 0.0, 0.0 }, { 0.0, 0.0, 0.0 }},
+		{{  0.5,  0.5, 0.0 }, { 0.0, 0.0 }, { 0.0, 0.0, 0.0 }},
+		{{ -0.5,  0.5, 0.0 }, { 0.0, 0.0 }, { 0.0, 0.0, 0.0 }},
+	};
+
+	struct VBO* triangle;
+	check_error("alloc vbo", nova_alloc_vbo(nova, vertices, 3, &triangle));
+
 	struct DrawContext ctx = {
-		.triangle = &triangle,
+		.triangle = triangle,
 		.specularity = 1.0
 	};
 	check_error("set up callbacks", nova_on_draw(nova, (NovaOnDrawFunc) on_draw, &ctx));
@@ -53,6 +46,8 @@ int main(void) {
 	int should_close = 0;
 	while(!should_close)
 		check_error("draw", nova_loop(nova, &should_close));
+
+	check_error("free vbo", nova_free_vbo(nova, ctx.triangle));
 
 	check_error("free nova", nova_free(nova));
 	return 0;

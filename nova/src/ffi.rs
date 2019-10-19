@@ -18,6 +18,42 @@ use std::{
     ptr,
 };
 
+fn catch<F: FnOnce() -> Result<()>>(body: F) -> *mut c_char {
+    match catch_unwind(AssertUnwindSafe(body)) {
+        Ok(Ok(())) => ptr::null_mut(),
+        Ok(Err(err)) => nova_alloc_error(format!("{:?}", err)),
+        Err(panic) => {
+            // TODO: Process the panic in some way.
+            nova_alloc_error(format!("Uncaught panic: {:?}", panic))
+        }
+    }
+}
+
+fn nova_alloc_error(s: String) -> *mut c_char {
+    match CString::new(s) {
+        Ok(cstr) => cstr.into_raw(),
+        Err(err) => {
+            // We must not panic at this point.
+            eprintln!("Failed to create CString in nova_alloc_error: {}", err);
+            eprintln!("This ought to be impossible...");
+            abort();
+        }
+    }
+}
+
+/// Frees a string returned as an error.
+///
+/// ## Arguments
+///
+/// `error`: A pointer returned from another function in this library as an error. This pointer
+/// must not be used after calling this function.
+#[no_mangle]
+pub unsafe extern "C" fn nova_free_error(error: *mut c_char) {
+    if !error.is_null() {
+        drop(CString::from_raw(error))
+    }
+}
+
 /// The data carried across the FFI boundary.
 ///
 /// Treat this struct as opaque: its size and contents may change.
@@ -40,17 +76,6 @@ pub struct Nova {
 pub struct NovaDraw {
     target: DrawTarget<'static>,
     valid: bool,
-}
-
-fn catch<F: FnOnce() -> Result<()>>(body: F) -> *mut c_char {
-    match catch_unwind(AssertUnwindSafe(body)) {
-        Ok(Ok(())) => ptr::null_mut(),
-        Ok(Err(err)) => nova_alloc_error(format!("{:?}", err)),
-        Err(panic) => {
-            // TODO: Process the panic in some way.
-            nova_alloc_error(format!("Uncaught panic: {:?}", panic))
-        }
-    }
 }
 
 /// Attempts to set up Nova.
@@ -121,31 +146,6 @@ pub unsafe extern "C" fn nova_free(nova: *mut Nova) -> *mut c_char {
         drop(Box::from_raw(nova));
         Ok(())
     })
-}
-
-fn nova_alloc_error(s: String) -> *mut c_char {
-    match CString::new(s) {
-        Ok(cstr) => cstr.into_raw(),
-        Err(err) => {
-            // We must not panic at this point.
-            eprintln!("Failed to create CString in nova_alloc_error: {}", err);
-            eprintln!("This ought to be impossible...");
-            abort();
-        }
-    }
-}
-
-/// Frees a string returned as an error.
-///
-/// ## Arguments
-///
-/// `error`: A pointer returned from another function in this library as an error. This pointer
-/// must not be used after calling this function.
-#[no_mangle]
-pub unsafe extern "C" fn nova_free_error(error: *mut c_char) {
-    if !error.is_null() {
-        drop(CString::from_raw(error))
-    }
 }
 
 /// Sets the title of the window.
@@ -258,6 +258,71 @@ pub unsafe extern "C" fn nova_loop(nova: *mut Nova, out_should_close: *mut c_int
     })
 }
 
+/// A single vertex in a VBO.
+#[derive(Clone, Copy, Debug)]
+#[repr(C)]
+pub struct Vertex {
+    pub position: [f32; 3],
+    pub texcoords: [f32; 2],
+    pub normal: [f32; 3],
+}
+
+/// Allocates a VBO.
+///
+/// ## Arguments
+///
+/// `nova`: The Nova pointer, as obtained from `nova_init`.
+///
+/// `vertices`: A pointer to the vertex data. The data will not be mutated, nor will it be
+/// referenced after this function returns (i.e., it's fine for it to be a stack-allocated or
+/// constant).
+///
+/// `num_vertices`: The number of vertices.
+///
+/// `out_vbo`: A non-null pointer to the location where the VBO pointer will be stored. If the VBO
+/// is successfully allocated, a pointer to it will be stored here. If an error occurs, the
+/// pointer will not be written to. This pointer will not be referenced after this function returns
+/// (i.e., it's fine for it to be a stack location).
+///
+/// ## Return Value
+///
+/// On success, returns `NULL`. On error, returns a non-null pointer to a null-terminated string
+/// describing the error. This string must be freed with `nova_free_error`.
+#[no_mangle]
+pub unsafe extern "C" fn nova_alloc_vbo<'a>(
+    nova: *mut Nova,
+    vertices: *const Vertex,
+    num_vertices: u32,
+    out_vbo: *mut VBO,
+) -> *mut c_char {
+    catch(|| {
+        let nova = nova.as_mut().expect("Got null pointer for nova");
+
+        unimplemented!()
+    })
+}
+
+/// Frees a VBO.
+///
+/// ## Arguments
+///
+/// `nova`: The Nova pointer, as obtained from `nova_init`.
+///
+/// `vbo`: The VBO pointer to free. This pointer must not be used after calling this function.
+///
+/// ## Return Value
+///
+/// On success, returns `NULL`. On error, returns a non-null pointer to a null-terminated string
+/// describing the error. This string must be freed with `nova_free_error`.
+#[no_mangle]
+pub unsafe extern "C" fn nova_free_vbo<'a>(nova: *mut Nova, vbo: *const VBO) -> *mut c_char {
+    catch(|| {
+        let nova = nova.as_mut().expect("Got null pointer for nova");
+
+        unimplemented!()
+    })
+}
+
 /// Draws a VBO to the G-buffer. **TODO**: Not actually true; we're doing forward rendering rn.
 ///
 /// This must only be called from the `on_draw` function called by `nova_loop`.
@@ -266,6 +331,8 @@ pub unsafe extern "C" fn nova_loop(nova: *mut Nova, out_should_close: *mut c_int
 ///
 /// `draw`: The NovaDraw pointer.
 ///
+/// **TODO** Finish documenting
+///
 /// ## Return Value
 ///
 /// On success, returns `NULL`. On error, returns a non-null pointer to a null-terminated string
@@ -273,7 +340,7 @@ pub unsafe extern "C" fn nova_loop(nova: *mut Nova, out_should_close: *mut c_int
 #[no_mangle]
 pub unsafe extern "C" fn nova_draw_vbo<'a>(
     draw: *mut NovaDraw,
-    vbo: *mut VBO,
+    vbo: *const VBO,
     model: *const [f32; 16],
     view: *const [f32; 16],
     proj: *const [f32; 16],
@@ -287,7 +354,7 @@ pub unsafe extern "C" fn nova_draw_vbo<'a>(
         let draw = draw.as_mut().expect("Got null pointer for draw");
         assert!(draw.valid);
 
-        let vbo = vbo.as_mut().expect("Got null pointer for vbo");
+        let vbo = vbo.as_ref().expect("Got null pointer for vbo");
         // TODO: Bind
 
         let model = model.as_ref().unwrap_or(&IDENTITY_MAT4);
