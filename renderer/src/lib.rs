@@ -54,9 +54,10 @@ pub struct Renderer {
     pipeline: Pipeline,
     command_pool: CommandPool,
     command_buffers: Vec<CommandBuffer>,
-    image_available_semaphore: Semaphore,
-    render_finished_semaphore: Semaphore,
-    render_finished_fence: Fence,
+    frame_num: usize,
+    image_available_semaphores: Vec<Semaphore>,
+    render_finished_semaphores: Vec<Semaphore>,
+    render_finished_fences: Vec<Fence>,
 }
 
 impl Renderer {
@@ -87,6 +88,7 @@ impl Renderer {
         let (swapchain, images, image_views, format, dims) =
             init::create_swapchain(&surface_ext, &swapchain_ext, surface, pd, &dev)
                 .context("Failed to create swapchain")?;
+        let num_images = images.len() as u32;
 
         let (_, vert_stage) = shaders::load_shader(&dev, vert_path, ShaderStageFlags::VERTEX)
             .context("Failed to load vertex shader")?;
@@ -103,12 +105,11 @@ impl Renderer {
             .collect::<Result<Vec<_>>>()?;
 
         let command_pool = cmds::create_command_pool(&dev, qf)?;
-        let command_buffers =
-            cmds::create_command_buffers(&dev, command_pool, images.len() as u32)?;
+        let command_buffers = cmds::create_command_buffers(&dev, command_pool, num_images)?;
 
-        let image_available_semaphore = sync::create_semaphore(&dev)?;
-        let render_finished_semaphore = sync::create_semaphore(&dev)?;
-        let render_finished_fence = sync::create_fence(&dev, true)?;
+        let image_available_semaphores = sync::create_semaphores(&dev, num_images)?;
+        let render_finished_semaphores = sync::create_semaphores(&dev, num_images)?;
+        let render_finished_fences = sync::create_fences(&dev, true, num_images)?;
 
         Ok(Renderer {
             glfw,
@@ -132,22 +133,30 @@ impl Renderer {
             framebuffers,
             command_pool,
             command_buffers,
-            image_available_semaphore,
-            render_finished_semaphore,
-            render_finished_fence,
+            frame_num: 0,
+            image_available_semaphores,
+            render_finished_semaphores,
+            render_finished_fences,
         })
     }
 
-    pub fn draw<F: FnOnce() -> Result<()>>(&self, f: F) -> Result<()> {
+    pub fn draw<F: FnOnce() -> Result<()>>(&mut self, f: F) -> Result<()> {
+        let image_available_semaphore = self.image_available_semaphores[self.frame_num];
+        let render_finished_semaphore = self.render_finished_semaphores[self.frame_num];
+        let render_finished_fence = self.render_finished_fences[self.frame_num];
+        let command_buffer = self.command_buffers[self.frame_num];
+        self.frame_num = (self.frame_num + 1) % self.images.len();
+
         let (i, suboptimal) = cmds::draw_start(
             &self.swapchain_ext,
             self.swapchain,
-            self.image_available_semaphore,
+            image_available_semaphore,
         )?;
         ensure!(!suboptimal, "Swapchain needs to be recreated");
+
         let framebuffer = self.framebuffers[i as usize];
-        let command_buffer = self.command_buffers[i as usize];
-        cmds::begin_command_buffer(&self.dev, command_buffer, &self.render_finished_fence)?;
+
+        cmds::begin_command_buffer(&self.dev, command_buffer, &render_finished_fence)?;
         cmds::begin_render_pass(
             &self.dev,
             command_buffer,
@@ -165,16 +174,16 @@ impl Renderer {
             &self.dev,
             self.queue,
             &command_buffer,
-            &self.image_available_semaphore,
-            &self.render_finished_semaphore,
-            self.render_finished_fence,
+            &image_available_semaphore,
+            &render_finished_semaphore,
+            render_finished_fence,
         )?;
         let suboptimal = cmds::present(
             &self.swapchain_ext,
             self.queue,
             &self.swapchain,
             i,
-            &self.render_finished_semaphore,
+            &render_finished_semaphore,
         )?;
         ensure!(!suboptimal, "Swapchain needs to be recreated");
         Ok(())
