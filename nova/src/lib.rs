@@ -3,6 +3,7 @@
 #[macro_use]
 pub mod utils;
 
+mod bufs;
 mod cmds;
 mod draw;
 mod imgs;
@@ -14,7 +15,7 @@ mod vert;
 
 pub mod ffi;
 
-pub use crate::{draw::DrawTarget, vert::Vertex};
+pub use crate::{bufs::VBO, draw::DrawTarget, vert::Vertex};
 use anyhow::{Context, Result};
 use ash::{
     extensions::khr::{Surface, Swapchain},

@@ -4,14 +4,15 @@
 //!
 //! See `example.c`
 
-use crate::{draw::DrawTarget, Renderer};
+use crate::{bufs::VBO, draw::DrawTarget, Renderer};
 use anyhow::Result;
 use derivative::Derivative;
 use glfw::WindowEvent;
 use log::debug;
 use std::{
     ffi::{CStr, CString},
-    os::raw::{c_char, c_int},
+    mem::transmute,
+    os::raw::{c_char, c_int, c_void},
     panic::{catch_unwind, AssertUnwindSafe},
     process::abort,
     ptr,
@@ -24,10 +25,21 @@ use std::{
 #[derivative(Debug)]
 pub struct Nova {
     renderer: Renderer,
+    in_loop: bool,
     #[derivative(Debug = "ignore")]
     on_draw: Box<dyn for<'a> FnMut(DrawTarget<'a>)>,
     #[derivative(Debug = "ignore")]
     on_event: Box<dyn FnMut(f64, WindowEvent)>,
+}
+
+/// The data carried across the FFI boundary during drawing.
+///
+/// Treat this struct as opaque: its size and contents may change.
+#[derive(Derivative)]
+#[derivative(Debug)]
+pub struct NovaDraw {
+    target: DrawTarget<'static>,
+    valid: bool,
 }
 
 fn catch<F: FnOnce() -> Result<()>>(body: F) -> *mut c_char {
@@ -82,6 +94,7 @@ pub unsafe extern "C" fn nova_init(
     catch(|| {
         let r = Nova {
             renderer: Renderer::new(&app_name, &*vert_path, &*frag_path)?,
+            in_loop: false,
             on_draw: Box::new(|_| {}),
             on_event: Box::new(|t, ev| debug!("At {}, got {:?}", t, ev)),
         };
@@ -135,6 +148,41 @@ pub unsafe extern "C" fn nova_free_error(error: *mut c_char) {
     }
 }
 
+/// Registers a function to be called for drawing.
+///
+/// ## Arguments
+///
+/// `nova`: The Nova pointer, as obtained from `nova_init`.
+///
+/// `func`: The function that does the drawing.
+///
+/// `ctx`: An argument passed to `func` every time it's called.
+///
+/// ## Return Value
+///
+/// On success, returns `NULL`. On error, returns a non-null pointer to a null-terminated string
+/// describing the error. This string must be freed with `nova_free_error`.
+#[no_mangle]
+pub unsafe extern "C" fn nova_on_draw(
+    nova: *mut Nova,
+    func: extern "C" fn(draw: *mut NovaDraw, ctx: *mut c_void),
+    ctx: *mut c_void,
+) -> *mut c_char {
+    catch(|| {
+        let nova = nova.as_mut().expect("Got null pointer for nova");
+        assert!(!nova.in_loop);
+        nova.on_draw = Box::new(move |target| {
+            let mut draw = NovaDraw {
+                target: transmute::<DrawTarget<'_>, DrawTarget<'static>>(target),
+                valid: true,
+            };
+            func(&mut draw, ctx);
+            draw.valid = false;
+        });
+        Ok(())
+    })
+}
+
 /// Polls and processes events, then starts a draw operation.
 ///
 /// Calls the function registered by `nova_on_event` with each event.
@@ -157,7 +205,10 @@ pub unsafe extern "C" fn nova_free_error(error: *mut c_char) {
 #[no_mangle]
 pub unsafe extern "C" fn nova_loop(nova: *mut Nova, out_should_close: *mut c_int) -> *mut c_char {
     catch(|| {
-        let nova = nova.as_mut().unwrap();
+        let nova = nova.as_mut().expect("Got null pointer for nova");
+
+        assert!(!nova.in_loop);
+        nova.in_loop = true;
 
         let on_event = &mut nova.on_event;
         let on_draw = &mut nova.on_draw;
@@ -171,10 +222,55 @@ pub unsafe extern "C" fn nova_loop(nova: *mut Nova, out_should_close: *mut c_int
             Ok(())
         })?;
 
+        nova.in_loop = false;
+
         ptr::write(
             out_should_close,
             if nova.renderer.should_close() { 1 } else { 0 },
         );
+        Ok(())
+    })
+}
+
+/// Draws a VBO to the G-buffer. **TODO**: Not actually true; we're doing forward rendering rn.
+///
+/// This must only be called from the `on_draw` function called by `nova_loop`.
+///
+/// ## Arguments
+///
+/// `draw`: The NovaDraw pointer.
+///
+/// ## Return Value
+///
+/// On success, returns `NULL`. On error, returns a non-null pointer to a null-terminated string
+/// describing the error. This string must be freed with `nova_free_error`.
+#[no_mangle]
+pub unsafe extern "C" fn nova_draw_vbo<'a>(
+    draw: *mut NovaDraw,
+    vbo: *mut VBO,
+    model: *const [f32; 16],
+    view: *const [f32; 16],
+    proj: *const [f32; 16],
+    specularity: f32,
+) -> *mut c_char {
+    static IDENTITY_MAT4: [f32; 16] = [
+        1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
+    ];
+
+    catch(|| {
+        let draw = draw.as_mut().expect("Got null pointer for draw");
+        assert!(draw.valid);
+
+        let vbo = vbo.as_mut().expect("Got null pointer for vbo");
+        // TODO: Bind
+
+        let model = model.as_ref().unwrap_or(&IDENTITY_MAT4);
+        let view = view.as_ref().unwrap_or(&IDENTITY_MAT4);
+        let proj = proj.as_ref().unwrap_or(&IDENTITY_MAT4);
+        // TODO: Uniforms
+
+        draw.target.draw(vbo.num_vertices);
+
         Ok(())
     })
 }
