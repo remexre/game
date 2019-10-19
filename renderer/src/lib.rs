@@ -1,3 +1,18 @@
+#[macro_use]
+pub mod utils;
+
+mod cmds;
+mod draw;
+mod imgs;
+mod init;
+mod pipeline;
+mod shaders;
+mod sync;
+mod vert;
+
+pub mod ffi;
+
+pub use crate::{draw::DrawTarget, vert::Vertex};
 use anyhow::{Context, Result};
 use ash::{
     extensions::khr::{Surface, Swapchain},
@@ -13,16 +28,6 @@ use derivative::Derivative;
 use glfw::{Glfw, Window, WindowEvent};
 use log::info;
 use std::{path::Path, sync::mpsc::Receiver};
-
-#[macro_use]
-pub mod utils;
-
-pub mod cmds;
-pub mod imgs;
-pub mod init;
-pub mod pipeline;
-pub mod shaders;
-pub mod sync;
 
 #[derive(Derivative)]
 #[derivative(Debug)]
@@ -63,6 +68,7 @@ pub struct Renderer {
     image_available_semaphores: Vec<Semaphore>,
     render_finished_semaphores: Vec<Semaphore>,
     render_finished_fences: Vec<Fence>,
+    resized: bool,
 }
 
 impl Renderer {
@@ -147,20 +153,24 @@ impl Renderer {
             image_available_semaphores,
             render_finished_semaphores,
             render_finished_fences,
+            resized: false,
         })
     }
 
-    pub fn draw<F: FnOnce() -> Result<()>>(&mut self, f: F) -> Result<()> {
-        match self.draw_inner(f) {
-            Ok(()) => Ok(()),
-            Err(ref err) if err.downcast_ref() == Some(&VkResult::ERROR_OUT_OF_DATE_KHR) => {
-                self.recreate_framebuffer()
-            }
-            Err(err) => Err(err),
+    pub fn draw<F: for<'a> FnOnce(DrawTarget<'a>) -> Result<()>>(&mut self, f: F) -> Result<()> {
+        let recreate = match self.draw_inner(f) {
+            Ok(()) => false,
+            Err(ref err) if err.downcast_ref() == Some(&VkResult::ERROR_OUT_OF_DATE_KHR) => true,
+            Err(err) => return Err(err),
+        };
+        if recreate || self.resized {
+            self.resized = false;
+            self.recreate_framebuffer()?;
         }
+        Ok(())
     }
 
-    fn draw_inner<F: FnOnce() -> Result<()>>(&mut self, f: F) -> Result<()> {
+    fn draw_inner<'a, F: FnOnce(DrawTarget<'a>) -> Result<()>>(&'a mut self, f: F) -> Result<()> {
         let image_available_semaphore = self.image_available_semaphores[self.frame_num];
         let render_finished_semaphore = self.render_finished_semaphores[self.frame_num];
         let render_finished_fence = self.render_finished_fences[self.frame_num];
@@ -185,7 +195,10 @@ impl Renderer {
         );
         cmds::bind_pipeline(&self.dev, command_buffer, self.pipeline);
 
-        // TODO Call f
+        f(DrawTarget {
+            dev: &self.dev,
+            command_buffer: command_buffer,
+        })?;
 
         cmds::end_render_pass(&self.dev, command_buffer);
         cmds::end_command_buffer(&self.dev, command_buffer)?;
@@ -250,7 +263,14 @@ impl Renderer {
 
     pub fn poll_events<'a>(&'a mut self) -> impl 'a + Iterator<Item = (f64, WindowEvent)> {
         self.glfw.poll_events();
-        self.events.try_iter()
+        let resized = &mut self.resized;
+        self.events.try_iter().filter(move |(_, ev)| match ev {
+            WindowEvent::Size(_, _) => {
+                *resized = true;
+                false
+            }
+            _ => true,
+        })
     }
 
     pub fn should_close(&self) -> bool {

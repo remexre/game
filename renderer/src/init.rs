@@ -54,6 +54,7 @@ pub fn create_window(name: &str) -> Result<(Glfw, Window, Receiver<(f64, WindowE
         .create_window(800, 600, name, WindowMode::Windowed)
         .ok_or_else(|| anyhow!("Failed to create window"))?;
     window.set_key_polling(true);
+    window.set_size_polling(true);
     Ok((glfw, window, events))
 }
 

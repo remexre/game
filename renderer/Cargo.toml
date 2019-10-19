@@ -6,7 +6,7 @@ name = "renderer"
 version = "0.1.0"
 
 [lib]
-crate-type = ["cdylib", "lib"]
+crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 anyhow = "1.0.13"

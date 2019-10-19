@@ -16,8 +16,8 @@ fn main() -> Result<()> {
         }
 
         renderer
-            .draw(|| {
-                println!("osu");
+            .draw(|mut target| {
+                target.draw(3);
                 Ok(())
             })
             .context("draw")?;
