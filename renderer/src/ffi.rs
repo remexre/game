@@ -154,9 +154,11 @@ pub unsafe extern "C" fn renderer_free_error(error: *mut c_char) {
     }
 }
 
-/// Polls and processes events.
+/// Polls and processes events, then starts a draw operation.
 ///
-/// Internally, this calls the function registered by `renderer_on_event` with each event.
+/// Calls the function registered by `renderer_on_event` with each event.
+///
+/// Next, calls the function registered by `renderer_on_draw`.
 ///
 /// ## Arguments
 ///
@@ -172,7 +174,7 @@ pub unsafe extern "C" fn renderer_free_error(error: *mut c_char) {
 /// On success, returns `NULL`. On error, returns a non-null pointer to a null-terminated string
 /// describing the error. This string must be freed with `renderer_free_error`.
 #[no_mangle]
-pub unsafe extern "C" fn renderer_poll(
+pub unsafe extern "C" fn renderer_loop(
     renderer: *mut RendererFFI,
     out_should_close: *mut c_int,
 ) -> *mut c_char {
@@ -180,10 +182,17 @@ pub unsafe extern "C" fn renderer_poll(
         let renderer = renderer.as_mut().unwrap();
 
         let on_event = &mut renderer.on_event;
+        let on_draw = &mut renderer.on_draw;
+
         renderer
             .renderer
             .poll_events()
             .for_each(|(t, ev)| (on_event)(t, ev));
+
+        renderer.renderer.draw(|target| {
+            (on_draw)(target);
+            Ok(())
+        })?;
 
         ptr::write(
             out_should_close,

@@ -6,7 +6,7 @@ char* renderer_init(const char* app_name, const char* vert_path, const char* fra
                     Renderer** out_renderer);
 char* renderer_free(Renderer* renderer);
 void renderer_free_error(char* error);
-char* renderer_poll(Renderer* renderer, int* out_should_close);
+char* renderer_loop(Renderer* renderer, int* out_should_close);
 
 static void check_error(const char* action, char* error) {
 	if(!error)
@@ -24,9 +24,7 @@ int main(void) {
 
 	int should_close = 0;
 	while(!should_close) {
-		puts("l");
-
-		check_error("poll for errors", renderer_poll(renderer, &should_close));
+		check_error("draw", renderer_loop(renderer, &should_close));
 	}
 
 	check_error("free renderer", renderer_free(renderer));
