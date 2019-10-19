@@ -12,9 +12,9 @@ char* nova_init(const char* app_name, const char* vert_path, const char* frag_pa
                     Nova** out_nova) WARN_UNUSED_RESULT;
 char* nova_free(Nova* nova) WARN_UNUSED_RESULT;
 void nova_free_error(char* error);
+char* nova_set_title(Nova* nova, const char* title) WARN_UNUSED_RESULT;
 char* nova_on_draw(Nova* nova, NovaOnDrawFunc func, void*) WARN_UNUSED_RESULT;
 char* nova_loop(Nova* nova, int* out_should_close) WARN_UNUSED_RESULT;
-
 char* nova_draw_vbo(NovaDraw* draw, VBO* vbo, float model[16], float view[16], float proj[16],
 	float specularity) WARN_UNUSED_RESULT;
 

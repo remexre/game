@@ -148,6 +148,32 @@ pub unsafe extern "C" fn nova_free_error(error: *mut c_char) {
     }
 }
 
+/// Sets the title of the window.
+///
+/// ## Arguments
+///
+/// `nova`: The Nova pointer, as obtained from `nova_init`.
+///
+/// `title`: The name of the application as a null-terminated string, which will not be mutated,
+/// and will not be referenced after this function returns (i.e., it's fine for it to be a
+/// stack-allocated string or a string constant).
+///
+/// ## Return Value
+///
+/// On success, returns `NULL`. On error, returns a non-null pointer to a null-terminated string
+/// describing the error. This string must be freed with `nova_free_error`.
+#[no_mangle]
+pub unsafe extern "C" fn nova_set_title(nova: *mut Nova, title: *const c_char) -> *mut c_char {
+    catch(|| {
+        let nova = nova.as_mut().expect("Got null pointer for nova");
+
+        let title = CStr::from_ptr(title).to_string_lossy();
+        nova.renderer.window.set_title(&title);
+
+        Ok(())
+    })
+}
+
 /// Registers a function to be called for drawing.
 ///
 /// ## Arguments
