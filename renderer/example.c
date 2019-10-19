@@ -5,24 +5,30 @@ typedef struct Renderer Renderer;
 char* renderer_init(const char* app_name, const char* vert_path, const char* frag_path,
                     Renderer** out_renderer);
 char* renderer_free(Renderer* renderer);
-
 void renderer_free_error(char* error);
+char* renderer_poll(Renderer* renderer, int* out_should_close);
 
-static void check_error(const char* action, char* error);
-
-int main(void) {
-	Renderer* renderer = NULL;
-	check_error("initialize renderer",
-		renderer_init("Vulkan Example", "./vert.spv", "./frag.spv", &renderer));
-
-	check_error("free renderer", renderer_free(renderer));
-	return 0;
-}
-
-void check_error(const char* action, char* error) {
+static void check_error(const char* action, char* error) {
 	if(!error)
 		return;
 	fprintf(stderr, "failed to %s: %s", action, error);
 	renderer_free_error(error);
 	exit(1);
+}
+
+int main(void) {
+	Renderer* renderer = NULL;
+	check_error("initialize renderer",
+		renderer_init("Vulkan Example", "assets/shaders/tutorial.vert.spv",
+			"assets/shaders/tutorial.frag.spv", &renderer));
+
+	int should_close = 0;
+	while(!should_close) {
+		puts("l");
+
+		check_error("poll for errors", renderer_poll(renderer, &should_close));
+	}
+
+	check_error("free renderer", renderer_free(renderer));
+	return 0;
 }
