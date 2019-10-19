@@ -1,35 +1,27 @@
-use anyhow::Result;
-use log::error;
+use anyhow::{Context, Result};
 use renderer::Renderer;
-use std::process::exit;
 
-fn main() {
+fn main() -> Result<()> {
     stderrlog::new().verbosity(3).init().unwrap();
 
-    if let Err(err) = run() {
-        for err in err.chain() {
-            error!("{}", err);
-        }
-        exit(1);
-    }
-}
-
-fn run() -> Result<()> {
     let mut renderer = Renderer::new(
         "Vulkan Test",
         "../assets/shaders/tutorial.vert.spv",
         "../assets/shaders/tutorial.frag.spv",
-    )?;
+    )
+    .context("new")?;
     while !renderer.should_close() {
         for event in renderer.poll_events() {
             println!("{:?}", event);
         }
 
-        renderer.draw(|| {
-            println!("osu");
-            Ok(())
-        })?;
+        renderer
+            .draw(|| {
+                println!("osu");
+                Ok(())
+            })
+            .context("draw")?;
     }
-    renderer.wait_idle()?;
+    renderer.wait_idle().context("wait_idle")?;
     Ok(())
 }

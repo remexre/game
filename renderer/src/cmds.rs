@@ -7,8 +7,8 @@ use ash::{
         CommandBufferBeginInfo, CommandBufferLevel, CommandBufferResetFlags,
         CommandBufferUsageFlags, CommandPool, CommandPoolCreateFlags, CommandPoolCreateInfo,
         Extent2D, Fence, Framebuffer, Offset2D, Pipeline, PipelineBindPoint, PipelineStageFlags,
-        PresentInfoKHR, Queue, Rect2D, RenderPass, RenderPassBeginInfo, Semaphore, SubmitInfo,
-        SubpassContents, SwapchainKHR,
+        PresentInfoKHR, Queue, Rect2D, RenderPass, RenderPassBeginInfo, Result as VkResult,
+        Semaphore, SubmitInfo, SubpassContents, SwapchainKHR,
     },
     Device,
 };
@@ -101,7 +101,7 @@ pub fn draw_start(
     swapchain_ext: &Swapchain,
     swapchain: SwapchainKHR,
     image_available_semaphore: Semaphore,
-) -> Result<(u32, bool)> {
+) -> Result<u32> {
     let (i, suboptimal) = unsafe {
         swapchain_ext.acquire_next_image(
             swapchain,
@@ -110,7 +110,11 @@ pub fn draw_start(
             Fence::null(),
         )?
     };
-    Ok((i, suboptimal))
+    if suboptimal {
+        Err(VkResult::ERROR_OUT_OF_DATE_KHR.into())
+    } else {
+        Ok(i)
+    }
 }
 
 pub fn submit_command_buffer(
@@ -138,7 +142,7 @@ pub fn present(
     swapchain: &SwapchainKHR,
     image_index: u32,
     render_finished_semaphore: &Semaphore,
-) -> Result<bool> {
+) -> Result<()> {
     let image_indices = [image_index];
     let create_info = PresentInfoKHR::builder()
         .wait_semaphores(slice::from_ref(render_finished_semaphore))
@@ -146,5 +150,9 @@ pub fn present(
         .image_indices(&image_indices);
 
     let suboptimal = unsafe { swapchain_ext.queue_present(queue, &create_info)? };
-    Ok(suboptimal)
+    if suboptimal {
+        Err(VkResult::ERROR_OUT_OF_DATE_KHR.into())
+    } else {
+        Ok(())
+    }
 }

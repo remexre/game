@@ -1,10 +1,11 @@
-use anyhow::{ensure, Context, Result};
+use anyhow::{Context, Result};
 use ash::{
     extensions::khr::{Surface, Swapchain},
     version::DeviceV1_0,
     vk::{
         CommandBuffer, CommandPool, Extent2D, Fence, Format, Framebuffer, Image, ImageView,
-        Pipeline, Queue, RenderPass, Semaphore, ShaderStageFlags, SurfaceKHR, SwapchainKHR,
+        PhysicalDevice, Pipeline, Queue, QueueFamily, RenderPass, Result as VkResult, Semaphore,
+        ShaderStageFlags, SurfaceKHR, SwapchainKHR,
     },
     Device, Entry, Instance,
 };
@@ -38,10 +39,14 @@ pub struct Renderer {
     surface: SurfaceKHR,
     #[derivative(Debug = "ignore")]
     surface_ext: Surface,
+    pd: PhysicalDevice,
+    qf: QueueFamily,
     #[derivative(Debug = "ignore")]
     dev: Device,
     queue: Queue,
     has_rtx: bool,
+    vert_stage: (),
+    frag_stage: (),
     #[derivative(Debug = "ignore")]
     swapchain_ext: Swapchain,
     swapchain: SwapchainKHR,
@@ -84,16 +89,17 @@ impl Renderer {
         if has_rtx {
             info!("RTX found!");
         }
-        let swapchain_ext = Swapchain::new(&instance, &dev);
-        let (swapchain, images, image_views, format, dims) =
-            init::create_swapchain(&surface_ext, &swapchain_ext, surface, pd, &dev)
-                .context("Failed to create swapchain")?;
-        let num_images = images.len() as u32;
 
         let (_, vert_stage) = shaders::load_shader(&dev, vert_path, ShaderStageFlags::VERTEX)
             .context("Failed to load vertex shader")?;
         let (_, frag_stage) = shaders::load_shader(&dev, frag_path, ShaderStageFlags::FRAGMENT)
             .context("Failed to load fragment shader")?;
+
+        let swapchain_ext = Swapchain::new(&instance, &dev);
+        let (swapchain, images, image_views, format, dims) =
+            init::create_swapchain(&surface_ext, &swapchain_ext, surface, pd, &dev)
+                .context("Failed to create swapchain")?;
+        let num_images = images.len() as u32;
 
         let (render_pass, pipeline) =
             pipeline::create_graphics_pipeline(&dev, format, dims, vert_stage, frag_stage)
@@ -119,9 +125,13 @@ impl Renderer {
             instance,
             surface,
             surface_ext,
+            pd,
+            qf,
             dev,
             queue,
             has_rtx,
+            vert_stage,
+            frag_stage,
             swapchain_ext,
             swapchain,
             images,
@@ -141,18 +151,27 @@ impl Renderer {
     }
 
     pub fn draw<F: FnOnce() -> Result<()>>(&mut self, f: F) -> Result<()> {
+        match self.draw_inner(f) {
+            Ok(()) => Ok(()),
+            Err(ref err) if err.downcast_ref() == Some(&VkResult::ERROR_OUT_OF_DATE_KHR) => {
+                self.recreate_framebuffer()
+            }
+            Err(err) => Err(err),
+        }
+    }
+
+    fn draw_inner<F: FnOnce() -> Result<()>>(&mut self, f: F) -> Result<()> {
         let image_available_semaphore = self.image_available_semaphores[self.frame_num];
         let render_finished_semaphore = self.render_finished_semaphores[self.frame_num];
         let render_finished_fence = self.render_finished_fences[self.frame_num];
         let command_buffer = self.command_buffers[self.frame_num];
         self.frame_num = (self.frame_num + 1) % self.images.len();
 
-        let (i, suboptimal) = cmds::draw_start(
+        let i = cmds::draw_start(
             &self.swapchain_ext,
             self.swapchain,
             image_available_semaphore,
         )?;
-        ensure!(!suboptimal, "Swapchain needs to be recreated");
 
         let framebuffer = self.framebuffers[i as usize];
 
@@ -178,15 +197,44 @@ impl Renderer {
             &render_finished_semaphore,
             render_finished_fence,
         )?;
-        let suboptimal = cmds::present(
+        cmds::present(
             &self.swapchain_ext,
             self.queue,
             &self.swapchain,
             i,
             &render_finished_semaphore,
         )?;
-        ensure!(!suboptimal, "Swapchain needs to be recreated");
         Ok(())
+    }
+
+    fn recreate_framebuffer(&mut self) -> Result<()> {
+        let (swapchain, images, image_views, format, dims) = init::create_swapchain(
+            &self.surface_ext,
+            &self.swapchain_ext,
+            self.surface,
+            self.pd,
+            &self.dev,
+        )
+        .context("Failed to create swapchain")?;
+        let num_images = images.len() as u32;
+
+        let (render_pass, pipeline) = pipeline::create_graphics_pipeline(
+            &self.dev,
+            format,
+            dims,
+            self.vert_stage,
+            self.frag_stage,
+        )
+        .context("Failed to create graphics pipeline")?;
+
+        let framebuffers = image_views
+            .iter()
+            .map(|image_view| init::create_framebuffer(&self.dev, image_view, dims, render_pass))
+            .collect::<Result<Vec<_>>>()?;
+
+        let command_pool = cmds::create_command_pool(&self.dev, self.qf)?;
+        let command_buffers = cmds::create_command_buffers(&self.dev, command_pool, num_images)?;
+        unimplemented!()
     }
 
     pub fn poll_events<'a>(&'a mut self) -> impl 'a + Iterator<Item = (f64, WindowEvent)> {

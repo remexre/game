@@ -49,7 +49,7 @@ lazy_static! {
 pub fn create_window(name: &str) -> Result<(Glfw, Window, Receiver<(f64, WindowEvent)>)> {
     let mut glfw = glfw::init(glfw::FAIL_ON_ERRORS)?;
     glfw.window_hint(WindowHint::ClientApi(ClientApiHint::NoApi));
-    glfw.window_hint(WindowHint::Resizable(false));
+    // glfw.window_hint(WindowHint::Resizable(false));
     let (mut window, events) = glfw
         .create_window(800, 600, name, WindowMode::Windowed)
         .ok_or_else(|| anyhow!("Failed to create window"))?;
