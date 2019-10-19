@@ -1,3 +1,5 @@
+//! A Vulkan-based renderer.
+
 #[macro_use]
 pub mod utils;
 

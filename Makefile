@@ -11,7 +11,7 @@ clean:
 	test ! -f assets/textures/ter-u32n.png || rm -r assets/textures/ter-u32n.png
 	test ! -d out || rm -r out
 	test ! -d preassets/target || rm -r preassets/target
-	test ! -d renderer/target || rm -r renderer/target
+	test ! -d nova/target || rm -r nova/target
 	test ! -d tmp || rm -r tmp
 debug:
 	sbcl --quit \
@@ -43,17 +43,17 @@ out/game:
 		--eval "(cffi:close-foreign-library '%glfw::glfw)" \
 		--eval "(trace sb-ext:save-lisp-and-die)" \
 		--eval "(asdf:make :game)"
-out/game.tgz: assets out/game out/librenderer.so
+out/game.tgz: assets out/game out/libnova.so
 	@mkdir -p $(dir $@)
 	tar czvf $@ $^
-out/librenderer.so:
+out/libnova.so:
 	@mkdir -p $(dir $@)
-	cd renderer && cargo build --release
-	cp renderer/target/release/librenderer.so $@
-out/renderer-c-example: out/librenderer.so renderer/example.c
+	cd nova && cargo build --release
+	cp nova/target/release/libnova.so $@
+out/nova-c-example: assets out/libnova.so nova/example.c
 	@mkdir -p $(dir $@)
-	gcc -o $@ -Wall -Wextra -Werror -O2 renderer/example.c -lrenderer -Lout -Wl,-rpath=$(abspath out):.
-.PHONY: assets out/game out/librenderer.so
+	gcc -o $@ -Wall -Wextra -Werror -O2 nova/example.c -lnova -Lout -Wl,-rpath=$(abspath out):.
+.PHONY: assets out/game out/libnova.so
 
 tmp/preassets:
 	@mkdir -p $(dir $@)

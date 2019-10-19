@@ -2,26 +2,7 @@
 //!
 //! ## Example
 //!
-//! ```c
-//! struct Renderer;
-//! char* renderer_init(const char* app_name, const char* vert_path, const char* frag_path,
-//!     Renderer** out_renderer);
-//! void renderer_free(Renderer* renderer);
-//! void renderer_free_error(char* error);
-//!
-//! int main(void) {
-//!     void* renderer = NULL;
-//!     char* error = renderer_init("Vulkan Example", "./vert.spv", "./frag.spv", &renderer);
-//!     if(error) {
-//!         fprintf(stderr, "failed to init renderer: %s", error);
-//!         renderer_free_error(error);
-//!         exit(1);
-//!     }
-//!
-//!     renderer_free(renderer);
-//!     return 0;
-//! }
-//! ```
+//! See `example.c`
 
 use crate::{draw::DrawTarget, Renderer};
 use anyhow::Result;
@@ -41,7 +22,7 @@ use std::{
 /// Treat this struct as opaque: its size and contents may change.
 #[derive(Derivative)]
 #[derivative(Debug)]
-pub struct RendererFFI {
+pub struct Nova {
     renderer: Renderer,
     #[derivative(Debug = "ignore")]
     on_draw: Box<dyn for<'a> FnMut(DrawTarget<'a>)>,
@@ -52,15 +33,15 @@ pub struct RendererFFI {
 fn catch<F: FnOnce() -> Result<()>>(body: F) -> *mut c_char {
     match catch_unwind(AssertUnwindSafe(body)) {
         Ok(Ok(())) => ptr::null_mut(),
-        Ok(Err(err)) => renderer_alloc_error(format!("{:?}", err)),
+        Ok(Err(err)) => nova_alloc_error(format!("{:?}", err)),
         Err(panic) => {
             // TODO: Process the panic in some way.
-            renderer_alloc_error(format!("Uncaught panic: {:?}", panic))
+            nova_alloc_error(format!("Uncaught panic: {:?}", panic))
         }
     }
 }
 
-/// Attempts to set up a renderer.
+/// Attempts to set up Nova.
 ///
 /// ## Arguments
 ///
@@ -68,73 +49,73 @@ fn catch<F: FnOnce() -> Result<()>>(body: F) -> *mut c_char {
 /// and will not be referenced after this function returns (i.e., it's fine for it to be a
 /// stack-allocated string or a string constant).
 ///
-/// `vert_path`: The path to a SPIR-V vertex shader which will initially be used by the renderer.
-/// The string must be null-terminated string, and will not be mutated, nor will it be referenced
-/// after this function returns (i.e., it's fine for it to be a stack-allocated string or a string
+/// `vert_path`: The path to a SPIR-V vertex shader which will initially be used by Nova. The
+/// string must be null-terminated string, and will not be mutated, nor will it be referenced after
+/// this function returns (i.e., it's fine for it to be a stack-allocated string or a string
 /// constant).
 ///
-/// `frag_path`: The path to a SPIR-V fragment shader which will initially be used by the renderer.
-/// The string must be null-terminated string, and will not be mutated, nor will it be referenced
-/// after this function returns (i.e., it's fine for it to be a stack-allocated string or a string
+/// `frag_path`: The path to a SPIR-V fragment shader which will initially be used by Nova. The
+/// string must be null-terminated string, and will not be mutated, nor will it be referenced after
+/// this function returns (i.e., it's fine for it to be a stack-allocated string or a string
 /// constant).
 ///
-/// `out_renderer`: A non-null pointer to the location where the renderer pointer will be stored.
-/// If the renderer is successfully initialized, a pointer to it will be stored here. If an error
-/// occurs, the pointer will not be written to. This pointer will not be referenced after this
-/// function returns (i.e., it's fine for it to be a stack location).
+/// `out_nova`: A non-null pointer to the location where the Nova pointer will be stored. If Nova
+/// is successfully initialized, a pointer to it will be stored here. If an error occurs, the
+/// pointer will not be written to. This pointer will not be referenced after this function returns
+/// (i.e., it's fine for it to be a stack location).
 ///
 /// ## Return Value
 ///
 /// On success, returns `NULL`. On error, returns a non-null pointer to a null-terminated string
-/// describing the error. This string must be freed with `renderer_free_error`.
+/// describing the error. This string must be freed with `nova_free_error`.
 #[no_mangle]
-pub unsafe extern "C" fn renderer_init(
+pub unsafe extern "C" fn nova_init(
     app_name: *const c_char,
     vert_path: *const c_char,
     frag_path: *const c_char,
-    out_renderer: *mut *mut RendererFFI,
+    out_nova: *mut *mut Nova,
 ) -> *mut c_char {
     let app_name = CStr::from_ptr(app_name).to_string_lossy();
     let vert_path = CStr::from_ptr(vert_path).to_string_lossy();
     let frag_path = CStr::from_ptr(frag_path).to_string_lossy();
 
     catch(|| {
-        let r = RendererFFI {
+        let r = Nova {
             renderer: Renderer::new(&app_name, &*vert_path, &*frag_path)?,
             on_draw: Box::new(|_| {}),
             on_event: Box::new(|t, ev| debug!("At {}, got {:?}", t, ev)),
         };
         let r = Box::into_raw(Box::new(r));
-        ptr::write(out_renderer, r);
+        ptr::write(out_nova, r);
         Ok(())
     })
 }
 
-/// Frees a renderer.
+/// Frees a Nova instance.
 ///
 /// ## Arguments
 ///
-/// `renderer`: The renderer pointer, as obtained from `renderer_init`. This pointer must not be
-/// used after calling this function.
+/// `nova`: The Nova pointer, as obtained from `nova_init`. This pointer must not be used after
+/// calling this function.
 ///
 /// ## Return Value
 ///
 /// On success, returns `NULL`. On error, returns a non-null pointer to a null-terminated string
-/// describing the error. This string must be freed with `renderer_free_error`.
+/// describing the error. This string must be freed with `nova_free_error`.
 #[no_mangle]
-pub unsafe extern "C" fn renderer_free(renderer: *mut RendererFFI) -> *mut c_char {
+pub unsafe extern "C" fn nova_free(nova: *mut Nova) -> *mut c_char {
     catch(|| {
-        drop(Box::from_raw(renderer));
+        drop(Box::from_raw(nova));
         Ok(())
     })
 }
 
-fn renderer_alloc_error(s: String) -> *mut c_char {
+fn nova_alloc_error(s: String) -> *mut c_char {
     match CString::new(s) {
         Ok(cstr) => cstr.into_raw(),
         Err(err) => {
             // We must not panic at this point.
-            eprintln!("Failed to create CString in renderer_alloc_error: {}", err);
+            eprintln!("Failed to create CString in nova_alloc_error: {}", err);
             eprintln!("This ought to be impossible...");
             abort();
         }
@@ -148,7 +129,7 @@ fn renderer_alloc_error(s: String) -> *mut c_char {
 /// `error`: A pointer returned from another function in this library as an error. This pointer
 /// must not be used after calling this function.
 #[no_mangle]
-pub unsafe extern "C" fn renderer_free_error(error: *mut c_char) {
+pub unsafe extern "C" fn nova_free_error(error: *mut c_char) {
     if !error.is_null() {
         drop(CString::from_raw(error))
     }
@@ -156,13 +137,13 @@ pub unsafe extern "C" fn renderer_free_error(error: *mut c_char) {
 
 /// Polls and processes events, then starts a draw operation.
 ///
-/// Calls the function registered by `renderer_on_event` with each event.
+/// Calls the function registered by `nova_on_event` with each event.
 ///
-/// Next, calls the function registered by `renderer_on_draw`.
+/// Next, calls the function registered by `nova_on_draw`.
 ///
 /// ## Arguments
 ///
-/// `renderer`: The renderer pointer, as obtained from `renderer_init`.
+/// `nova`: The Nova pointer, as obtained from `nova_init`.
 ///
 /// `out_should_close`: A non-null pointer to the location where the close flag will be stored. If
 /// an error occurs, the pointer will not be written to. Otherwise, if the window should be closed,
@@ -172,35 +153,27 @@ pub unsafe extern "C" fn renderer_free_error(error: *mut c_char) {
 /// ## Return Value
 ///
 /// On success, returns `NULL`. On error, returns a non-null pointer to a null-terminated string
-/// describing the error. This string must be freed with `renderer_free_error`.
+/// describing the error. This string must be freed with `nova_free_error`.
 #[no_mangle]
-pub unsafe extern "C" fn renderer_loop(
-    renderer: *mut RendererFFI,
-    out_should_close: *mut c_int,
-) -> *mut c_char {
+pub unsafe extern "C" fn nova_loop(nova: *mut Nova, out_should_close: *mut c_int) -> *mut c_char {
     catch(|| {
-        let renderer = renderer.as_mut().unwrap();
+        let nova = nova.as_mut().unwrap();
 
-        let on_event = &mut renderer.on_event;
-        let on_draw = &mut renderer.on_draw;
+        let on_event = &mut nova.on_event;
+        let on_draw = &mut nova.on_draw;
 
-        renderer
-            .renderer
+        nova.renderer
             .poll_events()
             .for_each(|(t, ev)| (on_event)(t, ev));
 
-        renderer.renderer.draw(|target| {
+        nova.renderer.draw(|target| {
             (on_draw)(target);
             Ok(())
         })?;
 
         ptr::write(
             out_should_close,
-            if renderer.renderer.should_close() {
-                1
-            } else {
-                0
-            },
+            if nova.renderer.should_close() { 1 } else { 0 },
         );
         Ok(())
     })

@@ -1,5 +1,5 @@
 use anyhow::{Context, Result};
-use renderer::Renderer;
+use nova::Renderer;
 
 fn main() -> Result<()> {
     stderrlog::new().verbosity(3).init().unwrap();
