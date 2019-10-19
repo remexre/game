@@ -10,8 +10,7 @@ all:
 clean:
 	test ! -d assets/shaders || rm -r assets/shaders
 	test ! -f assets/textures/ter-u32n.png || rm -r assets/textures/ter-u32n.png
-	test ! -f game || rm game
-	test ! -f game.tgz || rm game.tgz
+	test ! -d out || rm -r out
 	test ! -d preassets/target || rm -r preassets/target
 	test ! -d renderer/target || rm -r renderer/target
 	test ! -d tmp || rm -r tmp
@@ -22,11 +21,9 @@ debug:
 		--eval "(game::enable-loop-stage :debug)" \
 		--eval "(game:main)" \
 		"$(SCENE)"
-preprocess-assets: preassets/target/debug/preassets
-	cd preassets && cargo run
-preassets/target/debug/preassets:
-	cd preassets && cargo build
-release: preprocess-assets renderer/target/release/librenderer.so
+preprocess-assets: tmp/preassets
+	$<
+release: preprocess-assets out/librenderer.so
 	sbcl --non-interactive \
 		--eval "(push (uiop:getcwd) asdf:*central-registry*)" \
 		--eval "(ql:quickload :game :verbose t)" \
@@ -34,17 +31,31 @@ release: preprocess-assets renderer/target/release/librenderer.so
 		--eval "(trace sb-ext:save-lisp-and-die)" \
 		--eval "(asdf:make :game)"
 	tar czvf game.tgz game assets
-renderer/target/release/librenderer.so:
-	cd renderer && cargo build --release
-repl:
+repl: preprocess-assets
 	sbcl \
 		--eval "(push (uiop:getcwd) asdf:*central-registry*)" \
 		--eval "(ql:quickload :game :verbose t)" \
 		"$(SCENE)"
-run:
+run: preprocess-assets
 	sbcl --non-interactive \
 		--eval "(push (uiop:getcwd) asdf:*central-registry*)" \
 		--eval "(ql:quickload :game :verbose t)" \
 		--eval "(game:main)" \
 		"$(SCENE)"
+
 .PHONY: all debug preprocess-assets release repl
+
+out/librenderer.so:
+	@mkdir -p $(dir $@)
+	cd renderer && cargo build --release
+	cp renderer/target/release/librenderer.so $@
+out/renderer-c-example: out/librenderer.so renderer/example.c
+	@mkdir -p $(dir $@)
+	gcc -o $@ -Wall -Wextra -Werror -O2 renderer/example.c -lrenderer -Lout -Wl,-rpath=$(abspath out):.
+.PHONY: out/librenderer.so
+
+tmp/preassets:
+	@mkdir -p $(dir $@)
+	cd preassets && cargo build
+	cp preassets/target/debug/preassets $@
+.PHONY: tmp/preassets

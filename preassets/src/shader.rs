@@ -2,9 +2,9 @@ use shaderc::{Compiler, ShaderKind};
 use std::fs::{create_dir_all, read_to_string, write};
 
 pub fn glsl(name: &str) {
-    create_dir_all("../assets/shaders").expect("Couldn't create shaders directory");
+    create_dir_all("assets/shaders").expect("Couldn't create shaders directory");
 
-    let path = format!("shaders/{}", name);
+    let path = format!("preassets/shaders/{}", name);
     println!("Preprocessing shader {:?}...", path);
 
     let mut compiler = Compiler::new().expect("Couldn't start shader compiler");
@@ -15,7 +15,7 @@ pub fn glsl(name: &str) {
             _ => panic!("Failed to compile shader: {}", err),
         });
     write(
-        format!("../assets/shaders/{}.spv", name),
+        format!("assets/shaders/{}.spv", name),
         binary.as_binary_u8(),
     )
     .expect("Failed to write compiled shader");

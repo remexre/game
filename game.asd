@@ -3,7 +3,7 @@
   :license "Apache-2.0/MIT"
   :serial t
   :build-operation program-op
-  :build-pathname "game"
+  :build-pathname "out/game"
   :entry-point "game:main"
   :depends-on ("alexandria" "cl-glfw3" "cl-json" "cl-opengl" "cl-wadler-pprint"
                "ieee-floats" "iterate" "parse-float" "png-read" "swank"

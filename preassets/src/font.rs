@@ -2,9 +2,9 @@ use image::{ImageBuffer, Luma};
 use std::fs::create_dir_all;
 
 pub fn bdf(name: &str) {
-    create_dir_all("../assets/textures").expect("Couldn't create textures directory");
+    create_dir_all("assets/textures").expect("Couldn't create textures directory");
 
-    let path = format!("fonts/{}.bdf", name);
+    let path = format!("preassets/fonts/{}.bdf", name);
     println!("Preprocessing font {:?}...", path);
 
     let bdf = bdf::open(path).expect("Couldn't load font");
@@ -28,6 +28,6 @@ pub fn bdf(name: &str) {
     }
 
     texture
-        .save(format!("../assets/textures/{}.png", name))
+        .save(format!("assets/textures/{}.png", name))
         .expect("Couldn't write texture");
 }

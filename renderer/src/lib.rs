@@ -157,8 +157,8 @@ impl Renderer {
         })
     }
 
-    pub fn draw<F: for<'a> FnOnce(DrawTarget<'a>) -> Result<()>>(&mut self, f: F) -> Result<()> {
-        let recreate = match self.draw_inner(f) {
+    pub fn draw<F: for<'a> FnOnce(DrawTarget<'a>) -> Result<()>>(&mut self, body: F) -> Result<()> {
+        let recreate = match self.draw_inner(body) {
             Ok(()) => false,
             Err(ref err) if err.downcast_ref() == Some(&VkResult::ERROR_OUT_OF_DATE_KHR) => true,
             Err(err) => return Err(err),
@@ -170,7 +170,10 @@ impl Renderer {
         Ok(())
     }
 
-    fn draw_inner<'a, F: FnOnce(DrawTarget<'a>) -> Result<()>>(&'a mut self, f: F) -> Result<()> {
+    fn draw_inner<'a, F: FnOnce(DrawTarget<'a>) -> Result<()>>(
+        &'a mut self,
+        body: F,
+    ) -> Result<()> {
         let image_available_semaphore = self.image_available_semaphores[self.frame_num];
         let render_finished_semaphore = self.render_finished_semaphores[self.frame_num];
         let render_finished_fence = self.render_finished_fences[self.frame_num];
@@ -195,7 +198,7 @@ impl Renderer {
         );
         cmds::bind_pipeline(&self.dev, command_buffer, self.pipeline);
 
-        f(DrawTarget {
+        body(DrawTarget {
             dev: &self.dev,
             command_buffer: command_buffer,
         })?;
