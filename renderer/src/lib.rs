@@ -4,8 +4,8 @@ use ash::{
     version::DeviceV1_0,
     vk::{
         CommandBuffer, CommandPool, Extent2D, Fence, Format, Framebuffer, Image, ImageView,
-        PhysicalDevice, Pipeline, Queue, QueueFamily, RenderPass, Result as VkResult, Semaphore,
-        ShaderStageFlags, SurfaceKHR, SwapchainKHR,
+        PhysicalDevice, Pipeline, PipelineShaderStageCreateInfo, Queue, RenderPass,
+        Result as VkResult, Semaphore, ShaderStageFlags, SurfaceKHR, SwapchainKHR,
     },
     Device, Entry, Instance,
 };
@@ -40,13 +40,13 @@ pub struct Renderer {
     #[derivative(Debug = "ignore")]
     surface_ext: Surface,
     pd: PhysicalDevice,
-    qf: QueueFamily,
+    qf: u32,
     #[derivative(Debug = "ignore")]
     dev: Device,
     queue: Queue,
     has_rtx: bool,
-    vert_stage: (),
-    frag_stage: (),
+    vert_stage: PipelineShaderStageCreateInfo,
+    frag_stage: PipelineShaderStageCreateInfo,
     #[derivative(Debug = "ignore")]
     swapchain_ext: Swapchain,
     swapchain: SwapchainKHR,
@@ -234,7 +234,18 @@ impl Renderer {
 
         let command_pool = cmds::create_command_pool(&self.dev, self.qf)?;
         let command_buffers = cmds::create_command_buffers(&self.dev, command_pool, num_images)?;
-        unimplemented!()
+
+        self.swapchain = swapchain;
+        self.images = images;
+        self.image_views = image_views;
+        self.format = format;
+        self.dims = dims;
+        self.render_pass = render_pass;
+        self.pipeline = pipeline;
+        self.framebuffers = framebuffers;
+        self.command_pool = command_pool;
+        self.command_buffers = command_buffers;
+        Ok(())
     }
 
     pub fn poll_events<'a>(&'a mut self) -> impl 'a + Iterator<Item = (f64, WindowEvent)> {
