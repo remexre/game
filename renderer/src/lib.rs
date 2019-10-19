@@ -3,8 +3,8 @@ use ash::{
     extensions::khr::{Surface, Swapchain},
     version::DeviceV1_0,
     vk::{
-        CommandBuffer, CommandPool, Extent2D, Format, Framebuffer, Image, ImageView, Pipeline,
-        Queue, RenderPass, Semaphore, ShaderStageFlags, SurfaceKHR, SwapchainKHR,
+        CommandBuffer, CommandPool, Extent2D, Fence, Format, Framebuffer, Image, ImageView,
+        Pipeline, Queue, RenderPass, Semaphore, ShaderStageFlags, SurfaceKHR, SwapchainKHR,
     },
     Device, Entry, Instance,
 };
@@ -54,8 +54,9 @@ pub struct Renderer {
     pipeline: Pipeline,
     command_pool: CommandPool,
     command_buffers: Vec<CommandBuffer>,
-    image_available: Semaphore,
-    render_finished: Semaphore,
+    image_available_semaphore: Semaphore,
+    render_finished_semaphore: Semaphore,
+    render_finished_fence: Fence,
 }
 
 impl Renderer {
@@ -96,14 +97,18 @@ impl Renderer {
             pipeline::create_graphics_pipeline(&dev, format, dims, vert_stage, frag_stage)
                 .context("Failed to create graphics pipeline")?;
 
-        let framebuffers = unimplemented!();
+        let framebuffers = image_views
+            .iter()
+            .map(|image_view| init::create_framebuffer(&dev, image_view, dims, render_pass))
+            .collect::<Result<Vec<_>>>()?;
 
         let command_pool = cmds::create_command_pool(&dev, qf)?;
         let command_buffers =
             cmds::create_command_buffers(&dev, command_pool, images.len() as u32)?;
 
-        let image_available = sync::create_semaphore(&dev)?;
-        let render_finished = sync::create_semaphore(&dev)?;
+        let image_available_semaphore = sync::create_semaphore(&dev)?;
+        let render_finished_semaphore = sync::create_semaphore(&dev)?;
+        let render_finished_fence = sync::create_fence(&dev, true)?;
 
         Ok(Renderer {
             glfw,
@@ -127,20 +132,22 @@ impl Renderer {
             framebuffers,
             command_pool,
             command_buffers,
-            image_available,
-            render_finished,
+            image_available_semaphore,
+            render_finished_semaphore,
+            render_finished_fence,
         })
     }
 
     pub fn draw<F: FnOnce() -> Result<()>>(&self, f: F) -> Result<()> {
-        let (i, suboptimal) =
-            cmds::draw_start(&self.swapchain_ext, self.swapchain, self.image_available)?;
+        let (i, suboptimal) = cmds::draw_start(
+            &self.swapchain_ext,
+            self.swapchain,
+            self.image_available_semaphore,
+        )?;
         ensure!(!suboptimal, "Swapchain needs to be recreated");
-        let image = self.images[i as usize];
-        let image_view = self.image_views[i as usize];
         let framebuffer = self.framebuffers[i as usize];
         let command_buffer = self.command_buffers[i as usize];
-        cmds::begin_command_buffer(&self.dev, command_buffer)?;
+        cmds::begin_command_buffer(&self.dev, command_buffer, &self.render_finished_fence)?;
         cmds::begin_render_pass(
             &self.dev,
             command_buffer,
@@ -148,15 +155,28 @@ impl Renderer {
             framebuffer,
             self.dims,
         );
+        cmds::bind_pipeline(&self.dev, command_buffer, self.pipeline);
+
         // TODO Call f
+
         cmds::end_render_pass(&self.dev, command_buffer);
+        cmds::end_command_buffer(&self.dev, command_buffer)?;
         cmds::submit_command_buffer(
             &self.dev,
             self.queue,
             &command_buffer,
-            &self.image_available,
-            &self.render_finished,
+            &self.image_available_semaphore,
+            &self.render_finished_semaphore,
+            self.render_finished_fence,
         )?;
+        let suboptimal = cmds::present(
+            &self.swapchain_ext,
+            self.queue,
+            &self.swapchain,
+            i,
+            &self.render_finished_semaphore,
+        )?;
+        ensure!(!suboptimal, "Swapchain needs to be recreated");
         Ok(())
     }
 
