@@ -1,4 +1,5 @@
 use anyhow::Result;
+use log::info;
 use nova::{lye::Instance, Renderer};
 
 fn main() -> Result<()> {
@@ -15,6 +16,12 @@ fn run() -> Result<()> {
         "assets/shaders/tutorial.vert.spv",
         "assets/shaders/tutorial.frag.spv",
     )?;
+
+    while !renderer.window().should_close() {
+        for ev in renderer.window().poll_events() {
+            info!("{:?}", ev);
+        }
+    }
 
     Ok(())
 }

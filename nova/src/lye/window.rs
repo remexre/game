@@ -13,13 +13,19 @@ use glfw::{
 use std::{
     ffi::CString,
     mem::MaybeUninit,
-    sync::{mpsc::Receiver, Arc},
+    sync::{mpsc::Receiver, Arc, Mutex},
 };
 
 /// A GLFW-based window.
 #[derive(Derivative)]
-#[derivative(Debug)]
+#[derivative(Debug = "transparent")]
 pub struct Window {
+    inner: Mutex<WindowInner>,
+}
+
+#[derive(Derivative)]
+#[derivative(Debug)]
+pub struct WindowInner {
     #[derivative(Debug = "ignore")]
     glfw: Glfw,
     #[derivative(Debug = "ignore")]
@@ -40,34 +46,40 @@ impl Window {
         window.set_key_polling(true);
         window.set_size_polling(true);
         Ok(Arc::new(Window {
-            glfw,
-            window,
-            events,
-            resized: false,
+            inner: Mutex::new(WindowInner {
+                glfw,
+                window,
+                events,
+                resized: false,
+            }),
         }))
     }
 
     /// Polls for events.
-    pub fn poll_events<'a>(&'a mut self) -> impl 'a + Iterator<Item = (f64, WindowEvent)> {
-        self.glfw.poll_events();
-        let resized = &mut self.resized;
-        self.events.try_iter().filter(move |(_, ev)| match ev {
-            WindowEvent::Size(_, _) => {
-                *resized = true;
-                false
-            }
-            _ => true,
-        })
+    pub fn poll_events(&self) -> Vec<(f64, WindowEvent)> {
+        let mut inner = self.inner.lock().unwrap();
+        inner.glfw.poll_events();
+        let events = inner.events.try_iter().collect::<Vec<_>>();
+        events
+            .into_iter()
+            .filter(move |(_, ev)| match ev {
+                WindowEvent::Size(_, _) => {
+                    inner.resized = true;
+                    false
+                }
+                _ => true,
+            })
+            .collect()
     }
 
     /// Sets the title of the window.
-    pub fn set_title(&mut self, title: &str) {
-        self.window.set_title(title);
+    pub fn set_title(&self, title: &str) {
+        self.inner.lock().unwrap().window.set_title(title);
     }
 
     /// Returns whether the window should close.
     pub fn should_close(&self) -> bool {
-        self.window.should_close()
+        self.inner.lock().unwrap().window.should_close()
     }
 }
 
@@ -78,7 +90,7 @@ impl Window {
         let result = ash::vk::Result::from_raw(unsafe {
             glfwCreateWindowSurface(
                 instance.instance.handle().as_raw() as usize,
-                self.window.window_ptr(),
+                self.inner.lock().unwrap().window.window_ptr(),
                 std::ptr::null(),
                 surface.as_mut_ptr(),
             ) as i32
@@ -94,6 +106,9 @@ impl Window {
     /// Returns Vulkan extensions needed to render to this window.
     pub(crate) fn required_vulkan_extensions(&self) -> Result<Vec<CString>> {
         let exts = self
+            .inner
+            .lock()
+            .unwrap()
             .glfw
             .get_required_instance_extensions()
             .ok_or_else(|| anyhow!("GLFW doesn't support Vulkan"))?;

@@ -201,4 +201,9 @@ impl Renderer {
             Ok(())
         */
     }
+
+    /// Returns a reference to the Window inside the Renderer.
+    pub fn window(&self) -> &Window {
+        &self.window
+    }
 }
