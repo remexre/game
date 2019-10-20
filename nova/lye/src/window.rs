@@ -28,12 +28,29 @@ pub struct Window {
 }
 
 impl Window {
-    /// Creates a new window, not set up for rendering.
+    /// Creates a new window that can be resized arbitrarily.
     pub fn new(name: &str) -> Result<Window> {
         let mut glfw = glfw::init(glfw::FAIL_ON_ERRORS).context("Failed to initialize GLFW")?;
         glfw.window_hint(WindowHint::ClientApi(ClientApiHint::NoApi));
         let (mut window, events) = glfw
             .create_window(800, 600, name, WindowMode::Windowed)
+            .ok_or_else(|| anyhow!("Failed to create window"))?;
+        window.set_key_polling(true);
+        window.set_size_polling(true);
+        Ok(Window {
+            glfw,
+            window,
+            events,
+        })
+    }
+
+    /// Creates a new window that is fixed to the given size.
+    pub fn new_fixed_size(name: &str, width: u32, height: u32) -> Result<Window> {
+        let mut glfw = glfw::init(glfw::FAIL_ON_ERRORS).context("Failed to initialize GLFW")?;
+        glfw.window_hint(WindowHint::ClientApi(ClientApiHint::NoApi));
+        glfw.window_hint(WindowHint::Resizable(false));
+        let (mut window, events) = glfw
+            .create_window(width, height, name, WindowMode::Windowed)
             .ok_or_else(|| anyhow!("Failed to create window"))?;
         window.set_key_polling(true);
         window.set_size_polling(true);

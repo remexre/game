@@ -1,4 +1,5 @@
 use anyhow::Result;
+use log::info;
 use lye::*;
 
 fn main() -> Result<()> {
@@ -9,7 +10,7 @@ fn main() -> Result<()> {
 }
 
 fn run() -> Result<()> {
-    let window = Window::new("Vulkan Example")?;
+    let mut window = Window::new_fixed_size("Vulkan Example", 800, 600)?;
     let instance = Instance::new(&window, true)?;
     let device = Device::new(&window, instance)?;
 
@@ -25,7 +26,16 @@ fn run() -> Result<()> {
         ShaderStageFlags::FRAGMENT,
     )?;
     let pipeline = ForwardPipeline::new(swapchain, vert, frag)?;
-    let command_manager = CommandManager::new(pipeline)?;
+    let mut command_manager = CommandManager::new(pipeline)?;
+
+    while !window.should_close() {
+        // This doesn't do resizing.
+        command_manager.flip()?;
+
+        for ev in window.poll_events() {
+            info!("{:?}", ev);
+        }
+    }
 
     Ok(())
 }
