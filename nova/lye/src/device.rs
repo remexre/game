@@ -53,7 +53,7 @@ deref_field!(Device, device: ash::Device);
 
 impl Device {
     /// Creates a Vulkan device for the given instance and window.
-    pub fn new(window: &Arc<Window>, instance: Arc<Instance>) -> Result<Arc<Device>> {
+    pub fn new(window: &Window, instance: Arc<Instance>) -> Result<Arc<Device>> {
         // Create a surface.
         let surface = window
             .create_surface(&instance)

@@ -17,7 +17,7 @@ use std::{path::Path, sync::Arc};
 /// Currently, it performs simple forward rendering.
 #[derive(Debug)]
 pub struct Renderer {
-    window: Arc<Window>,
+    window: Window,
     instance: Arc<Instance>,
     device: Arc<Device>,
     command_manager: CommandManager<ForwardPipeline>,
@@ -157,7 +157,7 @@ impl Renderer {
     */
 
     /// Sets the title of the window.
-    pub fn set_title(&self, title: &str) {
+    pub fn set_title(&mut self, title: &str) {
         self.window.set_title(title);
     }
 

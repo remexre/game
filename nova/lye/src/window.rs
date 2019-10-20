@@ -1,5 +1,4 @@
 use crate::Instance;
-use antidote::Mutex;
 use anyhow::{anyhow, Context, Result};
 use ash::{
     prelude::VkResult,
@@ -19,14 +18,8 @@ use std::{
 
 /// A GLFW-based window.
 #[derive(Derivative)]
-#[derivative(Debug = "transparent")]
-pub struct Window {
-    inner: Mutex<WindowInner>,
-}
-
-#[derive(Derivative)]
 #[derivative(Debug)]
-pub struct WindowInner {
+pub struct Window {
     #[derivative(Debug = "ignore")]
     glfw: Glfw,
     #[derivative(Debug = "ignore")]
@@ -36,40 +29,35 @@ pub struct WindowInner {
 
 impl Window {
     /// Creates a new window, not set up for rendering.
-    pub fn new(name: &str) -> Result<Arc<Window>> {
+    pub fn new(name: &str) -> Result<Window> {
         let mut glfw = glfw::init(glfw::FAIL_ON_ERRORS).context("Failed to initialize GLFW")?;
         glfw.window_hint(WindowHint::ClientApi(ClientApiHint::NoApi));
-        // glfw.window_hint(WindowHint::Resizable(false));
         let (mut window, events) = glfw
             .create_window(800, 600, name, WindowMode::Windowed)
             .ok_or_else(|| anyhow!("Failed to create window"))?;
         window.set_key_polling(true);
         window.set_size_polling(true);
-        Ok(Arc::new(Window {
-            inner: Mutex::new(WindowInner {
-                glfw,
-                window,
-                events,
-            }),
-        }))
+        Ok(Window {
+            glfw,
+            window,
+            events,
+        })
     }
 
     /// Polls for events.
-    pub fn poll_events(&self) -> Vec<(f64, WindowEvent)> {
-        let mut inner = self.inner.lock();
-        inner.glfw.poll_events();
-        let events = inner.events.try_iter().collect::<Vec<_>>();
-        events.into_iter().collect()
+    pub fn poll_events(&mut self) -> Vec<(f64, WindowEvent)> {
+        self.glfw.poll_events();
+        self.events.try_iter().collect()
     }
 
     /// Sets the title of the window.
-    pub fn set_title(&self, title: &str) {
-        self.inner.lock().window.set_title(title);
+    pub fn set_title(&mut self, title: &str) {
+        self.window.set_title(title);
     }
 
     /// Returns whether the window should close.
     pub fn should_close(&self) -> bool {
-        self.inner.lock().window.should_close()
+        self.window.should_close()
     }
 }
 
@@ -80,7 +68,7 @@ impl Window {
         let result = ash::vk::Result::from_raw(unsafe {
             glfwCreateWindowSurface(
                 instance.handle().as_raw() as usize,
-                self.inner.lock().window.window_ptr(),
+                self.window.window_ptr(),
                 std::ptr::null(),
                 surface.as_mut_ptr(),
             ) as i32
@@ -96,8 +84,6 @@ impl Window {
     /// Returns Vulkan extensions needed to render to this window.
     pub(crate) fn required_vulkan_extensions(&self) -> Result<Vec<CString>> {
         let exts = self
-            .inner
-            .lock()
             .glfw
             .get_required_instance_extensions()
             .ok_or_else(|| anyhow!("GLFW doesn't support Vulkan"))?;

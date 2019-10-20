@@ -49,7 +49,7 @@ deref_field!(Instance, instance: ash::Instance);
 
 impl Instance {
     /// Creates a new `Instance`.
-    pub fn new(window: &Arc<Window>, debug: bool) -> Result<Arc<Instance>> {
+    pub fn new(window: &Window, debug: bool) -> Result<Arc<Instance>> {
         // Get all the Vulkan pointers.
         let entry = Entry::new().context("Failed to get a Vulkan entrypoint")?;
 
