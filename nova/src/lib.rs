@@ -1,4 +1,6 @@
 //! A Vulkan-based renderer.
+//!
+//! See `examples/lye.rs` for an example of usage.
 
 #[macro_use]
 mod utils;
@@ -42,28 +44,19 @@ use std::sync::mpsc::Receiver;
 
 /// A convenient renderer object wrapping up `lye`, and the interface exposed to FFI.
 ///
-/// This renderer performs deferred rendering, with optional raytraced shadows.
+/// Eventually, this renderer will perform deferred rendering, with optional raytraced reflections
+/// and shadows.
+///
+/// Currently, it performs simple forward rendering, but with slightly less driver overhead.
 #[derive(Debug)]
 pub struct Renderer {
     window: Arc<Window>,
     instance: Arc<Instance>,
     device: Arc<Device>,
 
-    vert_shader: Arc<Shader>,
-    frag_shader: Arc<Shader>,
+    pipeline: ForwardPipeline,
     /*
-    vert_stage: PipelineShaderStageCreateInfo,
-    frag_stage: PipelineShaderStageCreateInfo,
-    #[derivative(Debug = "ignore")]
-    swapchain_ext: Swapchain,
-    swapchain: SwapchainKHR,
-    images: Vec<Image>,
-    image_views: Vec<ImageView>,
-    format: Format,
-    dims: Extent2D,
-    render_pass: RenderPass,
     framebuffers: Vec<Framebuffer>,
-    pipeline: Pipeline,
     command_pool: CommandPool,
     command_buffers: Vec<CommandBuffer>,
     frame_num: usize,
@@ -86,22 +79,14 @@ impl Renderer {
         let instance = Instance::new(&window, debug).context("Failed to create Instance")?;
         let device = Device::new(&window, instance.clone()).context("Failed to create Device")?;
 
-        let vert_shader = Shader::load_from_path(device.clone(), vert_path)
+        let swapchain = Swapchain::new(device.clone())?;
+        let vert = Shader::load_from_path(device.clone(), vert_path, ShaderStageFlags::VERTEX)
             .context("Failed to load vertex shader")?;
-        let frag_shader = Shader::load_from_path(device.clone(), frag_path)
+        let frag = Shader::load_from_path(device.clone(), frag_path, ShaderStageFlags::FRAGMENT)
             .context("Failed to load fragment shader")?;
+        let pipeline = ForwardPipeline::new(swapchain, vert, frag)?;
 
         /*
-        let swapchain_ext = Swapchain::new(&instance, &dev);
-        let (swapchain, images, image_views, format, dims) =
-            init::create_swapchain(&surface_ext, &swapchain_ext, surface, pd, &dev)
-                .context("Failed to create swapchain")?;
-        let num_images = images.len() as u32;
-
-        let (render_pass, pipeline) =
-            pipeline::create_graphics_pipeline(&dev, format, dims, vert_stage, frag_stage)
-                .context("Failed to create graphics pipeline")?;
-
         let framebuffers = image_views
             .iter()
             .map(|image_view| init::create_framebuffer(&dev, image_view, dims, render_pass))
@@ -120,17 +105,8 @@ impl Renderer {
             instance,
             device,
 
-            vert_shader,
-            frag_shader,
-            /*
-            swapchain_ext,
-            swapchain,
-            images,
-            image_views,
-            format,
-            dims,
-            render_pass,
             pipeline,
+            /*
             framebuffers,
             command_pool,
             command_buffers,
@@ -208,46 +184,49 @@ impl Renderer {
         )?;
         Ok(())
     }
+    */
 
     fn recreate_framebuffer(&mut self) -> Result<()> {
-        let (swapchain, images, image_views, format, dims) = init::create_swapchain(
-            &self.surface_ext,
-            &self.swapchain_ext,
-            self.surface,
-            self.pd,
-            &self.dev,
-        )
-        .context("Failed to create swapchain")?;
-        let num_images = images.len() as u32;
+        unimplemented!()
+        /*
+            let (swapchain, images, image_views, format, dims) = init::create_swapchain(
+                &self.surface_ext,
+                &self.swapchain_ext,
+                self.surface,
+                self.pd,
+                &self.dev,
+            )
+            .context("Failed to create swapchain")?;
+            let num_images = images.len() as u32;
 
-        let (render_pass, pipeline) = pipeline::create_graphics_pipeline(
-            &self.dev,
-            format,
-            dims,
-            self.vert_stage,
-            self.frag_stage,
-        )
-        .context("Failed to create graphics pipeline")?;
+            let (render_pass, pipeline) = pipeline::create_graphics_pipeline(
+                &self.dev,
+                format,
+                dims,
+                self.vert_stage,
+                self.frag_stage,
+            )
+            .context("Failed to create graphics pipeline")?;
 
-        let framebuffers = image_views
-            .iter()
-            .map(|image_view| init::create_framebuffer(&self.dev, image_view, dims, render_pass))
-            .collect::<Result<Vec<_>>>()?;
+            let framebuffers = image_views
+                .iter()
+                .map(|image_view| init::create_framebuffer(&self.dev, image_view, dims, render_pass))
+                .collect::<Result<Vec<_>>>()?;
 
-        let command_pool = cmds::create_command_pool(&self.dev, self.qf)?;
-        let command_buffers = cmds::create_command_buffers(&self.dev, command_pool, num_images)?;
+            let command_pool = cmds::create_command_pool(&self.dev, self.qf)?;
+            let command_buffers = cmds::create_command_buffers(&self.dev, command_pool, num_images)?;
 
-        self.swapchain = swapchain;
-        self.images = images;
-        self.image_views = image_views;
-        self.format = format;
-        self.dims = dims;
-        self.render_pass = render_pass;
-        self.pipeline = pipeline;
-        self.framebuffers = framebuffers;
-        self.command_pool = command_pool;
-        self.command_buffers = command_buffers;
-        Ok(())
+            self.swapchain = swapchain;
+            self.images = images;
+            self.image_views = image_views;
+            self.format = format;
+            self.dims = dims;
+            self.render_pass = render_pass;
+            self.pipeline = pipeline;
+            self.framebuffers = framebuffers;
+            self.command_pool = command_pool;
+            self.command_buffers = command_buffers;
+            Ok(())
+        */
     }
-    */
 }

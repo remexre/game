@@ -52,3 +52,5 @@ pub fn read_u32s<P: AsRef<Path>>(path: P) -> IoResult<Vec<u32>> {
         }
     }
 }
+
+pub(crate) trait Sealed {}

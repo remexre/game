@@ -9,7 +9,13 @@ use ash::{
 use derivative::Derivative;
 use lazy_static::lazy_static;
 use log::trace;
-use std::{ffi::CString, sync::Arc};
+use std::{
+    ffi::CString,
+    sync::{
+        atomic::{AtomicUsize, Ordering},
+        Arc,
+    },
+};
 
 lazy_static! {
     static ref REQUIRED_EXTS: Vec<CString> = {
@@ -23,10 +29,12 @@ lazy_static! {
             KhrGetPhysicalDeviceProperties2Fn, // for RayTracing
         ]
     };
+
+    static ref INSTANCE_COUNT: AtomicUsize = AtomicUsize::new(0);
 }
 
 /// A Vulkan instance, and some extensions we depend on.
-#[derive(Clone, Derivative)]
+#[derive(Derivative)]
 #[derivative(Debug)]
 pub struct Instance {
     #[derivative(Debug = "ignore")]
@@ -99,11 +107,18 @@ impl Instance {
         // Create the extensions.
         let surface_ext = Surface::new(&entry, &instance);
 
+        INSTANCE_COUNT.fetch_add(1, Ordering::SeqCst);
         Ok(Arc::new(Instance {
             entry,
             instance,
             surface_ext,
         }))
+    }
+
+    /// Asserts that no instances currently exist. This function exists for testing.
+    #[doc(hidden)]
+    pub fn assert_no_instances_exist() {
+        assert_eq!(INSTANCE_COUNT.load(Ordering::SeqCst), 0);
     }
 }
 
@@ -112,5 +127,6 @@ impl Drop for Instance {
         unsafe {
             self.instance.destroy_instance(None);
         }
+        INSTANCE_COUNT.fetch_sub(1, Ordering::SeqCst);
     }
 }

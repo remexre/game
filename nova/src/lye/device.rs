@@ -33,21 +33,23 @@ lazy_static! {
 }
 
 /// A Vulkan device and queue.
-#[derive(Clone, Derivative)]
+#[derive(Derivative)]
 #[derivative(Debug)]
 pub struct Device {
-    surface: SurfaceKHR,
-    pd: PhysicalDevice,
-    qf: u32,
+    pub(crate) surface: SurfaceKHR,
+    pub(crate) pd: PhysicalDevice,
+    pub(crate) qf: u32,
     #[derivative(Debug = "ignore")]
     pub(crate) device: AshDevice,
     pub(crate) queue: Queue,
 
     #[derivative(Debug = "ignore")]
-    raytracing_ext: Option<RayTracing>,
+    pub(crate) raytracing_ext: Option<RayTracing>,
+    #[derivative(Debug = "ignore")]
+    pub(crate) swapchain_ext: Swapchain,
 
     // The instance must outlive us.
-    instance: Arc<Instance>,
+    pub(crate) instance: Arc<Instance>,
 }
 
 deref_field!(Device, device: ash::Device);
@@ -171,6 +173,9 @@ impl Device {
             .context("Failed to create device")?;
         let queue = unsafe { device.get_device_queue(qf, 0) };
 
+        // Create the extensions.
+        let swapchain_ext = Swapchain::new(&instance.instance, &device);
+
         // Snag the raytracing extension, if it exists.
         let raytracing_ext = if exts.iter().any(|e| RayTracing::name() == e.as_ref()) {
             Some(RayTracing::new(&instance.instance, &device))
@@ -186,6 +191,7 @@ impl Device {
             queue,
 
             raytracing_ext,
+            swapchain_ext,
 
             instance,
         }))
