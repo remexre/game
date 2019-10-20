@@ -25,6 +25,7 @@ fn run() -> Result<()> {
         ShaderStageFlags::FRAGMENT,
     )?;
     let pipeline = ForwardPipeline::new(swapchain, vert, frag)?;
+    let command_manager = CommandManager::new(pipeline)?;
 
     Ok(())
 }

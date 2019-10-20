@@ -52,15 +52,8 @@ pub struct Renderer {
     window: Arc<Window>,
     instance: Arc<Instance>,
     device: Arc<Device>,
-
-    vert: Arc<Shader>,
-    frag: Arc<Shader>,
-
-    framebuffers: Framebuffers<ForwardPipeline>,
-
-    command_pool: CommandBuffers,
+    command_manager: CommandManager<ForwardPipeline>,
     /*
-    command_buffers: Vec<CommandBuffer>,
     frame_num: usize,
     image_available_semaphores: Vec<Semaphore>,
     render_finished_semaphores: Vec<Semaphore>,
@@ -87,15 +80,10 @@ impl Renderer {
             .context("Failed to load fragment shader")?;
 
         let swapchain = Swapchain::new(device.clone())?;
-        let pipeline = ForwardPipeline::new(swapchain, vert.clone(), frag.clone())?;
-        let framebuffers = Framebuffers::new(pipeline)?;
-
-        let command_pool =
-            CommandBuffers::new(device.clone(), framebuffers.framebuffers.len() as u32)?;
+        let pipeline = ForwardPipeline::new(swapchain, vert, frag)?;
+        let command_manager = CommandManager::new(pipeline)?;
 
         /*
-        let command_pool = cmds::create_command_pool(&dev, qf)?;
-        let command_buffers = cmds::create_command_buffers(&dev, command_pool, num_images)?;
 
         let image_available_semaphores = sync::create_semaphores(&dev, num_images)?;
         let render_finished_semaphores = sync::create_semaphores(&dev, num_images)?;
@@ -106,15 +94,8 @@ impl Renderer {
             window,
             instance,
             device,
-
-            vert,
-            frag,
-
-            framebuffers,
-
-            command_pool,
+            command_manager,
             /*
-            command_buffers,
             frame_num: 0,
             image_available_semaphores,
             render_finished_semaphores,
@@ -190,21 +171,6 @@ impl Renderer {
         Ok(())
     }
     */
-
-    fn recreate_framebuffer(&mut self) -> Result<()> {
-        let swapchain = Swapchain::new(self.device.clone())?;
-        let pipeline = ForwardPipeline::new(swapchain, self.vert.clone(), self.frag.clone())?;
-        let framebuffers = Framebuffers::new(pipeline)?;
-
-        unimplemented!()
-
-        /*
-            let command_pool = cmds::create_command_pool(&self.dev, self.qf)?;
-            let command_buffers = cmds::create_command_buffers(&self.dev, command_pool, num_images)?;
-
-            Ok(())
-        */
-    }
 
     /// Returns a reference to the Window inside the Renderer.
     pub fn window(&self) -> &Window {

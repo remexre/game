@@ -10,7 +10,6 @@ mod utils;
 
 mod command;
 mod device;
-mod framebuffers;
 mod instance;
 mod pipelines;
 mod shader;
@@ -19,9 +18,8 @@ mod vertex;
 mod window;
 
 pub use ash::vk::ShaderStageFlags;
-pub use command::CommandBuffers;
+pub use command::CommandManager;
 pub use device::Device;
-pub use framebuffers::Framebuffers;
 pub use instance::Instance;
 pub use pipelines::{forward::ForwardPipeline, Pipeline};
 pub use shader::Shader;

@@ -23,19 +23,19 @@ impl Shader {
         device: Arc<Device>,
         path: P,
         stage: ShaderStageFlags,
-    ) -> Result<Arc<Shader>> {
+    ) -> Result<Shader> {
         let src = read_u32s(path)?;
         let create_info = ShaderModuleCreateInfo::builder().code(&src);
         let module = unsafe { device.create_shader_module(&create_info, None)? };
 
         // TODO: Validate shader stage
 
-        Ok(Arc::new(Shader {
+        Ok(Shader {
             module,
             stage,
 
             device,
-        }))
+        })
     }
 
     pub(crate) fn stage_create_info(&self) -> PipelineShaderStageCreateInfo {

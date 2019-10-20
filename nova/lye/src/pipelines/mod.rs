@@ -3,7 +3,9 @@
 pub mod forward;
 
 use crate::Swapchain;
+use anyhow::Result;
 use ash::vk::RenderPass;
+use std::sync::Arc;
 
 // TODO: Set up some shared pipeline cache. Sounds like making a pipeline can be pretty damn
 // expensive. As with anything, profile it first though...
@@ -17,6 +19,9 @@ use ash::vk::RenderPass;
 
 /// A single Vulkan pipeline.
 pub trait Pipeline {
+    /// Recreates the pipeline for a different swapchain.
+    fn recreate(&mut self, swapchain: Arc<Swapchain>) -> Result<()>;
+
     /// Returns the render pass that draws to the framebuffer.
     ///
     /// Unsafe because arbitrary bad things can occur by messing with the render pass object.
