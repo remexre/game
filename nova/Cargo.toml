@@ -16,4 +16,5 @@ derivative = "1.0.3"
 glfw = { version = "0.33.0", features = ["vulkan"] }
 lazy_static = "1.4.0"
 log = "0.4.8"
+memoffset = "0.5.1"
 stderrlog = "0.4.1"

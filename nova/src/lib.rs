@@ -1,20 +1,25 @@
 //! A Vulkan-based renderer.
 
 #[macro_use]
-pub mod utils;
+mod utils;
 
-mod bufs;
-mod cmds;
-mod draw;
-mod imgs;
-mod init;
-mod pipeline;
-mod shaders;
-mod sync;
+// mod bufs;
+// mod cmds;
+// mod draw;
+// mod imgs;
+// mod init;
+// mod pipeline;
+// mod shaders;
+// mod sync;
 
-pub mod ffi;
+// pub mod ffi;
+pub mod lye;
 
-pub use crate::{bufs::VBO, draw::DrawTarget};
+/*
+pub use crate::{
+    bufs::{Vertex, VBO},
+    draw::DrawTarget,
+};
 use anyhow::{Context, Result};
 use ash::{
     extensions::khr::{Surface, Swapchain},
@@ -266,24 +271,9 @@ impl Renderer {
         Ok(())
     }
 
-    pub fn poll_events<'a>(&'a mut self) -> impl 'a + Iterator<Item = (f64, WindowEvent)> {
-        self.glfw.poll_events();
-        let resized = &mut self.resized;
-        self.events.try_iter().filter(move |(_, ev)| match ev {
-            WindowEvent::Size(_, _) => {
-                *resized = true;
-                false
-            }
-            _ => true,
-        })
-    }
-
-    pub fn should_close(&self) -> bool {
-        self.window.should_close()
-    }
-
     pub fn wait_idle(&self) -> Result<()> {
         let () = unsafe { self.dev.device_wait_idle() }?;
         Ok(())
     }
 }
+*/

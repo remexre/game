@@ -1,5 +1,6 @@
 //! The graphics and raytracing pipelines.
 
+use crate::bufs::Vertex;
 use anyhow::Result;
 use ash::{
     version::DeviceV1_0,
@@ -12,11 +13,13 @@ use ash::{
         PipelineMultisampleStateCreateInfo, PipelineRasterizationStateCreateInfo,
         PipelineShaderStageCreateInfo, PipelineVertexInputStateCreateInfo,
         PipelineViewportStateCreateInfo, PolygonMode, PrimitiveTopology, Rect2D, RenderPass,
-        RenderPassCreateInfo, SampleCountFlags, SubpassDescription, Viewport,
+        RenderPassCreateInfo, SampleCountFlags, SubpassDescription,
+        VertexInputAttributeDescription, VertexInputBindingDescription, VertexInputRate, Viewport,
     },
     Device,
 };
-use std::slice;
+use memoffset::offset_of;
+use std::{mem::size_of, slice};
 
 pub fn create_graphics_pipeline(
     dev: &Device,
@@ -27,7 +30,34 @@ pub fn create_graphics_pipeline(
 ) -> Result<(RenderPass, Pipeline)> {
     let shader_stages = vec![vert_stage, frag_stage];
 
-    let vertex_input_state = PipelineVertexInputStateCreateInfo::builder();
+    let vertex_attribute_descriptions = [
+        VertexInputAttributeDescription::builder()
+            .location(0)
+            .binding(0)
+            .format(Format::R32G32B32_SFLOAT)
+            .offset(offset_of!(Vertex, position) as u32)
+            .build(),
+        VertexInputAttributeDescription::builder()
+            .location(1)
+            .binding(0)
+            .format(Format::R32G32_SFLOAT)
+            .offset(offset_of!(Vertex, texcoords) as u32)
+            .build(),
+        VertexInputAttributeDescription::builder()
+            .location(2)
+            .binding(0)
+            .format(Format::R32G32B32_SFLOAT)
+            .offset(offset_of!(Vertex, normal) as u32)
+            .build(),
+    ];
+    let vertex_binding_description = VertexInputBindingDescription::builder()
+        .binding(0)
+        .stride(size_of::<Vertex>() as u32)
+        .input_rate(VertexInputRate::VERTEX);
+
+    let vertex_input_state = PipelineVertexInputStateCreateInfo::builder()
+        .vertex_attribute_descriptions(&vertex_attribute_descriptions)
+        .vertex_binding_descriptions(slice::from_ref(&vertex_binding_description));
 
     let input_assembly_state = PipelineInputAssemblyStateCreateInfo::builder()
         .topology(PrimitiveTopology::TRIANGLE_LIST)

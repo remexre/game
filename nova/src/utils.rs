@@ -6,12 +6,29 @@ use std::{
     path::Path,
 };
 
-macro_rules! cstrings {
-    ($($l:literal),* $(,)*) => {{
+macro_rules! extensions {
+    ($($ext:ident),* $(,)*) => {{
         let mut v: std::vec::Vec<std::ffi::CString> = std::vec::Vec::new();
-        $(v.push(std::ffi::CString::new($l.as_bytes()).unwrap());)*
+        $(v.push(std::borrow::ToOwned::to_owned($ext::name()));)*
         v
     }};
+}
+
+macro_rules! deref_field {
+    ($ty:ty, $field:ident : $field_ty:ty) => {
+        impl std::ops::Deref for $ty {
+            type Target = $field_ty;
+            fn deref(&self) -> &$field_ty {
+                &self.$field
+            }
+        }
+
+        impl std::ops::DerefMut for $ty {
+            fn deref_mut(&mut self) -> &mut $field_ty {
+                &mut self.$field
+            }
+        }
+    };
 }
 
 pub fn char_array_to_cstring(bs: &[i8]) -> CString {

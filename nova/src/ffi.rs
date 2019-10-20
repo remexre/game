@@ -4,7 +4,11 @@
 //!
 //! See `example.c`
 
-use crate::{bufs::VBO, draw::DrawTarget, Renderer};
+use crate::{
+    bufs::{Vertex, VBO},
+    draw::DrawTarget,
+    Renderer,
+};
 use anyhow::Result;
 use derivative::Derivative;
 use glfw::WindowEvent;
@@ -256,15 +260,6 @@ pub unsafe extern "C" fn nova_loop(nova: *mut Nova, out_should_close: *mut c_int
         );
         Ok(())
     })
-}
-
-/// A single vertex in a VBO.
-#[derive(Clone, Copy, Debug)]
-#[repr(C)]
-pub struct Vertex {
-    pub position: [f32; 3],
-    pub texcoords: [f32; 2],
-    pub normal: [f32; 3],
 }
 
 /// Allocates a VBO.
