@@ -1,6 +1,7 @@
 use anyhow::Result;
 use log::info;
-use nova::{lye::Instance, Renderer};
+use lye::Instance;
+use nova::Renderer;
 
 fn main() -> Result<()> {
     stderrlog::new().verbosity(3).init()?;

@@ -1,7 +1,4 @@
-use crate::{
-    lye::{Instance, Window},
-    utils::char_array_to_cstring,
-};
+use crate::{utils::char_array_to_cstring, Instance, Window};
 use anyhow::{anyhow, Context, Result};
 use ash::{
     extensions::{khr::Swapchain, nv::RayTracing},
@@ -40,7 +37,7 @@ pub struct Device {
     pub(crate) pd: PhysicalDevice,
     pub(crate) qf: u32,
     #[derivative(Debug = "ignore")]
-    pub(crate) device: AshDevice,
+    device: AshDevice,
     pub(crate) queue: Queue,
 
     #[derivative(Debug = "ignore")]
@@ -63,13 +60,13 @@ impl Device {
             .context("Failed to get a surface from GLFW")?;
 
         // Get information about all the physical devices on the system.
-        let pd_infos = unsafe { instance.instance.enumerate_physical_devices() }
+        let pd_infos = unsafe { instance.enumerate_physical_devices() }
             .context("Failed to list physical devices")?
             .into_iter()
             .map(|pd| {
-                let props = unsafe { instance.instance.get_physical_device_properties(pd) };
+                let props = unsafe { instance.get_physical_device_properties(pd) };
                 let name = char_array_to_cstring(&props.device_name);
-                let exts = unsafe { instance.instance.enumerate_device_extension_properties(pd) }
+                let exts = unsafe { instance.enumerate_device_extension_properties(pd) }
                     .context("Failed to get device extensions")?
                     .into_iter()
                     .map(|ext| char_array_to_cstring(&ext.extension_name))
@@ -77,7 +74,6 @@ impl Device {
 
                 let qf_props = unsafe {
                     instance
-                        .instance
                         .get_physical_device_queue_family_properties(pd)
                 };
 
@@ -143,7 +139,6 @@ impl Device {
         trace!("Device Extensions:");
         for ext in unsafe {
             instance
-                .instance
                 .enumerate_device_extension_properties(pd)
                 .context("Failed to get device extensions for chosen device")?
         } {
@@ -169,16 +164,16 @@ impl Device {
         let create_info = DeviceCreateInfo::builder()
             .queue_create_infos(&queue_create_infos)
             .enabled_extension_names(&ext_ptrs);
-        let device = unsafe { instance.instance.create_device(pd, &create_info, None) }
+        let device = unsafe { instance.create_device(pd, &create_info, None) }
             .context("Failed to create device")?;
         let queue = unsafe { device.get_device_queue(qf, 0) };
 
         // Create the extensions.
-        let swapchain_ext = Swapchain::new(&instance.instance, &device);
+        let swapchain_ext = Swapchain::new(&**instance, &device);
 
         // Snag the raytracing extension, if it exists.
         let raytracing_ext = if exts.iter().any(|e| RayTracing::name() == e.as_ref()) {
-            Some(RayTracing::new(&instance.instance, &device))
+            Some(RayTracing::new(&**instance, &device))
         } else {
             None
         };

@@ -109,6 +109,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "lye"
+version = "0.1.0"
+dependencies = [
+ "anyhow 1.0.13 (registry+https://github.com/rust-lang/crates.io-index)",
+ "ash 0.29.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "byteorder 1.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "derivative 1.0.3 (registry+https://github.com/rust-lang/crates.io-index)",
+ "glfw 0.33.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "lazy_static 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
+ "memoffset 0.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
 name = "malloc_buf"
 version = "0.0.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -129,13 +143,8 @@ name = "nova"
 version = "0.1.0"
 dependencies = [
  "anyhow 1.0.13 (registry+https://github.com/rust-lang/crates.io-index)",
- "ash 0.29.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "byteorder 1.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "derivative 1.0.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "glfw 0.33.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "lazy_static 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
- "memoffset 0.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "lye 0.1.0",
  "stderrlog 0.4.1 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 

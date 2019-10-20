@@ -2,7 +2,7 @@
 
 pub mod forward;
 
-use crate::lye::Swapchain;
+use crate::Swapchain;
 use ash::vk::RenderPass;
 
 // TODO: Set up some shared pipeline cache. Sounds like making a pipeline can be pretty damn

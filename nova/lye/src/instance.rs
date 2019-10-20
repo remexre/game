@@ -1,4 +1,4 @@
-use crate::{lye::Window, utils::char_array_to_cstring};
+use crate::{utils::char_array_to_cstring, Window};
 use anyhow::{Context as AnyhowContext, Result};
 use ash::{
     extensions::khr::Surface,
@@ -39,13 +39,13 @@ lazy_static! {
 pub struct Instance {
     #[derivative(Debug = "ignore")]
     pub(crate) entry: Entry,
-
     #[derivative(Debug = "ignore")]
-    pub(crate) instance: AshInstance,
-
+    instance: AshInstance,
     #[derivative(Debug = "ignore")]
     pub(crate) surface_ext: Surface,
 }
+
+deref_field!(Instance, instance: ash::Instance);
 
 impl Instance {
     /// Creates a new `Instance`.

@@ -1,4 +1,4 @@
-use crate::lye::Instance;
+use crate::Instance;
 use anyhow::{anyhow, Context, Result};
 use ash::{
     prelude::VkResult,
@@ -89,7 +89,7 @@ impl Window {
         let mut surface = MaybeUninit::uninit();
         let result = ash::vk::Result::from_raw(unsafe {
             glfwCreateWindowSurface(
-                instance.instance.handle().as_raw() as usize,
+                instance.handle().as_raw() as usize,
                 self.inner.lock().unwrap().window.window_ptr(),
                 std::ptr::null(),
                 surface.as_mut_ptr(),

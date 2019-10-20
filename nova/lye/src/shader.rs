@@ -1,4 +1,4 @@
-use crate::{lye::Device, utils::read_u32s};
+use crate::{utils::read_u32s, Device};
 use anyhow::Result;
 use ash::{
     version::DeviceV1_0,
@@ -26,7 +26,7 @@ impl Shader {
     ) -> Result<Arc<Shader>> {
         let src = read_u32s(path)?;
         let create_info = ShaderModuleCreateInfo::builder().code(&src);
-        let module = unsafe { device.device.create_shader_module(&create_info, None)? };
+        let module = unsafe { device.create_shader_module(&create_info, None)? };
 
         // TODO: Validate shader stage
 
@@ -50,7 +50,7 @@ impl Shader {
 impl Drop for Shader {
     fn drop(&mut self) {
         unsafe {
-            self.device.device.destroy_shader_module(self.module, None);
+            self.device.destroy_shader_module(self.module, None);
         }
     }
 }

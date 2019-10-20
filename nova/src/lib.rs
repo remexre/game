@@ -1,6 +1,6 @@
 //! A Vulkan-based renderer.
 //!
-//! See `examples/lye.rs` for an example of usage.
+//! See `nova/examples/nova.rs` for an example of usage.
 
 #[macro_use]
 mod utils;
@@ -15,10 +15,9 @@ mod utils;
 // mod sync;
 
 // pub mod ffi;
-pub mod lye;
 
-use crate::lye::*;
 use anyhow::{Context, Result};
+use lye::*;
 use std::{path::Path, sync::Arc};
 
 /*
@@ -58,8 +57,9 @@ pub struct Renderer {
     frag: Arc<Shader>,
 
     framebuffers: Framebuffers<ForwardPipeline>,
+
+    command_pool: CommandBuffers,
     /*
-    command_pool: CommandPool,
     command_buffers: Vec<CommandBuffer>,
     frame_num: usize,
     image_available_semaphores: Vec<Semaphore>,
@@ -90,6 +90,9 @@ impl Renderer {
         let pipeline = ForwardPipeline::new(swapchain, vert.clone(), frag.clone())?;
         let framebuffers = Framebuffers::new(pipeline)?;
 
+        let command_pool =
+            CommandBuffers::new(device.clone(), framebuffers.framebuffers.len() as u32)?;
+
         /*
         let command_pool = cmds::create_command_pool(&dev, qf)?;
         let command_buffers = cmds::create_command_buffers(&dev, command_pool, num_images)?;
@@ -108,8 +111,9 @@ impl Renderer {
             frag,
 
             framebuffers,
-            /*
+
             command_pool,
+            /*
             command_buffers,
             frame_num: 0,
             image_available_semaphores,

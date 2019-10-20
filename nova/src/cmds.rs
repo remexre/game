@@ -14,14 +14,6 @@ use ash::{
 };
 use std::slice;
 
-pub fn create_command_pool(dev: &Device, qf: u32) -> Result<CommandPool> {
-    let create_info = CommandPoolCreateInfo::builder()
-        .flags(CommandPoolCreateFlags::RESET_COMMAND_BUFFER)
-        .queue_family_index(qf);
-    let command_pool = unsafe { dev.create_command_pool(&create_info, None)? };
-    Ok(command_pool)
-}
-
 pub fn create_command_buffers(
     dev: &Device,
     pool: CommandPool,

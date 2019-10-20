@@ -1,4 +1,4 @@
-use crate::lye::Pipeline;
+use crate::Pipeline;
 use anyhow::{Context, Result};
 use ash::{
     version::DeviceV1_0,
@@ -11,7 +11,7 @@ use std::slice;
 #[derive(Derivative)]
 #[derivative(Debug)]
 pub struct Framebuffers<P: Pipeline> {
-    framebuffers: Vec<Framebuffer>,
+    pub(crate) framebuffers: Vec<Framebuffer>,
 
     pipeline: P,
 }

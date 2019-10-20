@@ -1,5 +1,5 @@
 use anyhow::Result;
-use nova::lye::*;
+use lye::*;
 
 fn main() -> Result<()> {
     stderrlog::new().verbosity(3).init()?;

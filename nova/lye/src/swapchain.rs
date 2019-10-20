@@ -1,4 +1,4 @@
-use crate::lye::Device;
+use crate::Device;
 use anyhow::{anyhow, Result};
 use ash::{
     version::DeviceV1_0,
@@ -119,7 +119,7 @@ impl Swapchain {
                             .layer_count(1)
                             .build(),
                     );
-                let image_view = unsafe { device.device.create_image_view(&create_info, None)? };
+                let image_view = unsafe { device.create_image_view(&create_info, None)? };
                 Ok((image, image_view))
             })
             .collect::<Result<_>>()?;

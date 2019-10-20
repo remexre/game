@@ -1,7 +1,4 @@
-use crate::{
-    lye::{pipelines::Pipeline, Device, Shader, Swapchain},
-    Vertex,
-};
+use crate::{pipelines::Pipeline, Device, Shader, Swapchain, Vertex};
 use anyhow::Result;
 use ash::{
     version::DeviceV1_0,
@@ -218,6 +215,6 @@ fn create_graphics_render_pass(device: &Arc<Device>, format: Format) -> Result<R
         .attachments(slice::from_ref(&color_attachment))
         .subpasses(slice::from_ref(&subpass));
 
-    let render_pass = unsafe { device.device.create_render_pass(&create_info, None)? };
+    let render_pass = unsafe { device.create_render_pass(&create_info, None)? };
     Ok(render_pass)
 }
