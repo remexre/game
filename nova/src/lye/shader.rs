@@ -23,19 +23,19 @@ impl Shader {
         device: Arc<Device>,
         path: P,
         stage: ShaderStageFlags,
-    ) -> Result<Shader> {
+    ) -> Result<Arc<Shader>> {
         let src = read_u32s(path)?;
         let create_info = ShaderModuleCreateInfo::builder().code(&src);
         let module = unsafe { device.device.create_shader_module(&create_info, None)? };
 
-        log::warn!("TODO: Validate shader kind");
+        // TODO: Validate shader stage
 
-        Ok(Shader {
+        Ok(Arc::new(Shader {
             module,
             stage,
 
             device,
-        })
+        }))
     }
 
     pub(crate) fn stage_create_info(&self) -> PipelineShaderStageCreateInfo {
@@ -53,8 +53,4 @@ impl Drop for Shader {
             self.device.device.destroy_shader_module(self.module, None);
         }
     }
-}
-
-pub trait ShaderKind {
-    const FLAGS: ShaderStageFlags;
 }

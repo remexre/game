@@ -2,6 +2,9 @@
 
 pub mod forward;
 
+use crate::lye::Swapchain;
+use ash::vk::RenderPass;
+
 // TODO: Set up some shared pipeline cache. Sounds like making a pipeline can be pretty damn
 // expensive. As with anything, profile it first though...
 //
@@ -11,3 +14,15 @@ pub mod forward;
 // behavior for its own file management.
 //
 // I suppose we could expose the file management we do here to the engine, but... ew.
+
+/// A single Vulkan pipeline.
+pub trait Pipeline {
+    /// Returns the render pass that draws to the framebuffer.
+    ///
+    /// Unsafe because arbitrary bad things can occur by messing with the render pass object.
+    /// However, this method should generally just be a field access and a copy.
+    unsafe fn render_pass(&self) -> RenderPass;
+
+    /// Returns a reference to the contained swapchain.
+    fn swapchain(&self) -> &Swapchain;
+}

@@ -1,5 +1,5 @@
 use crate::{
-    lye::{Device, Shader, Swapchain},
+    lye::{pipelines::Pipeline, Device, Shader, Swapchain},
     Vertex,
 };
 use anyhow::Result;
@@ -8,14 +8,14 @@ use ash::{
     vk::{
         AttachmentDescription, AttachmentLoadOp, AttachmentReference, AttachmentStoreOp,
         BlendFactor, BlendOp, ColorComponentFlags, CullModeFlags, Format, FrontFace,
-        GraphicsPipelineCreateInfo, ImageLayout, Offset2D, Pipeline, PipelineBindPoint,
-        PipelineCache, PipelineColorBlendAttachmentState, PipelineColorBlendStateCreateInfo,
-        PipelineInputAssemblyStateCreateInfo, PipelineLayout, PipelineLayoutCreateInfo,
-        PipelineMultisampleStateCreateInfo, PipelineRasterizationStateCreateInfo,
-        PipelineVertexInputStateCreateInfo, PipelineViewportStateCreateInfo, PolygonMode,
-        PrimitiveTopology, Rect2D, RenderPass, RenderPassCreateInfo, SampleCountFlags,
-        SubpassDescription, VertexInputAttributeDescription, VertexInputBindingDescription,
-        VertexInputRate, Viewport,
+        GraphicsPipelineCreateInfo, ImageLayout, Offset2D, Pipeline as VkPipeline,
+        PipelineBindPoint, PipelineCache, PipelineColorBlendAttachmentState,
+        PipelineColorBlendStateCreateInfo, PipelineInputAssemblyStateCreateInfo, PipelineLayout,
+        PipelineLayoutCreateInfo, PipelineMultisampleStateCreateInfo,
+        PipelineRasterizationStateCreateInfo, PipelineVertexInputStateCreateInfo,
+        PipelineViewportStateCreateInfo, PolygonMode, PrimitiveTopology, Rect2D, RenderPass,
+        RenderPassCreateInfo, SampleCountFlags, SubpassDescription,
+        VertexInputAttributeDescription, VertexInputBindingDescription, VertexInputRate, Viewport,
     },
 };
 use derivative::Derivative;
@@ -28,19 +28,24 @@ use std::{mem::size_of, slice, sync::Arc};
 pub struct ForwardPipeline {
     layout: PipelineLayout,
     render_pass: RenderPass,
-    pipeline: Pipeline,
+    pipeline: VkPipeline,
 
-    vert: Shader,
-    frag: Shader,
-    swapchain: Swapchain,
+    vert: Arc<Shader>,
+    frag: Arc<Shader>,
+    swapchain: Arc<Swapchain>,
 }
 
 impl ForwardPipeline {
     /// Creates a ForwardPipeline with the given shaders, rendering to the given Swapchain.
     ///
     /// **TODO**: Much of this could probably be genericized.
+    ///
     /// **TODO**: Shader parameters should be made configurable. `unsafe trait Vertex`?
-    pub fn new(swapchain: Swapchain, vert: Shader, frag: Shader) -> Result<ForwardPipeline> {
+    pub fn new(
+        swapchain: Arc<Swapchain>,
+        vert: Arc<Shader>,
+        frag: Arc<Shader>,
+    ) -> Result<ForwardPipeline> {
         let shader_stages = vec![vert.stage_create_info(), frag.stage_create_info()];
 
         let vertex_attribute_descriptions = [
@@ -177,6 +182,16 @@ impl Drop for ForwardPipeline {
                 .destroy_render_pass(self.render_pass, None);
             self.swapchain.device.destroy_pipeline(self.pipeline, None);
         }
+    }
+}
+
+impl Pipeline for ForwardPipeline {
+    unsafe fn render_pass(&self) -> RenderPass {
+        self.render_pass
+    }
+
+    fn swapchain(&self) -> &Swapchain {
+        &self.swapchain
     }
 }
 

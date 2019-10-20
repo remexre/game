@@ -30,7 +30,7 @@ use ash::{
     extensions::khr::{Surface, Swapchain},
     version::DeviceV1_0,
     vk::{
-        CommandBuffer, CommandPool, Extent2D, Fence, Format, Framebuffer, Image, ImageView,
+        CommandBuffer, CommandPool, Extent2D, Fence, Format, Framebuffers, Image, ImageView,
         PhysicalDevice, Pipeline, PipelineShaderStageCreateInfo, Queue, RenderPass,
         Result as VkResult, Semaphore, ShaderStageFlags, SurfaceKHR, SwapchainKHR,
     },
@@ -54,9 +54,11 @@ pub struct Renderer {
     instance: Arc<Instance>,
     device: Arc<Device>,
 
-    pipeline: ForwardPipeline,
+    vert: Arc<Shader>,
+    frag: Arc<Shader>,
+
+    framebuffers: Framebuffers<ForwardPipeline>,
     /*
-    framebuffers: Vec<Framebuffer>,
     command_pool: CommandPool,
     command_buffers: Vec<CommandBuffer>,
     frame_num: usize,
@@ -79,19 +81,16 @@ impl Renderer {
         let instance = Instance::new(&window, debug).context("Failed to create Instance")?;
         let device = Device::new(&window, instance.clone()).context("Failed to create Device")?;
 
-        let swapchain = Swapchain::new(device.clone())?;
         let vert = Shader::load_from_path(device.clone(), vert_path, ShaderStageFlags::VERTEX)
             .context("Failed to load vertex shader")?;
         let frag = Shader::load_from_path(device.clone(), frag_path, ShaderStageFlags::FRAGMENT)
             .context("Failed to load fragment shader")?;
-        let pipeline = ForwardPipeline::new(swapchain, vert, frag)?;
+
+        let swapchain = Swapchain::new(device.clone())?;
+        let pipeline = ForwardPipeline::new(swapchain, vert.clone(), frag.clone())?;
+        let framebuffers = Framebuffers::new(pipeline)?;
 
         /*
-        let framebuffers = image_views
-            .iter()
-            .map(|image_view| init::create_framebuffer(&dev, image_view, dims, render_pass))
-            .collect::<Result<Vec<_>>>()?;
-
         let command_pool = cmds::create_command_pool(&dev, qf)?;
         let command_buffers = cmds::create_command_buffers(&dev, command_pool, num_images)?;
 
@@ -105,9 +104,11 @@ impl Renderer {
             instance,
             device,
 
-            pipeline,
-            /*
+            vert,
+            frag,
+
             framebuffers,
+            /*
             command_pool,
             command_buffers,
             frame_num: 0,
@@ -187,45 +188,16 @@ impl Renderer {
     */
 
     fn recreate_framebuffer(&mut self) -> Result<()> {
+        let swapchain = Swapchain::new(self.device.clone())?;
+        let pipeline = ForwardPipeline::new(swapchain, self.vert.clone(), self.frag.clone())?;
+        let framebuffers = Framebuffers::new(pipeline)?;
+
         unimplemented!()
+
         /*
-            let (swapchain, images, image_views, format, dims) = init::create_swapchain(
-                &self.surface_ext,
-                &self.swapchain_ext,
-                self.surface,
-                self.pd,
-                &self.dev,
-            )
-            .context("Failed to create swapchain")?;
-            let num_images = images.len() as u32;
-
-            let (render_pass, pipeline) = pipeline::create_graphics_pipeline(
-                &self.dev,
-                format,
-                dims,
-                self.vert_stage,
-                self.frag_stage,
-            )
-            .context("Failed to create graphics pipeline")?;
-
-            let framebuffers = image_views
-                .iter()
-                .map(|image_view| init::create_framebuffer(&self.dev, image_view, dims, render_pass))
-                .collect::<Result<Vec<_>>>()?;
-
             let command_pool = cmds::create_command_pool(&self.dev, self.qf)?;
             let command_buffers = cmds::create_command_buffers(&self.dev, command_pool, num_images)?;
 
-            self.swapchain = swapchain;
-            self.images = images;
-            self.image_views = image_views;
-            self.format = format;
-            self.dims = dims;
-            self.render_pass = render_pass;
-            self.pipeline = pipeline;
-            self.framebuffers = framebuffers;
-            self.command_pool = command_pool;
-            self.command_buffers = command_buffers;
             Ok(())
         */
     }

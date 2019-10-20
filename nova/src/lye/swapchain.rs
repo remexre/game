@@ -16,7 +16,7 @@ use std::sync::Arc;
 #[derivative(Debug)]
 pub struct Swapchain {
     swapchain: SwapchainKHR,
-    images: Vec<(Image, ImageView)>,
+    pub(crate) images: Vec<(Image, ImageView)>,
     pub(crate) format: Format,
     pub(crate) extent: Extent2D,
 
@@ -28,7 +28,7 @@ impl Swapchain {
     /// Creates a new Swapchain.
     ///
     /// **TODO**: Comments, context for errors.
-    pub fn new(device: Arc<Device>) -> Result<Swapchain> {
+    pub fn new(device: Arc<Device>) -> Result<Arc<Swapchain>> {
         let formats = unsafe {
             device
                 .instance
@@ -124,14 +124,14 @@ impl Swapchain {
             })
             .collect::<Result<_>>()?;
 
-        Ok(Swapchain {
+        Ok(Arc::new(Swapchain {
             swapchain,
             images,
             format: format.format,
             extent,
 
             device,
-        })
+        }))
     }
 }
 
