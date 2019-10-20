@@ -12,6 +12,7 @@ use derivative::Derivative;
 use log::debug;
 use std::sync::Arc;
 
+/// The swapchain and associated images.
 #[derive(Derivative)]
 #[derivative(Debug)]
 pub struct Swapchain {

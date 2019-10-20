@@ -19,6 +19,7 @@ pub struct Shader {
 }
 
 impl Shader {
+    /// Loads the shader from the SPIR-V module at the given path.
     pub fn load_from_path<P: AsRef<Path>>(
         device: Arc<Device>,
         path: P,

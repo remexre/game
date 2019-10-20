@@ -1,6 +1,7 @@
 //! A Vulkan-based renderer.
 //!
 //! See `nova/examples/nova.rs` for an example of usage.
+#![warn(missing_docs)]
 
 #[macro_use]
 mod utils;

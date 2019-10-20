@@ -4,6 +4,7 @@
 //!
 //! **TODO**: Go over the spec's "Externally Synchronized Parameters" and slap some `&mut`s and
 //! `antidote::Mutex<>`es around.
+#![warn(missing_docs)]
 
 #[macro_use]
 mod utils;

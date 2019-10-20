@@ -14,19 +14,6 @@ use ash::{
 };
 use std::slice;
 
-pub fn create_command_buffers(
-    dev: &Device,
-    pool: CommandPool,
-    count: u32,
-) -> Result<Vec<CommandBuffer>> {
-    let create_info = CommandBufferAllocateInfo::builder()
-        .command_pool(pool)
-        .level(CommandBufferLevel::PRIMARY)
-        .command_buffer_count(count);
-    let command_buffers = unsafe { dev.allocate_command_buffers(&create_info)? };
-    Ok(command_buffers)
-}
-
 pub fn begin_command_buffer(
     dev: &Device,
     command_buffer: CommandBuffer,

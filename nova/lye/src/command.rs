@@ -54,7 +54,9 @@ impl<P: Pipeline> CommandManager<P> {
 
     /// Recreates the swapchain, framebuffers, etc.
     pub fn recreate(&mut self) -> Result<()> {
-        unimplemented!()
+        let device = self.pipeline.swapchain().device.clone();
+        let swapchain = Swapchain::new(device)?;
+        self.pipeline.recreate(swapchain)
     }
 }
 
