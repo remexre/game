@@ -31,8 +31,13 @@ run: assets
 		--eval "(ql:quickload :game :verbose t)" \
 		--eval "(game:main)" \
 		"$(SCENE)"
-
-.PHONY: all debug repl
+run-c-example: out/nova-c-example
+	$<
+run-lye-example: out/nova-lye-example
+	$<
+run-nova-example: out/nova-example
+	$<
+.PHONY: all clean debug repl run
 
 assets: tmp/preassets
 	$<
@@ -50,10 +55,18 @@ out/libnova.so:
 	@mkdir -p $(dir $@)
 	cd nova && cargo build --release
 	cp nova/target/release/libnova.so $@
+out/nova-example: assets
+	@mkdir -p $(dir $@)
+	cargo build --example=nova --manifest-path=nova/Cargo.toml
+	cp nova/target/debug/examples/nova $@
 out/nova-c-example: assets out/libnova.so nova/example.c
 	@mkdir -p $(dir $@)
 	gcc -o $@ -Wall -Wextra -Werror -O2 nova/example.c -lnova -Lout -Wl,-rpath=$(abspath out):.
-.PHONY: assets out/game out/libnova.so
+out/nova-lye-example: assets
+	@mkdir -p $(dir $@)
+	cargo build --example=lye --manifest-path=nova/Cargo.toml
+	cp nova/target/debug/examples/lye $@
+.PHONY: assets out/game out/libnova.so out/nova-example out/nova-lye-example
 
 tmp/preassets:
 	@mkdir -p $(dir $@)

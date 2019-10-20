@@ -15,12 +15,15 @@ mod utils;
 // pub mod ffi;
 pub mod lye;
 
+use crate::lye::*;
+use anyhow::{Context, Result};
+use std::{path::Path, sync::Arc};
+
 /*
 pub use crate::{
     bufs::{Vertex, VBO},
     draw::DrawTarget,
 };
-use anyhow::{Context, Result};
 use ash::{
     extensions::khr::{Surface, Swapchain},
     version::DeviceV1_0,
@@ -34,29 +37,21 @@ use ash::{
 use derivative::Derivative;
 use glfw::{Glfw, Window, WindowEvent};
 use log::info;
-use std::{path::Path, sync::mpsc::Receiver};
+use std::sync::mpsc::Receiver;
+*/
 
-#[derive(Derivative)]
-#[derivative(Debug)]
+/// A convenient renderer object wrapping up `lye`, and the interface exposed to FFI.
+///
+/// This renderer performs deferred rendering, with optional raytraced shadows.
+#[derive(Debug)]
 pub struct Renderer {
-    #[derivative(Debug = "ignore")]
-    glfw: Glfw,
-    #[derivative(Debug = "ignore")]
-    window: Window,
-    events: Receiver<(f64, WindowEvent)>,
-    #[derivative(Debug = "ignore")]
-    entry: Entry,
-    #[derivative(Debug = "ignore")]
-    instance: Instance,
-    surface: SurfaceKHR,
-    #[derivative(Debug = "ignore")]
-    surface_ext: Surface,
-    pd: PhysicalDevice,
-    qf: u32,
-    #[derivative(Debug = "ignore")]
-    dev: Device,
-    queue: Queue,
-    has_rtx: bool,
+    window: Arc<Window>,
+    instance: Arc<Instance>,
+    device: Arc<Device>,
+
+    vert_shader: Arc<Shader>,
+    frag_shader: Arc<Shader>,
+    /*
     vert_stage: PipelineShaderStageCreateInfo,
     frag_stage: PipelineShaderStageCreateInfo,
     #[derivative(Debug = "ignore")]
@@ -75,39 +70,28 @@ pub struct Renderer {
     image_available_semaphores: Vec<Semaphore>,
     render_finished_semaphores: Vec<Semaphore>,
     render_finished_fences: Vec<Fence>,
-    resized: bool,
+    */
 }
 
 impl Renderer {
-    /// Creates a new Renderer with the given window name.
+    /// Creates a new Renderer with the given window name, and shaders corresponding to the given
+    /// paths.
     pub fn new(
         name: &str,
+        debug: bool,
         vert_path: impl AsRef<Path>,
         frag_path: impl AsRef<Path>,
     ) -> Result<Renderer> {
-        let (glfw, window, events) =
-            init::create_window(name).context("Failed to create window")?;
-        let entry = Entry::new().context("Failed to get a Vulkan entrypoint")?;
-        let instance = init::create_instance(&glfw, &entry, true)
-            .context("Failed to create a Vulkan instance")?;
-        let surface = init::create_surface(&instance, &window)
-            .context("Failed to create a Vulkan surface")?;
+        let window = Window::new(name).context("Failed to create Window")?;
+        let instance = Instance::new(&window, debug).context("Failed to create Instance")?;
+        let device = Device::new(&window, instance.clone()).context("Failed to create Device")?;
 
-        let surface_ext = Surface::new(&entry, &instance);
-        let (pd, qf) =
-            init::choose_physical_device_and_queue_family(&instance, &surface_ext, surface)
-                .context("Failed to choose a physical device and queue family")?;
-        let (dev, queue, has_rtx) =
-            init::create_device(&instance, pd, qf).context("Failed to create a Vulkan device")?;
-        if has_rtx {
-            info!("RTX found!");
-        }
-
-        let (_, vert_stage) = shaders::load_shader(&dev, vert_path, ShaderStageFlags::VERTEX)
+        let vert_shader = Shader::load_from_path(device.clone(), vert_path)
             .context("Failed to load vertex shader")?;
-        let (_, frag_stage) = shaders::load_shader(&dev, frag_path, ShaderStageFlags::FRAGMENT)
+        let frag_shader = Shader::load_from_path(device.clone(), frag_path)
             .context("Failed to load fragment shader")?;
 
+        /*
         let swapchain_ext = Swapchain::new(&instance, &dev);
         let (swapchain, images, image_views, format, dims) =
             init::create_swapchain(&surface_ext, &swapchain_ext, surface, pd, &dev)
@@ -129,22 +113,16 @@ impl Renderer {
         let image_available_semaphores = sync::create_semaphores(&dev, num_images)?;
         let render_finished_semaphores = sync::create_semaphores(&dev, num_images)?;
         let render_finished_fences = sync::create_fences(&dev, true, num_images)?;
+        */
 
         Ok(Renderer {
-            glfw,
             window,
-            events,
-            entry,
             instance,
-            surface,
-            surface_ext,
-            pd,
-            qf,
-            dev,
-            queue,
-            has_rtx,
-            vert_stage,
-            frag_stage,
+            device,
+
+            vert_shader,
+            frag_shader,
+            /*
             swapchain_ext,
             swapchain,
             images,
@@ -160,10 +138,11 @@ impl Renderer {
             image_available_semaphores,
             render_finished_semaphores,
             render_finished_fences,
-            resized: false,
+            */
         })
     }
 
+    /*
     pub fn draw<F: for<'a> FnOnce(DrawTarget<'a>) -> Result<()>>(&mut self, body: F) -> Result<()> {
         let recreate = match self.draw_inner(body) {
             Ok(()) => false,
@@ -270,10 +249,5 @@ impl Renderer {
         self.command_buffers = command_buffers;
         Ok(())
     }
-
-    pub fn wait_idle(&self) -> Result<()> {
-        let () = unsafe { self.dev.device_wait_idle() }?;
-        Ok(())
-    }
+    */
 }
-*/

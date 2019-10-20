@@ -40,8 +40,8 @@ pub struct Device {
     pd: PhysicalDevice,
     qf: u32,
     #[derivative(Debug = "ignore")]
-    device: AshDevice,
-    queue: Queue,
+    pub(crate) device: AshDevice,
+    pub(crate) queue: Queue,
 
     #[derivative(Debug = "ignore")]
     raytracing_ext: Option<RayTracing>,
@@ -50,9 +50,11 @@ pub struct Device {
     instance: Arc<Instance>,
 }
 
+deref_field!(Device, device: ash::Device);
+
 impl Device {
     /// Creates a Vulkan device for the given instance and window.
-    pub fn new(instance: Arc<Instance>, window: &Arc<Window>) -> Result<Arc<Device>> {
+    pub fn new(window: &Arc<Window>, instance: Arc<Instance>) -> Result<Arc<Device>> {
         // Create a surface.
         let surface = window
             .create_surface(&instance)
