@@ -1,10 +1,10 @@
-//! A wrapper around `ash` that makes it more ergonomic (largely via RAII).
+//! A higher-level wrapper around `ash`. Probably unsound if you stray off the happy path.
 //!
 //! See `nova/examples/lye.rs` for an example of usage.
 //!
 //! **TODO**: Go over the spec's "Externally Synchronized Parameters" and slap some `&mut`s and
-//! `antidote::Mutex<>`es around.
-#![warn(missing_docs)]
+//! `antidote::Mutex<>`es around; the happy path is not yet threaded.
+#![deny(missing_docs)]
 
 #[macro_use]
 mod utils;

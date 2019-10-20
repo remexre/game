@@ -1,19 +1,7 @@
 //! A Vulkan-based renderer.
 //!
 //! See `nova/examples/nova.rs` for an example of usage.
-#![warn(missing_docs)]
-
-#[macro_use]
-mod utils;
-
-// mod bufs;
-// mod cmds;
-// mod draw;
-// mod imgs;
-// mod init;
-// mod pipeline;
-// mod shaders;
-// mod sync;
+#![deny(missing_docs)]
 
 // pub mod ffi;
 

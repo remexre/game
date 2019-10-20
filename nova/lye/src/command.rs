@@ -4,8 +4,8 @@ use ash::{
     version::DeviceV1_0,
     vk::{
         CommandBuffer, CommandBufferAllocateInfo, CommandBufferLevel, CommandPool,
-        CommandPoolCreateFlags, CommandPoolCreateInfo, Framebuffer, FramebufferCreateInfo,
-        RenderPass,
+        CommandPoolCreateFlags, CommandPoolCreateInfo, Fence, FenceCreateFlags, FenceCreateInfo,
+        Framebuffer, FramebufferCreateInfo, RenderPass, Semaphore, SemaphoreCreateInfo,
     },
 };
 use std::slice;
@@ -27,6 +27,9 @@ pub struct CommandManager<P: Pipeline> {
 struct PerImage {
     framebuffer: Framebuffer,
     cmd_buffer: CommandBuffer,
+    image_available_semaphore: Semaphore,
+    render_finished_semaphore: Semaphore,
+    render_finished_fence: Fence,
 }
 
 impl<P: Pipeline> CommandManager<P> {
@@ -67,6 +70,21 @@ impl<P: Pipeline> Drop for CommandManager<P> {
                 self.pipeline
                     .swapchain()
                     .device
+                    .destroy_fence(per_image.render_finished_fence, None);
+
+                self.pipeline
+                    .swapchain()
+                    .device
+                    .destroy_semaphore(per_image.render_finished_semaphore, None);
+
+                self.pipeline
+                    .swapchain()
+                    .device
+                    .destroy_semaphore(per_image.image_available_semaphore, None);
+
+                self.pipeline
+                    .swapchain()
+                    .device
                     .destroy_framebuffer(per_image.framebuffer, None);
 
                 // Not ideal that we free them one by one... It'd be shocking if this even showed
@@ -100,6 +118,15 @@ fn create_per_image(
     let bufs = unsafe { swapchain.device.allocate_command_buffers(&create_info) }
         .context("Failed to allocate command buffers")?;
 
+    // Create the semaphore and fence's create info outside the loop.
+    let sema_create_info = SemaphoreCreateInfo::builder();
+    let fence_create_info = FenceCreateInfo::builder().flags(FenceCreateFlags::SIGNALED);
+
+    // Create closures for creating the semaphores and fences. This is mainly to make it nicer to
+    // read :P
+    let create_sema = || unsafe { swapchain.device.create_semaphore(&sema_create_info, None) };
+    let create_fence = || unsafe { swapchain.device.create_fence(&fence_create_info, None) };
+
     (0..bufs.len())
         .map(|i| {
             let cmd_buffer = bufs[i];
@@ -115,9 +142,17 @@ fn create_per_image(
             let framebuffer = unsafe { swapchain.device.create_framebuffer(&create_info, None) }
                 .context("Failed to create framebuffer")?;
 
+            // Create the synchronization values.
+            let image_available_semaphore = create_sema()?;
+            let render_finished_semaphore = create_sema()?;
+            let render_finished_fence = create_fence()?;
+
             Ok(PerImage {
                 framebuffer,
                 cmd_buffer,
+                image_available_semaphore,
+                render_finished_semaphore,
+                render_finished_fence,
             })
         })
         .collect()

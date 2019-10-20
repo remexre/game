@@ -1,4 +1,5 @@
 use crate::Instance;
+use antidote::Mutex;
 use anyhow::{anyhow, Context, Result};
 use ash::{
     prelude::VkResult,
@@ -13,7 +14,7 @@ use glfw::{
 use std::{
     ffi::CString,
     mem::MaybeUninit,
-    sync::{mpsc::Receiver, Arc, Mutex},
+    sync::{mpsc::Receiver, Arc},
 };
 
 /// A GLFW-based window.
@@ -57,7 +58,7 @@ impl Window {
 
     /// Polls for events.
     pub fn poll_events(&self) -> Vec<(f64, WindowEvent)> {
-        let mut inner = self.inner.lock().unwrap();
+        let mut inner = self.inner.lock();
         inner.glfw.poll_events();
         let events = inner.events.try_iter().collect::<Vec<_>>();
         events
@@ -74,12 +75,12 @@ impl Window {
 
     /// Sets the title of the window.
     pub fn set_title(&self, title: &str) {
-        self.inner.lock().unwrap().window.set_title(title);
+        self.inner.lock().window.set_title(title);
     }
 
     /// Returns whether the window should close.
     pub fn should_close(&self) -> bool {
-        self.inner.lock().unwrap().window.should_close()
+        self.inner.lock().window.should_close()
     }
 }
 
@@ -90,7 +91,7 @@ impl Window {
         let result = ash::vk::Result::from_raw(unsafe {
             glfwCreateWindowSurface(
                 instance.handle().as_raw() as usize,
-                self.inner.lock().unwrap().window.window_ptr(),
+                self.inner.lock().window.window_ptr(),
                 std::ptr::null(),
                 surface.as_mut_ptr(),
             ) as i32
@@ -108,14 +109,14 @@ impl Window {
         let exts = self
             .inner
             .lock()
-            .unwrap()
             .glfw
             .get_required_instance_extensions()
             .ok_or_else(|| anyhow!("GLFW doesn't support Vulkan"))?;
-        let exts = exts
-            .into_iter()
-            .map(|cstr| CString::new(cstr.into_bytes()).unwrap())
-            .collect();
-        Ok(exts)
+        exts.into_iter()
+            .map(|cstr| {
+                CString::new(cstr.into_bytes())
+                    .context("A GLFW-required extension contained a null byte???")
+            })
+            .collect()
     }
 }
