@@ -66,6 +66,17 @@ impl Pipeline for ForwardPipeline {
     fn recreate(&mut self, swapchain: Arc<Swapchain>) -> Result<()> {
         let (layout, render_pass, pipeline) =
             create_graphics_pipeline(&swapchain, &self.vert, &self.frag)?;
+
+        unsafe {
+            self.swapchain
+                .device
+                .destroy_pipeline_layout(self.layout, None);
+            self.swapchain
+                .device
+                .destroy_render_pass(self.render_pass, None);
+            self.swapchain.device.destroy_pipeline(self.pipeline, None);
+        }
+
         self.layout = layout;
         self.render_pass = render_pass;
         self.pipeline = pipeline;

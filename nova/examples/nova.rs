@@ -21,7 +21,7 @@ fn run() -> Result<()> {
     while !renderer.should_close() {
         // TODO: Draw!
 
-        for ev in renderer.flip() {
+        for ev in renderer.flip()? {
             info!("{:?}", ev);
         }
     }

@@ -98,7 +98,7 @@ impl<P: Pipeline> CommandManager<P> {
 
     /// Finishes drawing a frame and starts drawing the next frame.
     pub fn flip(&mut self) -> Result<()> {
-        unimplemented!()
+        Ok(()) // TODO
     }
 
     /// Recreates the swapchain, framebuffers, etc.

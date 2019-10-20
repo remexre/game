@@ -9,7 +9,7 @@ use ash::{
     },
 };
 use derivative::Derivative;
-use log::debug;
+use log::trace;
 use std::sync::Arc;
 
 /// The swapchain and associated images.
@@ -75,7 +75,7 @@ impl Swapchain {
                 .get_physical_device_surface_capabilities(device.pd, device.surface)?
         };
         let extent = caps.current_extent;
-        debug!("Current extent: {:?}", extent);
+        trace!("Current extent: {:?}", extent);
 
         let num_images = caps.min_image_count
             + if caps.min_image_count == caps.max_image_count {
