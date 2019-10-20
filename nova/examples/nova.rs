@@ -11,15 +11,17 @@ fn main() -> Result<()> {
 }
 
 fn run() -> Result<()> {
-    let renderer = Renderer::new(
+    let mut renderer = Renderer::new(
         "Vulkan Example",
         true,
         "assets/shaders/tutorial.vert.spv",
         "assets/shaders/tutorial.frag.spv",
     )?;
 
-    while !renderer.window().should_close() {
-        for ev in renderer.window().poll_events() {
+    while !renderer.should_close() {
+        // TODO: Draw!
+
+        for ev in renderer.flip() {
             info!("{:?}", ev);
         }
     }

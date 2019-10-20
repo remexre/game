@@ -8,6 +8,7 @@ use ash::{
         Framebuffer, FramebufferCreateInfo, RenderPass, Semaphore, SemaphoreCreateInfo,
     },
 };
+use log::debug;
 use std::slice;
 
 /// A wrapper around a bunch of Vulkan state that handles drawing commands to the screen.
@@ -18,6 +19,9 @@ use std::slice;
 pub struct CommandManager<P: Pipeline> {
     pool: CommandPool,
     per_image: Vec<PerImage>,
+
+    current_frame: u32,
+    first_frame: bool,
 
     // pipeline holds the device alive
     pipeline: P,
@@ -51,20 +55,15 @@ impl<P: Pipeline> CommandManager<P> {
         Ok(CommandManager {
             pool,
             per_image,
+
+            current_frame: 0,
+            first_frame: true,
+
             pipeline,
         })
     }
 
-    /// Recreates the swapchain, framebuffers, etc.
-    pub fn recreate(&mut self) -> Result<()> {
-        let device = self.pipeline.swapchain().device.clone();
-        let swapchain = Swapchain::new(device)?;
-        self.pipeline.recreate(swapchain)
-    }
-}
-
-impl<P: Pipeline> Drop for CommandManager<P> {
-    fn drop(&mut self) {
+    fn destroy_per_image(&mut self) {
         unsafe {
             for per_image in self.per_image.drain(..) {
                 self.pipeline
@@ -94,6 +93,38 @@ impl<P: Pipeline> Drop for CommandManager<P> {
                     .device
                     .free_command_buffers(self.pool, slice::from_ref(&per_image.cmd_buffer));
             }
+        }
+    }
+
+    /// Finishes drawing a frame and starts drawing the next frame.
+    pub fn flip(&mut self) -> Result<()> {
+        unimplemented!()
+    }
+
+    /// Recreates the swapchain, framebuffers, etc.
+    pub fn recreate(&mut self) -> Result<()> {
+        debug!("CommandManager.recreate() start");
+
+        let device = self.pipeline.swapchain().device.clone();
+        let swapchain = Swapchain::new(device)?;
+        self.pipeline.recreate(swapchain.clone())?;
+        let render_pass = unsafe { self.pipeline.render_pass() };
+
+        self.destroy_per_image();
+        self.per_image = create_per_image(render_pass, &swapchain, self.pool)?;
+
+        self.current_frame = 0;
+        self.first_frame = true;
+
+        debug!("CommandManager.recreate() end");
+        Ok(())
+    }
+}
+
+impl<P: Pipeline> Drop for CommandManager<P> {
+    fn drop(&mut self) {
+        unsafe {
+            self.destroy_per_image();
 
             self.pipeline
                 .swapchain()

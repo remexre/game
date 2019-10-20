@@ -18,7 +18,9 @@ mod swapchain;
 mod vertex;
 mod window;
 
-pub use ash::vk::ShaderStageFlags;
+pub use ash::vk::{Result as VkResult, ShaderStageFlags};
+pub use glfw::WindowEvent;
+
 pub use command::CommandManager;
 pub use device::Device;
 pub use instance::Instance;

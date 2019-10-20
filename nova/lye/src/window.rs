@@ -32,7 +32,6 @@ pub struct WindowInner {
     #[derivative(Debug = "ignore")]
     window: glfw::Window,
     events: Receiver<(f64, WindowEvent)>,
-    pub(crate) resized: bool,
 }
 
 impl Window {
@@ -51,7 +50,6 @@ impl Window {
                 glfw,
                 window,
                 events,
-                resized: false,
             }),
         }))
     }
@@ -61,16 +59,7 @@ impl Window {
         let mut inner = self.inner.lock();
         inner.glfw.poll_events();
         let events = inner.events.try_iter().collect::<Vec<_>>();
-        events
-            .into_iter()
-            .filter(move |(_, ev)| match ev {
-                WindowEvent::Size(_, _) => {
-                    inner.resized = true;
-                    false
-                }
-                _ => true,
-            })
-            .collect()
+        events.into_iter().collect()
     }
 
     /// Sets the title of the window.

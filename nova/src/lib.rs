@@ -9,45 +9,18 @@ use anyhow::{Context, Result};
 use lye::*;
 use std::{path::Path, sync::Arc};
 
-/*
-pub use crate::{
-    bufs::{Vertex, VBO},
-    draw::DrawTarget,
-};
-use ash::{
-    extensions::khr::{Surface, Swapchain},
-    version::DeviceV1_0,
-    vk::{
-        CommandBuffer, CommandPool, Extent2D, Fence, Format, Framebuffers, Image, ImageView,
-        PhysicalDevice, Pipeline, PipelineShaderStageCreateInfo, Queue, RenderPass,
-        Result as VkResult, Semaphore, ShaderStageFlags, SurfaceKHR, SwapchainKHR,
-    },
-    Device, Entry, Instance,
-};
-use derivative::Derivative;
-use glfw::{Glfw, Window, WindowEvent};
-use log::info;
-use std::sync::mpsc::Receiver;
-*/
-
-/// A convenient renderer object wrapping up `lye`, and the interface exposed to FFI.
+/// A convenient renderer object wrapping up `lye`.
 ///
 /// Eventually, this renderer will perform deferred rendering, with optional raytraced reflections
 /// and shadows.
 ///
-/// Currently, it performs simple forward rendering, but with slightly less driver overhead.
+/// Currently, it performs simple forward rendering.
 #[derive(Debug)]
 pub struct Renderer {
     window: Arc<Window>,
     instance: Arc<Instance>,
     device: Arc<Device>,
     command_manager: CommandManager<ForwardPipeline>,
-    /*
-    frame_num: usize,
-    image_available_semaphores: Vec<Semaphore>,
-    render_finished_semaphores: Vec<Semaphore>,
-    render_finished_fences: Vec<Fence>,
-    */
 }
 
 impl Renderer {
@@ -72,25 +45,47 @@ impl Renderer {
         let pipeline = ForwardPipeline::new(swapchain, vert, frag)?;
         let command_manager = CommandManager::new(pipeline)?;
 
-        /*
-
-        let image_available_semaphores = sync::create_semaphores(&dev, num_images)?;
-        let render_finished_semaphores = sync::create_semaphores(&dev, num_images)?;
-        let render_finished_fences = sync::create_fences(&dev, true, num_images)?;
-        */
-
         Ok(Renderer {
             window,
             instance,
             device,
             command_manager,
-            /*
-            frame_num: 0,
-            image_available_semaphores,
-            render_finished_semaphores,
-            render_finished_fences,
-            */
         })
+    }
+
+    /// Finishes rendering the current frame and starts rendering the next one. Also checks for
+    /// events, returning them.
+    pub fn flip(&mut self) -> Result<Vec<(f64, WindowEvent)>> {
+        // Try to flip.
+        let mut recreate = false;
+        if let Err(err) = self.command_manager.flip() {
+            if err.downcast_ref() == Some(&VkResult::ERROR_OUT_OF_DATE_KHR) {
+                recreate = true;
+            } else {
+                return Err(err);
+            }
+        }
+
+        // Snag the events, checking if we need to resize.
+        let events = self
+            .window
+            .poll_events()
+            .drain(..)
+            .filter(|(_, ev)| match ev {
+                WindowEvent::Size(_, _) => {
+                    recreate = true;
+                    false
+                }
+                _ => true,
+            })
+            .collect();
+
+        // If we need to resize, do so.
+        if recreate {
+            self.command_manager.recreate()?;
+        }
+
+        Ok(events)
     }
 
     /*
@@ -161,8 +156,13 @@ impl Renderer {
     }
     */
 
-    /// Returns a reference to the Window inside the Renderer.
-    pub fn window(&self) -> &Window {
-        &self.window
+    /// Sets the title of the window.
+    pub fn set_title(&self, title: &str) {
+        self.window.set_title(title);
+    }
+
+    /// Returns whether the window should close.
+    pub fn should_close(&self) -> bool {
+        self.window.should_close()
     }
 }
