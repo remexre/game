@@ -106,12 +106,6 @@ impl Renderer {
         &'a mut self,
         body: F,
     ) -> Result<()> {
-        let image_available_semaphore = self.image_available_semaphores[self.frame_num];
-        let render_finished_semaphore = self.render_finished_semaphores[self.frame_num];
-        let render_finished_fence = self.render_finished_fences[self.frame_num];
-        let command_buffer = self.command_buffers[self.frame_num];
-        self.frame_num = (self.frame_num + 1) % self.images.len();
-
         let i = cmds::draw_start(
             &self.swapchain_ext,
             self.swapchain,
@@ -134,26 +128,6 @@ impl Renderer {
             dev: &self.dev,
             command_buffer: command_buffer,
         })?;
-
-        cmds::end_render_pass(&self.dev, command_buffer);
-        cmds::end_command_buffer(&self.dev, command_buffer)?;
-        cmds::submit_command_buffer(
-            &self.dev,
-            self.queue,
-            &command_buffer,
-            &image_available_semaphore,
-            &render_finished_semaphore,
-            render_finished_fence,
-        )?;
-        cmds::present(
-            &self.swapchain_ext,
-            self.queue,
-            &self.swapchain,
-            i,
-            &render_finished_semaphore,
-        )?;
-        Ok(())
-    }
     */
 
     /// Sets the title of the window.

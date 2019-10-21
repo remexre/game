@@ -16,7 +16,7 @@ use std::sync::Arc;
 #[derive(Derivative)]
 #[derivative(Debug)]
 pub struct Swapchain {
-    swapchain: SwapchainKHR,
+    pub(crate) swapchain: SwapchainKHR,
     pub(crate) images: Vec<(Image, ImageView)>,
     pub(crate) format: Format,
     pub(crate) extent: Extent2D,

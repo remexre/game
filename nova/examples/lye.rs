@@ -32,6 +32,12 @@ fn run() -> Result<()> {
         // This doesn't do resizing.
         command_manager.flip()?;
 
+        command_manager.with_device_and_current_command_buffer(|device, cmd_buffer| unsafe {
+            use ash::version::DeviceV1_0;
+            device.cmd_draw(cmd_buffer, 3, 1, 0, 0);
+            Ok(())
+        })?;
+
         for ev in window.poll_events() {
             info!("{:?}", ev);
         }

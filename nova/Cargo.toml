@@ -16,5 +16,6 @@ anyhow = "1.0.13"
 lye = { path = "lye" }
 
 [dev-dependencies]
+ash = "0.29.0"
 log = "0.4.8"
 stderrlog = "0.4.1"

@@ -191,6 +191,12 @@ impl Device {
             instance,
         }))
     }
+
+    /// Waits until the device is idle.
+    pub(crate) fn wait_idle(&self) -> Result<()> {
+        unsafe { self.device.device_wait_idle()? };
+        Ok(())
+    }
 }
 
 impl Drop for Device {

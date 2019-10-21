@@ -63,6 +63,10 @@ impl Drop for ForwardPipeline {
 }
 
 impl Pipeline for ForwardPipeline {
+    fn handle(&self) -> VkPipeline {
+        self.pipeline
+    }
+
     fn recreate(&mut self, swapchain: Arc<Swapchain>) -> Result<()> {
         let (layout, render_pass, pipeline) =
             create_graphics_pipeline(&swapchain, &self.vert, &self.frag)?;
@@ -84,7 +88,7 @@ impl Pipeline for ForwardPipeline {
         Ok(())
     }
 
-    unsafe fn render_pass(&self) -> RenderPass {
+    fn render_pass(&self) -> RenderPass {
         self.render_pass
     }
 
