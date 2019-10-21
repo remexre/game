@@ -2,10 +2,10 @@
 
 pub mod forward;
 
-use crate::Swapchain;
+use crate::{MutableBuffer, Swapchain, Uniforms};
 use anyhow::Result;
 use ash::vk::{CommandBuffer, Pipeline as VkPipeline, RenderPass};
-use std::{marker::PhantomData, sync::Arc};
+use std::sync::Arc;
 
 // TODO: Set up some shared pipeline cache. Sounds like making a pipeline can be pretty damn
 // expensive. As with anything, profile it first though...
@@ -18,9 +18,10 @@ use std::{marker::PhantomData, sync::Arc};
 // I suppose we could expose the file management we do here to the engine, but... ew.
 
 /// The state required to know how and where to draw.
+#[derive(Debug)]
 pub struct DrawContext<'a> {
     pub(crate) cmd_buffer: CommandBuffer,
-    pub(crate) _phantom: PhantomData<&'a ()>,
+    pub(crate) ubo: &'a mut MutableBuffer<Uniforms>,
 }
 
 /// A single Vulkan pipeline.

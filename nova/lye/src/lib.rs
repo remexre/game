@@ -25,7 +25,7 @@ mod window;
 pub use ash::vk::{BufferUsageFlags, Result as VkResult, ShaderStageFlags};
 pub use glfw::WindowEvent;
 
-pub use buffer::immutable::ImmutableBuffer;
+pub use buffer::{immutable::ImmutableBuffer, mutable::MutableBuffer};
 pub use command::CommandManager;
 pub use device::Device;
 pub use instance::Instance;

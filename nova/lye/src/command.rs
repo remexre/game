@@ -1,9 +1,9 @@
-use crate::{DrawContext, Pipeline, Swapchain};
+use crate::{DrawContext, MutableBuffer, Pipeline, Swapchain, Uniforms};
 use anyhow::{ensure, Context, Result};
 use ash::{
     version::DeviceV1_0,
     vk::{
-        ClearColorValue, ClearValue, CommandBuffer, CommandBufferAllocateInfo,
+        BufferUsageFlags, ClearColorValue, ClearValue, CommandBuffer, CommandBufferAllocateInfo,
         CommandBufferBeginInfo, CommandBufferLevel, CommandBufferResetFlags,
         CommandBufferUsageFlags, CommandPool, CommandPoolCreateFlags, CommandPoolCreateInfo, Fence,
         FenceCreateFlags, FenceCreateInfo, Framebuffer, FramebufferCreateInfo, Offset2D,
@@ -13,7 +13,7 @@ use ash::{
     },
 };
 use log::debug;
-use std::{marker::PhantomData, slice};
+use std::slice;
 
 /// A wrapper around a bunch of Vulkan state that handles drawing commands to the screen.
 ///
@@ -38,6 +38,8 @@ struct PerImage {
     image_available_semaphore: Semaphore,
     render_finished_semaphore: Semaphore,
     render_finished_fence: Fence,
+
+    ubo: MutableBuffer<Uniforms>,
 }
 
 impl<P: Pipeline> CommandManager<P> {
@@ -255,10 +257,13 @@ impl<P: Pipeline> CommandManager<P> {
             self.image_index.is_some(),
             "flip was not called before drawing"
         );
+
+        let per_image = &mut self.per_image[self.current_frame];
+
         body(
             DrawContext {
-                cmd_buffer: self.per_image[self.current_frame].cmd_buffer,
-                _phantom: PhantomData,
+                cmd_buffer: per_image.cmd_buffer,
+                ubo: &mut per_image.ubo,
             },
             &self.pipeline,
         )
@@ -328,6 +333,12 @@ fn create_per_image(swapchain: &Swapchain, pool: CommandPool) -> Result<Vec<PerI
                 image_available_semaphore,
                 render_finished_semaphore,
                 render_finished_fence,
+
+                ubo: MutableBuffer::new(
+                    swapchain.device.clone(),
+                    1,
+                    BufferUsageFlags::UNIFORM_BUFFER,
+                )?,
             })
         })
         .collect()

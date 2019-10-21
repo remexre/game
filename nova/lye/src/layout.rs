@@ -1,5 +1,5 @@
 /// The uniforms expected for rendering.
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Default)]
 #[repr(C)]
 pub struct Uniforms {
     /// The model matrix.

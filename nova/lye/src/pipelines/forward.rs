@@ -1,17 +1,18 @@
-use crate::{Device, DrawContext, ImmutableBuffer, Pipeline, Shader, Swapchain, Vertex};
+use crate::{Device, DrawContext, ImmutableBuffer, Pipeline, Shader, Swapchain, Uniforms, Vertex};
 use anyhow::{ensure, Result};
 use ash::{
     version::DeviceV1_0,
     vk::{
         AttachmentDescription, AttachmentLoadOp, AttachmentReference, AttachmentStoreOp,
-        BlendFactor, BlendOp, ColorComponentFlags, CullModeFlags, Format, FrontFace,
-        GraphicsPipelineCreateInfo, ImageLayout, Offset2D, Pipeline as VkPipeline,
+        BlendFactor, BlendOp, ColorComponentFlags, CullModeFlags, DescriptorSetLayout,
+        DescriptorSetLayoutBinding, DescriptorSetLayoutCreateInfo, DescriptorType, Format,
+        FrontFace, GraphicsPipelineCreateInfo, ImageLayout, Offset2D, Pipeline as VkPipeline,
         PipelineBindPoint, PipelineCache, PipelineColorBlendAttachmentState,
         PipelineColorBlendStateCreateInfo, PipelineInputAssemblyStateCreateInfo, PipelineLayout,
         PipelineLayoutCreateInfo, PipelineMultisampleStateCreateInfo,
         PipelineRasterizationStateCreateInfo, PipelineVertexInputStateCreateInfo,
         PipelineViewportStateCreateInfo, PolygonMode, PrimitiveTopology, Rect2D, RenderPass,
-        RenderPassCreateInfo, SampleCountFlags, SubpassDescription,
+        RenderPassCreateInfo, SampleCountFlags, ShaderStageFlags, SubpassDescription,
         VertexInputAttributeDescription, VertexInputBindingDescription, VertexInputRate, Viewport,
     },
 };
@@ -23,6 +24,7 @@ use std::{mem::size_of, slice, sync::Arc};
 #[derive(Derivative)]
 #[derivative(Debug)]
 pub struct ForwardPipeline {
+    descriptor_set_layout: DescriptorSetLayout,
     layout: PipelineLayout,
     render_pass: RenderPass,
     pipeline: VkPipeline,
@@ -35,8 +37,10 @@ pub struct ForwardPipeline {
 impl ForwardPipeline {
     /// Creates a ForwardPipeline with the given shaders, rendering to the given Swapchain.
     pub fn new(swapchain: Arc<Swapchain>, vert: Shader, frag: Shader) -> Result<ForwardPipeline> {
-        let (layout, render_pass, pipeline) = create_graphics_pipeline(&swapchain, &vert, &frag)?;
+        let (descriptor_set_layout, layout, render_pass, pipeline) =
+            create_graphics_pipeline(&swapchain, &vert, &frag)?;
         Ok(ForwardPipeline {
+            descriptor_set_layout,
             layout,
             render_pass,
             pipeline,
@@ -48,7 +52,12 @@ impl ForwardPipeline {
     }
 
     /// Draws a VBO with the pipeline.
-    pub fn draw(&self, ctx: DrawContext, buffer: &ImmutableBuffer) -> Result<()> {
+    pub fn draw(
+        &self,
+        ctx: DrawContext,
+        uniforms: &Uniforms,
+        buffer: &ImmutableBuffer,
+    ) -> Result<()> {
         const VERTEX_SIZE: u64 = size_of::<Vertex>() as u64;
 
         ensure!(
@@ -59,6 +68,7 @@ impl ForwardPipeline {
         let DrawContext { cmd_buffer, .. } = ctx;
         let device = &self.swapchain.device;
 
+        ctx.ubo[0] = *uniforms;
         unsafe {
             device.cmd_bind_vertex_buffers(cmd_buffer, 0, slice::from_ref(&buffer.buffer), &[0]);
             device.cmd_draw(cmd_buffer, vertex_count, 1, 0, 0);
@@ -76,6 +86,9 @@ impl Drop for ForwardPipeline {
                 .destroy_pipeline_layout(self.layout, None);
             self.swapchain
                 .device
+                .destroy_descriptor_set_layout(self.descriptor_set_layout, None);
+            self.swapchain
+                .device
                 .destroy_render_pass(self.render_pass, None);
             self.swapchain.device.destroy_pipeline(self.pipeline, None);
         }
@@ -88,7 +101,7 @@ impl Pipeline for ForwardPipeline {
     }
 
     fn recreate(&mut self, swapchain: Arc<Swapchain>) -> Result<()> {
-        let (layout, render_pass, pipeline) =
+        let (descriptor_set_layout, layout, render_pass, pipeline) =
             create_graphics_pipeline(&swapchain, &self.vert, &self.frag)?;
 
         unsafe {
@@ -97,10 +110,14 @@ impl Pipeline for ForwardPipeline {
                 .destroy_pipeline_layout(self.layout, None);
             self.swapchain
                 .device
+                .destroy_descriptor_set_layout(self.descriptor_set_layout, None);
+            self.swapchain
+                .device
                 .destroy_render_pass(self.render_pass, None);
             self.swapchain.device.destroy_pipeline(self.pipeline, None);
         }
 
+        self.descriptor_set_layout = descriptor_set_layout;
         self.layout = layout;
         self.render_pass = render_pass;
         self.pipeline = pipeline;
@@ -128,7 +145,7 @@ fn create_graphics_pipeline(
     swapchain: &Arc<Swapchain>,
     vert: &Shader,
     frag: &Shader,
-) -> Result<(PipelineLayout, RenderPass, VkPipeline)> {
+) -> Result<(DescriptorSetLayout, PipelineLayout, RenderPass, VkPipeline)> {
     // TODO: Validate shaders
     let shader_stages = vec![vert.stage_create_info(), frag.stage_create_info()];
 
@@ -207,7 +224,21 @@ fn create_graphics_pipeline(
     let color_blend_state = PipelineColorBlendStateCreateInfo::builder()
         .attachments(slice::from_ref(&color_blend_attachment));
 
-    let layout_create_info = PipelineLayoutCreateInfo::builder();
+    let binding = DescriptorSetLayoutBinding::builder()
+        .binding(0)
+        .descriptor_type(DescriptorType::UNIFORM_BUFFER)
+        .descriptor_count(1)
+        .stage_flags(ShaderStageFlags::VERTEX | ShaderStageFlags::FRAGMENT);
+    let descriptor_set_info =
+        DescriptorSetLayoutCreateInfo::builder().bindings(slice::from_ref(&binding));
+    let descriptor_set_layout = unsafe {
+        swapchain
+            .device
+            .create_descriptor_set_layout(&descriptor_set_info, None)?
+    };
+
+    let layout_create_info =
+        PipelineLayoutCreateInfo::builder().set_layouts(slice::from_ref(&descriptor_set_layout));
 
     let layout = unsafe {
         swapchain
@@ -240,7 +271,7 @@ fn create_graphics_pipeline(
         Ok(mut pipelines) => {
             assert_eq!(pipelines.len(), 1);
             let pipeline = pipelines.remove(0);
-            Ok((layout, render_pass, pipeline))
+            Ok((descriptor_set_layout, layout, render_pass, pipeline))
         }
         Err((_, err)) => Err(err.into()),
     }

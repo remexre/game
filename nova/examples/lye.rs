@@ -2,6 +2,10 @@ use anyhow::Result;
 use log::info;
 use lye::*;
 
+static MAT4_IDENTITY: [f32; 16] = [
+    1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
+];
+
 const VERTICES: &[Vertex] = &[
     Vertex {
         position: [-1.0, -1.0, 0.0],
@@ -47,13 +51,22 @@ fn run() -> Result<()> {
     let mut command_manager = CommandManager::new(pipeline)?;
 
     let vbo = ImmutableBuffer::new(device.clone(), VERTICES, BufferUsageFlags::VERTEX_BUFFER)?;
+    let uniforms = Uniforms {
+        model: MAT4_IDENTITY,
+        view: MAT4_IDENTITY,
+        proj: MAT4_IDENTITY,
+
+        ambient: [0.2, 0.0, 0.0],
+        diffuse: [0.0, 0.0, 0.0],
+        specular: 1.0,
+    };
 
     while !window.should_close() {
         // This doesn't do resizing.
         command_manager.flip()?;
 
         command_manager.with_draw_context_and_pipeline(|ctx, pipeline| {
-            pipeline.draw(ctx, &vbo)?;
+            pipeline.draw(ctx, &uniforms, &vbo)?;
             Ok(())
         })?;
 
