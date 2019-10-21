@@ -6,7 +6,11 @@
 // pub mod ffi;
 
 use anyhow::{Context, Result};
-use lye::*;
+use lye::{
+    BufferUsageFlags, CommandManager, Device, DrawContext as LyeDrawContext, ForwardPipeline,
+    ImmutableBuffer, Instance, Shader, ShaderStageFlags, Swapchain, VkResult, Window,
+};
+pub use lye::{Uniforms, Vertex, WindowEvent};
 use std::{path::Path, sync::Arc};
 
 /// A convenient renderer object wrapping up `lye`.
@@ -88,6 +92,15 @@ impl Renderer {
         Ok(events)
     }
 
+    /// Allocates a new VBO, filling it with the given vertices.
+    pub fn new_vbo(&self, vertices: &[Vertex]) -> Result<ImmutableBuffer> {
+        ImmutableBuffer::new(
+            self.device.clone(),
+            vertices,
+            BufferUsageFlags::VERTEX_BUFFER,
+        )
+    }
+
     /// Sets the title of the window.
     pub fn set_title(&mut self, title: &str) {
         self.window.set_title(title);
@@ -96,5 +109,29 @@ impl Renderer {
     /// Returns whether the window should close.
     pub fn should_close(&self) -> bool {
         self.window.should_close()
+    }
+
+    /// Calls the given closure with a function that draws. This may be called multiple times per
+    /// `flip`.
+    pub fn with_draw<'a, F: FnOnce(DrawContext<'a>) -> Result<()>>(
+        &'a mut self,
+        body: F,
+    ) -> Result<()> {
+        self.command_manager
+            .with_draw_context_and_pipeline(|ctx, pipeline| body(DrawContext { ctx, pipeline }))
+    }
+}
+
+/// The state used in drawing. Note that this is not the same as `lye::DrawContext`.
+#[derive(Debug)]
+pub struct DrawContext<'a> {
+    ctx: LyeDrawContext<'a>,
+    pipeline: &'a ForwardPipeline,
+}
+
+impl<'a> DrawContext<'a> {
+    /// Draws a VBO with the given uniforms.
+    pub fn draw(&mut self, vbo: &ImmutableBuffer, uniforms: &Uniforms) -> Result<()> {
+        self.pipeline.draw(&mut self.ctx, vbo, uniforms)
     }
 }

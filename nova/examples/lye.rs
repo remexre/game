@@ -65,9 +65,8 @@ fn run() -> Result<()> {
         // This doesn't do resizing.
         command_manager.flip()?;
 
-        command_manager.with_draw_context_and_pipeline(|ctx, pipeline| {
-            pipeline.draw(ctx, &uniforms, &vbo)?;
-            Ok(())
+        command_manager.with_draw_context_and_pipeline(|mut ctx, pipeline| {
+            pipeline.draw(&mut ctx, &vbo, &uniforms)
         })?;
 
         for ev in window.poll_events() {

@@ -54,24 +54,23 @@ impl ForwardPipeline {
     /// Draws a VBO with the pipeline.
     pub fn draw(
         &self,
-        ctx: DrawContext,
+        ctx: &mut DrawContext,
+        vbo: &ImmutableBuffer,
         uniforms: &Uniforms,
-        buffer: &ImmutableBuffer,
     ) -> Result<()> {
         const VERTEX_SIZE: u64 = size_of::<Vertex>() as u64;
 
         ensure!(
-            buffer.size % VERTEX_SIZE == 0,
+            vbo.size % VERTEX_SIZE == 0,
             "Invalid VBO (indivisible size)"
         );
-        let vertex_count = (buffer.size / VERTEX_SIZE) as u32;
-        let DrawContext { cmd_buffer, .. } = ctx;
+        let vertex_count = (vbo.size / VERTEX_SIZE) as u32;
         let device = &self.swapchain.device;
 
         ctx.ubo[0] = *uniforms;
         unsafe {
-            device.cmd_bind_vertex_buffers(cmd_buffer, 0, slice::from_ref(&buffer.buffer), &[0]);
-            device.cmd_draw(cmd_buffer, vertex_count, 1, 0, 0);
+            device.cmd_bind_vertex_buffers(ctx.cmd_buffer, 0, slice::from_ref(&vbo.buffer), &[0]);
+            device.cmd_draw(ctx.cmd_buffer, vertex_count, 1, 0, 0);
         }
 
         Ok(())

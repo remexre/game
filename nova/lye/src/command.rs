@@ -1,5 +1,5 @@
 use crate::{DrawContext, MutableBuffer, Pipeline, Swapchain, Uniforms};
-use anyhow::{ensure, Context, Result};
+use anyhow::{Context, Result};
 use ash::{
     version::DeviceV1_0,
     vk::{
@@ -262,14 +262,14 @@ impl<P: Pipeline> CommandManager<P> {
 
     /// Calls the closure with the current frame's command buffer. `flip` must have been called
     /// before this method.
-    pub fn with_draw_context_and_pipeline<'a, F: FnOnce(DrawContext<'a>, &'a P) -> Result<T>, T>(
+    pub fn with_draw_context_and_pipeline<'a, F: FnOnce(DrawContext<'a>, &'a P) -> Result<()>>(
         &'a mut self,
         body: F,
-    ) -> Result<T> {
-        ensure!(
-            self.image_index.is_some(),
-            "flip was not called before drawing"
-        );
+    ) -> Result<()> {
+        if self.image_index.is_none() {
+            debug!("Skipping draw (no available image, we might've just resized?)");
+            return Ok(());
+        }
 
         let per_image = &mut self.per_image[self.current_frame];
 
