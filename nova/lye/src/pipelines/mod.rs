@@ -4,7 +4,9 @@ pub mod forward;
 
 use crate::{MutableBuffer, Swapchain, Uniforms};
 use anyhow::Result;
-use ash::vk::{CommandBuffer, Pipeline as VkPipeline, RenderPass};
+use ash::vk::{
+    CommandBuffer, DescriptorSetLayout, Pipeline as VkPipeline, PipelineLayout, RenderPass,
+};
 use std::sync::Arc;
 
 // TODO: Set up some shared pipeline cache. Sounds like making a pipeline can be pretty damn
@@ -29,6 +31,9 @@ pub trait Pipeline {
     /// Returns the pipeline handle.
     fn handle(&self) -> VkPipeline;
 
+    /// Returns the pipeline layout.
+    fn layout(&self) -> PipelineLayout;
+
     /// Recreates the pipeline for a different swapchain.
     fn recreate(&mut self, swapchain: Arc<Swapchain>) -> Result<()>;
 
@@ -37,4 +42,7 @@ pub trait Pipeline {
 
     /// Returns a reference to the contained swapchain.
     fn swapchain(&self) -> &Swapchain;
+
+    /// Returns the DescriptorSetLayout used for the uniforms.
+    fn uniform_descriptor_set_layout(&self) -> DescriptorSetLayout;
 }

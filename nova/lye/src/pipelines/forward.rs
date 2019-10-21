@@ -100,6 +100,10 @@ impl Pipeline for ForwardPipeline {
         self.pipeline
     }
 
+    fn layout(&self) -> PipelineLayout {
+        self.layout
+    }
+
     fn recreate(&mut self, swapchain: Arc<Swapchain>) -> Result<()> {
         let (descriptor_set_layout, layout, render_pass, pipeline) =
             create_graphics_pipeline(&swapchain, &self.vert, &self.frag)?;
@@ -131,6 +135,10 @@ impl Pipeline for ForwardPipeline {
 
     fn swapchain(&self) -> &Swapchain {
         &self.swapchain
+    }
+
+    fn uniform_descriptor_set_layout(&self) -> DescriptorSetLayout {
+        self.descriptor_set_layout
     }
 }
 

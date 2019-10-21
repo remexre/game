@@ -15,5 +15,5 @@ layout(binding = 0) uniform UBO {
 } ubo;
 
 void main(void) {
-	color = vec4(ubo.ambient, 1.0);
+	color = vec4(fragColor, 1.0);
 }

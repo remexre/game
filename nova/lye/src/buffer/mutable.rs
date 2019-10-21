@@ -21,6 +21,7 @@ pub struct MutableBuffer<T> {
     memory: DeviceMemory,
     ptr: *mut T,
     length: usize,
+    pub(crate) size: u64,
 
     // The device must outlive us.
     device: Arc<Device>,
@@ -70,6 +71,7 @@ impl<T: Copy + Default> MutableBuffer<T> {
             memory,
             ptr,
             length,
+            size,
 
             device,
         })

@@ -5,11 +5,13 @@ use ash::{
     vk::{
         BufferUsageFlags, ClearColorValue, ClearValue, CommandBuffer, CommandBufferAllocateInfo,
         CommandBufferBeginInfo, CommandBufferLevel, CommandBufferResetFlags,
-        CommandBufferUsageFlags, CommandPool, CommandPoolCreateFlags, CommandPoolCreateInfo, Fence,
-        FenceCreateFlags, FenceCreateInfo, Framebuffer, FramebufferCreateInfo, Offset2D,
-        PipelineBindPoint, PipelineStageFlags, PresentInfoKHR, Rect2D, RenderPass,
-        RenderPassBeginInfo, Result as VkResult, Semaphore, SemaphoreCreateInfo, SubmitInfo,
-        SubpassContents,
+        CommandBufferUsageFlags, CommandPool, CommandPoolCreateFlags, CommandPoolCreateInfo,
+        DescriptorBufferInfo, DescriptorPoolCreateInfo, DescriptorPoolSize, DescriptorSet,
+        DescriptorSetAllocateInfo, DescriptorSetLayout, DescriptorType, Fence, FenceCreateFlags,
+        FenceCreateInfo, Framebuffer, FramebufferCreateInfo, Offset2D, PipelineBindPoint,
+        PipelineStageFlags, PresentInfoKHR, Rect2D, RenderPass, RenderPassBeginInfo,
+        Result as VkResult, Semaphore, SemaphoreCreateInfo, SubmitInfo, SubpassContents,
+        WriteDescriptorSet,
     },
 };
 use log::debug;
@@ -39,6 +41,7 @@ struct PerImage {
     render_finished_semaphore: Semaphore,
     render_finished_fence: Fence,
 
+    descriptor_set: DescriptorSet,
     ubo: MutableBuffer<Uniforms>,
 }
 
@@ -56,7 +59,8 @@ impl<P: Pipeline> CommandManager<P> {
 
         // Create all the per-image stuff.
         let framebuffers = create_framebuffers(pipeline.render_pass(), &swapchain)?;
-        let per_image = create_per_image(&swapchain, pool)?;
+        let descriptor_set_layout = pipeline.uniform_descriptor_set_layout();
+        let per_image = create_per_image(&swapchain, descriptor_set_layout, pool)?;
 
         Ok(CommandManager {
             pool,
@@ -189,12 +193,20 @@ impl<P: Pipeline> CommandManager<P> {
             device.begin_command_buffer(per_image.cmd_buffer, &begin_info)?;
         }
 
-        // Bind the pipeline to the command buffer.
+        // Bind the pipeline and descriptor set to the command buffer.
         unsafe {
             device.cmd_bind_pipeline(
                 per_image.cmd_buffer,
                 PipelineBindPoint::GRAPHICS,
                 self.pipeline.handle(),
+            );
+            device.cmd_bind_descriptor_sets(
+                per_image.cmd_buffer,
+                PipelineBindPoint::GRAPHICS,
+                self.pipeline.layout(),
+                0,
+                &[per_image.descriptor_set],
+                &[],
             );
         }
 
@@ -238,7 +250,8 @@ impl<P: Pipeline> CommandManager<P> {
         self.framebuffers = create_framebuffers(self.pipeline.render_pass(), &swapchain)?;
 
         self.destroy_per_image();
-        self.per_image = create_per_image(&swapchain, self.pool)?;
+        let descriptor_set_layout = self.pipeline.uniform_descriptor_set_layout();
+        self.per_image = create_per_image(&swapchain, descriptor_set_layout, self.pool)?;
 
         self.current_frame = 0;
         self.image_index = None;
@@ -303,14 +316,40 @@ fn create_framebuffers(render_pass: RenderPass, swapchain: &Swapchain) -> Result
         .collect()
 }
 
-fn create_per_image(swapchain: &Swapchain, pool: CommandPool) -> Result<Vec<PerImage>> {
+fn create_per_image(
+    swapchain: &Swapchain,
+    descriptor_set_layout: DescriptorSetLayout,
+    pool: CommandPool,
+) -> Result<Vec<PerImage>> {
+    let num_images = swapchain.images.len() as u32;
+
     // Create all the command buffers.
     let create_info = CommandBufferAllocateInfo::builder()
         .command_pool(pool)
         .level(CommandBufferLevel::PRIMARY)
-        .command_buffer_count(swapchain.images.len() as u32);
+        .command_buffer_count(num_images);
     let bufs = unsafe { swapchain.device.allocate_command_buffers(&create_info) }
         .context("Failed to allocate command buffers")?;
+
+    // Create the descriptor pool. TODO: When does this get destroyed...
+    let pool_size = DescriptorPoolSize::builder()
+        .ty(DescriptorType::UNIFORM_BUFFER)
+        .descriptor_count(num_images);
+    let create_info = DescriptorPoolCreateInfo::builder()
+        .max_sets(num_images)
+        .pool_sizes(slice::from_ref(&pool_size));
+    let descriptor_pool = unsafe {
+        swapchain
+            .device
+            .create_descriptor_pool(&create_info, None)?
+    };
+
+    // Create the descriptor sets.
+    let set_layouts = vec![descriptor_set_layout; num_images as usize];
+    let create_info = DescriptorSetAllocateInfo::builder()
+        .descriptor_pool(descriptor_pool)
+        .set_layouts(&set_layouts);
+    let descriptor_sets = unsafe { swapchain.device.allocate_descriptor_sets(&create_info)? };
 
     // Create the semaphore and fence's create info outside the loop.
     let sema_create_info = SemaphoreCreateInfo::builder();
@@ -322,11 +361,36 @@ fn create_per_image(swapchain: &Swapchain, pool: CommandPool) -> Result<Vec<PerI
     let create_fence = || unsafe { swapchain.device.create_fence(&fence_create_info, None) };
 
     bufs.into_iter()
-        .map(|cmd_buffer| {
+        .zip(descriptor_sets)
+        .map(|(cmd_buffer, descriptor_set)| {
             // Create the synchronization values.
             let image_available_semaphore = create_sema()?;
             let render_finished_semaphore = create_sema()?;
             let render_finished_fence = create_fence()?;
+
+            // Create the UBO.
+            let ubo = MutableBuffer::new(
+                swapchain.device.clone(),
+                1,
+                BufferUsageFlags::UNIFORM_BUFFER,
+            )?;
+
+            // Initialize the descriptor set.
+            let buffer_info = DescriptorBufferInfo::builder()
+                .buffer(ubo.buffer)
+                .offset(0)
+                .range(ubo.size);
+            let write_info = WriteDescriptorSet::builder()
+                .dst_set(descriptor_set)
+                .dst_binding(0)
+                .dst_array_element(0)
+                .descriptor_type(DescriptorType::UNIFORM_BUFFER)
+                .buffer_info(slice::from_ref(&buffer_info));
+            unsafe {
+                swapchain
+                    .device
+                    .update_descriptor_sets(slice::from_ref(&write_info), &[]);
+            }
 
             Ok(PerImage {
                 cmd_buffer,
@@ -334,11 +398,8 @@ fn create_per_image(swapchain: &Swapchain, pool: CommandPool) -> Result<Vec<PerI
                 render_finished_semaphore,
                 render_finished_fence,
 
-                ubo: MutableBuffer::new(
-                    swapchain.device.clone(),
-                    1,
-                    BufferUsageFlags::UNIFORM_BUFFER,
-                )?,
+                descriptor_set,
+                ubo,
             })
         })
         .collect()
