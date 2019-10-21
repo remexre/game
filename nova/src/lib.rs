@@ -3,7 +3,7 @@
 //! See `nova/examples/nova.rs` for an example of usage.
 #![deny(missing_docs)]
 
-// pub mod ffi;
+pub mod ffi;
 
 use anyhow::{Context, Result};
 use lye::{
@@ -122,7 +122,9 @@ impl Renderer {
     }
 }
 
-/// The state used in drawing. Note that this is not the same as `lye::DrawContext`.
+/// The state used in drawing.
+///
+/// Note that this is not the same type as `lye::DrawContext`.
 #[derive(Debug)]
 pub struct DrawContext<'a> {
     ctx: LyeDrawContext<'a>,

@@ -11,44 +11,43 @@ static void check_error(const char* action, char* error) {
 	exit(1);
 }
 
-struct DrawContext {
-	VBO* triangle;
-
-	float specularity;
-};
-
-static void on_draw(NovaDraw* draw, struct DrawContext* ctx) {
-	check_error("draw vbo", nova_draw_vbo(draw, ctx->triangle, NULL, NULL, NULL,
-		ctx->specularity));
+static void on_event(const char* event, void* ignored) {
+	(void) ignored;
+	puts(event);
 }
 
 int main(void) {
-	Nova* nova = NULL;
-	check_error("initialize nova",
-		nova_init("Vulkan Example", "assets/shaders/tutorial.vert.spv",
-			"assets/shaders/tutorial.frag.spv", &nova));
+	NovaRenderer* renderer = NULL;
+	check_error("initialize renderer",
+		nova_init("Vulkan Example", 0, "assets/shaders/tutorial.vert.spv",
+			"assets/shaders/tutorial.frag.spv", &renderer));
 
-	const struct Vertex vertices[3] = {
-		{{  0.0, -0.5, 0.0 }, { 0.0, 0.0 }, { 0.0, 0.0, 0.0 }},
-		{{  0.5,  0.5, 0.0 }, { 0.0, 0.0 }, { 0.0, 0.0, 0.0 }},
-		{{ -0.5,  0.5, 0.0 }, { 0.0, 0.0 }, { 0.0, 0.0, 0.0 }},
+	const NovaVertex vertices[3] = {
+		{{  0.0, -0.5, 0.0 }, { 0.0, 0.0 }, { 1.0, 0.0, 0.0 }},
+		{{  0.5,  0.5, 0.0 }, { 0.0, 0.0 }, { 0.0, 1.0, 0.0 }},
+		{{ -0.5,  0.5, 0.0 }, { 0.0, 0.0 }, { 0.0, 0.0, 1.0 }},
 	};
 
-	struct VBO* triangle;
-	check_error("alloc vbo", nova_alloc_vbo(nova, vertices, 3, &triangle));
+	const NovaUniforms uniforms = {
+		.model = {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1},
+		.view = {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1},
+		.proj = {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1},
 
-	struct DrawContext ctx = {
-		.triangle = triangle,
-		.specularity = 1.0
+		.ambient = {0.2, 0.0, 0.0},
+		.diffuse = {0.0, 0.0, 0.0},
+		.specular = 1.0,
 	};
-	check_error("set up callbacks", nova_on_draw(nova, (NovaOnDrawFunc) on_draw, &ctx));
+
+	NovaVBO* vbo;
+	check_error("create vbo", nova_new_vbo(renderer, vertices, 3, &vbo));
 
 	int should_close = 0;
-	while(!should_close)
-		check_error("draw", nova_loop(nova, &should_close));
+	while(!should_close) {
+		check_error("flip", nova_flip(renderer, on_event, NULL, &should_close));
+		check_error("draw", nova_draw_vbo(renderer, vbo, &uniforms));
+	}
 
-	check_error("free vbo", nova_free_vbo(nova, ctx.triangle));
-
-	check_error("free nova", nova_free(nova));
+	check_error("free vbo", nova_free_vbo(renderer, vbo));
+	check_error("free renderer", nova_free(renderer));
 	return 0;
 }
