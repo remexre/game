@@ -4,8 +4,9 @@ use ash::{
     extensions::{khr::Swapchain, nv::RayTracing},
     version::{DeviceV1_0, InstanceV1_0},
     vk::{
-        DeviceCreateInfo, DeviceQueueCreateInfo, KhrGetMemoryRequirements2Fn, PhysicalDevice,
-        PhysicalDeviceType, Queue, QueueFlags, SurfaceKHR,
+        DeviceCreateInfo, DeviceMemory, DeviceQueueCreateInfo, KhrGetMemoryRequirements2Fn,
+        MemoryAllocateInfo, MemoryPropertyFlags, MemoryRequirements, PhysicalDevice,
+        PhysicalDeviceMemoryProperties, PhysicalDeviceType, Queue, QueueFlags, SurfaceKHR,
     },
     Device as AshDevice,
 };
@@ -38,6 +39,7 @@ pub struct Device {
     pub(crate) qf: u32,
     #[derivative(Debug = "ignore")]
     device: AshDevice,
+    memory_info: PhysicalDeviceMemoryProperties,
     pub(crate) queue: Queue,
 
     #[derivative(Debug = "ignore")]
@@ -178,11 +180,15 @@ impl Device {
             None
         };
 
+        // Get memory information.
+        let memory_info = unsafe { instance.get_physical_device_memory_properties(pd) };
+
         Ok(Arc::new(Device {
             surface,
             pd,
             qf,
             device,
+            memory_info,
             queue,
 
             raytracing_ext,
@@ -190,6 +196,31 @@ impl Device {
 
             instance,
         }))
+    }
+
+    /// Allocates GPU memory.
+    pub(crate) fn alloc(
+        &self,
+        req: MemoryRequirements,
+        flags: MemoryPropertyFlags,
+    ) -> Result<DeviceMemory> {
+        let memory_type_index = self
+            .memory_info
+            .memory_types
+            .iter()
+            .take(self.memory_info.memory_type_count as usize)
+            .enumerate()
+            .filter(|(i, _)| (req.memory_type_bits & (1u32 << i)) != 0)
+            .filter(|(_, mt)| mt.property_flags.contains(flags))
+            .map(|(i, _)| i as u32)
+            .next()
+            .ok_or_else(|| anyhow!("No available memory coould satisfy allocation request"))?;
+
+        let alloc_info = MemoryAllocateInfo::builder()
+            .allocation_size(req.size)
+            .memory_type_index(memory_type_index);
+        let mem = unsafe { self.allocate_memory(&alloc_info, None)? };
+        Ok(mem)
     }
 
     /// Waits until the device is idle.

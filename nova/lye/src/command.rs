@@ -1,4 +1,4 @@
-use crate::{Device, Pipeline, Swapchain};
+use crate::{DrawContext, Pipeline, Swapchain};
 use anyhow::{ensure, Context, Result};
 use ash::{
     version::DeviceV1_0,
@@ -13,7 +13,7 @@ use ash::{
     },
 };
 use log::debug;
-use std::{slice, sync::Arc};
+use std::{marker::PhantomData, slice};
 
 /// A wrapper around a bunch of Vulkan state that handles drawing commands to the screen.
 ///
@@ -247,12 +247,8 @@ impl<P: Pipeline> CommandManager<P> {
 
     /// Calls the closure with the current frame's command buffer. `flip` must have been called
     /// before this method.
-    #[doc(hidden)]
-    pub fn with_device_and_current_command_buffer<
-        F: FnOnce(&Arc<Device>, CommandBuffer) -> Result<T>,
-        T,
-    >(
-        &self,
+    pub fn with_draw_context_and_pipeline<'a, F: FnOnce(DrawContext<'a>, &'a P) -> Result<T>, T>(
+        &'a mut self,
         body: F,
     ) -> Result<T> {
         ensure!(
@@ -260,8 +256,11 @@ impl<P: Pipeline> CommandManager<P> {
             "flip was not called before drawing"
         );
         body(
-            &self.pipeline.swapchain().device,
-            self.per_image[self.current_frame].cmd_buffer,
+            DrawContext {
+                cmd_buffer: self.per_image[self.current_frame].cmd_buffer,
+                _phantom: PhantomData,
+            },
+            &self.pipeline,
         )
     }
 }

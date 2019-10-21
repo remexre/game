@@ -1,5 +1,5 @@
-use crate::{pipelines::Pipeline, Device, Shader, Swapchain, Vertex};
-use anyhow::Result;
+use crate::{Device, DrawContext, ImmutableBuffer, Pipeline, Shader, Swapchain, Vertex};
+use anyhow::{ensure, Result};
 use ash::{
     version::DeviceV1_0,
     vk::{
@@ -45,6 +45,26 @@ impl ForwardPipeline {
             frag,
             swapchain,
         })
+    }
+
+    /// Draws a VBO with the pipeline.
+    pub fn draw(&self, ctx: DrawContext, buffer: &ImmutableBuffer) -> Result<()> {
+        const VERTEX_SIZE: u64 = size_of::<Vertex>() as u64;
+
+        ensure!(
+            buffer.size % VERTEX_SIZE == 0,
+            "Invalid VBO (indivisible size)"
+        );
+        let vertex_count = (buffer.size / VERTEX_SIZE) as u32;
+        let DrawContext { cmd_buffer, .. } = ctx;
+        let device = &self.swapchain.device;
+
+        unsafe {
+            device.cmd_bind_vertex_buffers(cmd_buffer, 0, slice::from_ref(&buffer.buffer), &[0]);
+            device.cmd_draw(cmd_buffer, vertex_count, 1, 0, 0);
+        }
+
+        Ok(())
     }
 }
 

@@ -2,6 +2,24 @@ use anyhow::Result;
 use log::info;
 use lye::*;
 
+const VERTICES: &[Vertex] = &[
+    Vertex {
+        position: [-1.0, -1.0, 0.0],
+        normal: [1.0, 0.0, 0.0],
+        texcoords: [0.0, 0.0],
+    },
+    Vertex {
+        position: [1.0, -1.0, 0.0],
+        normal: [0.0, 1.0, 0.0],
+        texcoords: [0.0, 0.0],
+    },
+    Vertex {
+        position: [0.0, 1.0, 0.0],
+        normal: [0.0, 0.0, 1.0],
+        texcoords: [0.0, 0.0],
+    },
+];
+
 fn main() -> Result<()> {
     stderrlog::new().verbosity(3).init()?;
     run()?;
@@ -28,13 +46,14 @@ fn run() -> Result<()> {
     let pipeline = ForwardPipeline::new(swapchain, vert, frag)?;
     let mut command_manager = CommandManager::new(pipeline)?;
 
+    let vbo = ImmutableBuffer::new(device.clone(), VERTICES, BufferUsageFlags::VERTEX_BUFFER)?;
+
     while !window.should_close() {
         // This doesn't do resizing.
         command_manager.flip()?;
 
-        command_manager.with_device_and_current_command_buffer(|device, cmd_buffer| unsafe {
-            use ash::version::DeviceV1_0;
-            device.cmd_draw(cmd_buffer, 3, 1, 0, 0);
+        command_manager.with_draw_context_and_pipeline(|ctx, pipeline| {
+            pipeline.draw(ctx, &vbo)?;
             Ok(())
         })?;
 

@@ -88,48 +88,6 @@ impl Renderer {
         Ok(events)
     }
 
-    /*
-    pub fn draw<F: for<'a> FnOnce(DrawTarget<'a>) -> Result<()>>(&mut self, body: F) -> Result<()> {
-        let recreate = match self.draw_inner(body) {
-            Ok(()) => false,
-            Err(ref err) if err.downcast_ref() == Some(&VkResult::ERROR_OUT_OF_DATE_KHR) => true,
-            Err(err) => return Err(err),
-        };
-        if recreate || self.resized {
-            self.resized = false;
-            self.recreate_framebuffer()?;
-        }
-        Ok(())
-    }
-
-    fn draw_inner<'a, F: FnOnce(DrawTarget<'a>) -> Result<()>>(
-        &'a mut self,
-        body: F,
-    ) -> Result<()> {
-        let i = cmds::draw_start(
-            &self.swapchain_ext,
-            self.swapchain,
-            image_available_semaphore,
-        )?;
-
-        let framebuffer = self.framebuffers[i as usize];
-
-        cmds::begin_command_buffer(&self.dev, command_buffer, &render_finished_fence)?;
-        cmds::begin_render_pass(
-            &self.dev,
-            command_buffer,
-            self.render_pass,
-            framebuffer,
-            self.dims,
-        );
-        cmds::bind_pipeline(&self.dev, command_buffer, self.pipeline);
-
-        body(DrawTarget {
-            dev: &self.dev,
-            command_buffer: command_buffer,
-        })?;
-    */
-
     /// Sets the title of the window.
     pub fn set_title(&mut self, title: &str) {
         self.window.set_title(title);
