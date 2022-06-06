@@ -7,5 +7,5 @@ version = "0.1.0"
 
 [dependencies]
 bdf = "0.5.5"
-image = "0.22.3"
+image = "0.23.12"
 shaderc = "0.6.1"
